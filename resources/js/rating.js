@@ -1,6 +1,84 @@
 import { log } from 'handlebars';
 import $ from 'jquery';
 
+/**
+ * Determine validation strategy based on total rating cell value
+ * @param {number} totalRatingCell - The total number of ratings
+ * @returns {string} - The validation strategy to use
+ */
+function getValidationStrategy(totalRatingCell) {
+    switch(true) {
+        case totalRatingCell === 1:
+            return 'singleRating';
+        case totalRatingCell === 2:
+            return 'dualRating';
+        case totalRatingCell > 2:
+            return 'multipleRating';
+        default:
+            return 'other';
+    }
+}
+
+/**
+ * Validate a single rating based on the strategy
+ * @param {string} strategy - The validation strategy
+ * @param {number} totalRatingCell - Total number of ratings
+ * @param {string} key - The rating key (A, B, C, etc.)
+ * @param {string} firstKey - The first rating key
+ * @param {number} ratingCount - Expected rating count
+ * @param {number} suggestedRatingCount - Suggested rating count
+ * @returns {object} - {isValid: boolean, message: string}
+ */
+function validateRating(strategy, totalRatingCell, key, firstKey, ratingCount, suggestedRatingCount) {
+    switch(strategy) {
+        case 'singleRating':
+            // For single rating: Allow only if key matches first key
+            if (key === firstKey && ratingCount !== suggestedRatingCount) {
+                return {
+                    isValid: false,
+                    message: `${key}: Expected ${ratingCount}, Got ${suggestedRatingCount}`
+                };
+            }
+            return { isValid: true, message: '' };
+            
+        case 'dualRating':
+            // For dual rating: Allow mismatch if key has no more than 1 unique rating value
+            if (suggestedRatingCount > 1 && ratingCount !== suggestedRatingCount) {
+                return {
+                    isValid: false,
+                    message: `${key}: Maximum Expected 1, Got ${suggestedRatingCount}`
+                };
+            }
+            return { isValid: true, message: '' };
+            
+        case 'multipleRating':
+            // For multiple ratings: Flexible validation - allow reasonable variations
+            // Consider tolerance for distribution errors (e.g., +/- 10%)
+            const tolerance = Math.ceil(totalRatingCell * 0.1); // 10% tolerance
+            const difference = Math.abs(ratingCount - suggestedRatingCount);
+            
+            if (difference > tolerance && ratingCount !== suggestedRatingCount) {
+                return {
+                    isValid: false,
+                    message: `${key}: Expected ~${ratingCount}, Got ${suggestedRatingCount} (difference: ${difference})`
+                };
+            }
+            return { isValid: true, message: '' };
+            
+        case 'other':
+        default:
+            // For other/unknown levels: Strict validation - require exact match
+            if (ratingCount !== suggestedRatingCount) {
+                return {
+                    isValid: false,
+                    message: `${key}: Expected ${ratingCount}, Got ${suggestedRatingCount}`
+                };
+            }
+            return { isValid: true, message: '' };
+    }
+}
+
+
 $(document).ready(function() {
     $('#tableNotInitiated').DataTable({
         dom: 'Bfrtip',
@@ -116,7 +194,48 @@ document.addEventListener('DOMContentLoaded', function() {
             });
         
             // Validate table data
-            const table = document.querySelector(`table:has(.key-${level})`);
+            
+            // Find table with multiple selector strategies to handle various class names
+            let table = null;
+            
+            // Strategy 1: Find table containing element with class key-{level}
+            // Handle class names with spaces by converting them to underscores or dashes
+            const sanitizedLevel = level.replace(/\s+/g, '_').replace(/\s+/g, '-');
+            table = document.querySelector(`table:has(.key-${sanitizedLevel})`);
+            
+            // Strategy 2: If Strategy 1 fails, find table by data-level attribute
+            if (!table) {
+                table = document.querySelector(`table[data-level="${level}"]`);
+            }
+            
+            // Strategy 3: Find all tables and filter by checking if they contain elements with the class
+            if (!table) {
+                const allTables = document.querySelectorAll('table');
+                for (let t of allTables) {
+                    // Try different class name formats
+                    if (t.querySelector(`.key-${level}`) ||
+                        t.querySelector(`.key-${sanitizedLevel}`) ||
+                        t.querySelector(`[data-key-level="${level}"]`)) {
+                        table = t;
+                        break;
+                    }
+                }
+            }
+
+            // console.log(`Looking for table with level: "${level}"`, { table, sanitizedLevel });
+            
+            // Safety check: ensure table exists
+            if (!table) {
+                Swal.fire({
+                    title: 'Validation Error!',
+                    text: `Rating table not found for level "${level}". Please refresh the page and try again.`,
+                    icon: 'error',
+                    confirmButtonColor: "#3e60d5",
+                    confirmButtonText: 'OK'
+                });
+                return;
+            }
+            
             const rows = table.querySelectorAll('tbody tr:not(:last-child)');
             let tableIsValid = true;
             let mismatchedRatings = [];
@@ -126,35 +245,56 @@ document.addEventListener('DOMContentLoaded', function() {
                 el.classList.remove('table-danger');
             });
 
-            const totalRatingCell = parseInt(table.querySelector(`td.rating-total-count-${level}`).textContent);
-            const firstKey = table.querySelector(`td.key-${level}`).textContent.trim();
+            const totalRatingCellElement = table.querySelector(`td.rating-total-count-${level}`);
+            const firstKeyElement = table.querySelector(`td.key-${level}`);
+            
+            // Safety check: ensure elements exist
+            if (!totalRatingCellElement || !firstKeyElement) {
+                Swal.fire({
+                    title: 'Validation Error!',
+                    text: 'Rating table elements not found. Please refresh the page and try again.',
+                    icon: 'error',
+                    confirmButtonColor: "#3e60d5",
+                    confirmButtonText: 'OK'
+                });
+                return;
+            }
+            
+            const totalRatingCell = parseInt(totalRatingCellElement.textContent) || 0;
+            const firstKey = firstKeyElement.textContent.trim();
+            
+            // Determine validation strategy based on totalRatingCell value
+            const validationStrategy = getValidationStrategy(totalRatingCell);
             
             rows.forEach(row => {
-                const key = row.querySelector(`td.key-${level}`).textContent.trim().replace(/\s+/g, '');
-                const ratingCell = row.querySelector('td.rating');
-                const suggestedRatingCell = row.querySelector(`td.suggested-rating-count-${key}-${level}`);
-                const ratingCount = parseInt(ratingCell.textContent);
-                const suggestedRatingCount = parseInt(suggestedRatingCell.textContent);
-                        
-                if (totalRatingCell === 1) {
-                    // Allow mismatch only if key is not 'A'
-                    if (key === firstKey && ratingCount !== suggestedRatingCount) {
-                        tableIsValid = false;
-                        mismatchedRatings.push(`${key}: Expected ${ratingCount}, Got ${suggestedRatingCount}`);
-                        suggestedRatingCell.classList.add('table-danger');
-                    }
-                } else if (totalRatingCell === 2) {
-                    // Allow mismatch if key has no more than 1 unique rating value
-                    if (suggestedRatingCount > 1 && ratingCount !== suggestedRatingCount) {
-                        tableIsValid = false;
-                        mismatchedRatings.push(`${key}: Maximum Expected 1, Got ${suggestedRatingCount}`);
-                        suggestedRatingCell.classList.add('table-danger');
-                    }
-                } else if (ratingCount !== suggestedRatingCount) {
-                    // General case: Handle any other mismatch
+                const keyElement = row.querySelector(`td.key-${level}`);
+                const ratingCellElement = row.querySelector('td.rating');
+                const suggestedRatingCellElement = row.querySelector(`td.suggested-rating-count-${level}`);
+                
+                // Safety check: ensure all cell elements exist
+                if (!keyElement || !ratingCellElement || !suggestedRatingCellElement) {
+                    console.warn('Missing cell elements in row:', row);
+                    return;
+                }
+                
+                const key = keyElement.textContent.trim().replace(/\s+/g, '');
+                const ratingCount = parseInt(ratingCellElement.textContent) || 0;
+                const suggestedRatingCount = parseInt(suggestedRatingCellElement.textContent) || 0;
+                
+                // Apply validation based on strategy
+                const validationResult = validateRating(
+                    validationStrategy,
+                    totalRatingCell,
+                    key,
+                    firstKey,
+                    ratingCount,
+                    suggestedRatingCount
+                );
+                
+                if (!validationResult.isValid) {
                     tableIsValid = false;
-                    mismatchedRatings.push(`${key}: Expected ${ratingCount}, Got ${suggestedRatingCount}`);
-                    suggestedRatingCell.classList.add('table-danger');
+                    mismatchedRatings.push(validationResult.message);
+                    suggestedRatingCellElement.classList.add('table-danger');
                 }
             });
         

@@ -82,7 +82,7 @@
                 }
             @endphp
             @if ($viewAchievement)
-            <div class="rounded mb-2 p-3 bg-white text-primary align-items-center">
+            <div class="rounded mb-2 p-3 bg-white text-primary align-items-center d-none">
                 <div class="row mb-2">
                     <span class="fs-16 mx-1">
                         Achievements
@@ -150,6 +150,7 @@
                                 'formIndex' => $index,
                                 'name' => $row['name'],
                                 'data' => $row['data'],
+                                'ratings' => $ratings ?? [],
                                 'viewCategory' => $filteredFormDatas['viewCategory']
                                 ])
                             </div>

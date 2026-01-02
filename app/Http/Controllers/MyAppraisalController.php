@@ -111,8 +111,7 @@ class MyAppraisalController extends Controller
                                                         ->value('layer');
                 }
                 return $item;
-            });
-            
+            });            
             
             $adjustByManager = $datas->first()->updatedBy ? 
                 ApprovalLayerAppraisal::where('approver_id', $datas->first()->updatedBy->employee_id)
@@ -125,12 +124,12 @@ class MyAppraisalController extends Controller
             $cultureData = $this->getDataByName($formGroupData['data']['form_appraisals'], 'Culture') ?? [];
             $leadershipData = $this->getDataByName($formGroupData['data']['form_appraisals'], 'Leadership') ?? [];
             $technicalData = $this->getDataByName($formGroupData['data']['form_appraisals'], 'Technical') ?? [];
+            $sigapData = $this->getDataByName($formGroupData['data']['form_appraisals'], 'Sigap') ?? [];
 
             $data = [];
             foreach ($formattedData as $request) {
-                
+
                 if ($request->appraisal->goal->form_status != 'Draft' || $request->created_by == Auth::user()->id) {
-                    // dd($request);
 
                     $goalData = $request ? json_decode($request->appraisal->goal->form_data, true) : [];
             
@@ -140,17 +139,19 @@ class MyAppraisalController extends Controller
 
                     $appraisalData = json_decode($form_data, true) ?? [];
 
+                    
                     $groupedContributors = $request->contributor->groupBy('contributor_type');
-
+                    
                     $employeeData = $request->employee;
 
                     $formData = $this->appService->combineFormData($appraisalData, $goalData, 'employee', $employeeData, $request->period);
-                    
+
                     if (isset($formData['totalKpiScore'])) {
                         $appraisalData['kpiScore'] = round($formData['totalKpiScore'], 2);
                         $appraisalData['cultureScore'] = round($formData['totalCultureScore'], 2);
                         $appraisalData['leadershipScore'] = round($formData['totalLeadershipScore'], 2);
                         $appraisalData['technicalScore'] = round($formData['totalTechnicalScore'], 2);
+                        $appraisalData['sigapScore'] = round($formData['sigapScore'], 2);
                     }
                     
                     foreach ($formData['formData'] as &$form) {
@@ -191,6 +192,20 @@ class MyAppraisalController extends Controller
                                     }
                                 }
                                 $form[$index]['title'] = $cultureItem['title'];
+                            }
+                        }
+                        if ($form['formName'] === 'Sigap') {
+                            foreach ($sigapData as $index => $sigapItem) {
+                                foreach ($sigapItem['items'] as $itemIndex => $item) {
+                                    if (isset($form[$index][$itemIndex])) {
+                                        $form[$index][$itemIndex] = [
+                                            'formItem' => $item,
+                                            'score' => $form[$index][$itemIndex]['score']
+                                        ];
+                                    }
+                                }
+                                $form[$index]['title'] = $sigapItem['title'];
+                                $form[$index]['items'] = $sigapItem['items'];
                             }
                         }
                         if ($form['formName'] === 'Technical') {
@@ -313,79 +328,90 @@ class MyAppraisalController extends Controller
 
     public function create(Request $request)
     {
-        $step = $request->input('step', 1);
+        try {
+            $step = $request->input('step', 1);
 
-        $period = $this->appService->appraisalPeriod();
+            $period = $this->appService->appraisalPeriod();
 
-        $goalChecked = Goal::where('employee_id', $request->id)->where('period', $period)->exists();
+            $goalChecked = Goal::where('employee_id', $request->id)->where('period', $period)->exists();
 
-        $goal = Goal::where('employee_id', $request->id)->where('period', $period)->first();
+            $goal = Goal::where('employee_id', $request->id)->where('period', $period)->first();
 
-        $appraisal = Appraisal::where('employee_id', $request->id)->where('period', $period)->first();
+            $appraisal = Appraisal::where('employee_id', $request->id)->where('period', $period)->first();
 
-        $accessMenu = [];
+            $accessMenu = [];
 
-        $employee = EmployeeAppraisal::where('employee_id', $request->id)->first();
-        if ($employee) {
-            $accessMenu = json_decode($employee->access_menu, true);
-        }
+            $employee = EmployeeAppraisal::where('employee_id', $request->id)->first();
+            if ($employee) {
+                $accessMenu = json_decode($employee->access_menu, true);
+            }
 
-        // check goals
-        if ($goalChecked) {
-            $goalData = json_decode($goal->form_data, true);
-        } else {
-            Session::flash('error', "Your Goal for $period are not found.");
+            // check goals
+            if ($goalChecked) {
+                $goalData = json_decode($goal->form_data, true);
+            } else {
+                Session::flash('error', "Your Goal for $period are not found.");
+                return redirect()->route('appraisals');
+            }
+
+            if (!$accessMenu['createpa'] && !$accessMenu['accesspa']) {
+                Session::flash('error', "You are not eligible to create Appraisal $period.");
+                return redirect()->route('appraisals');
+            }
+
+            // check appraisals
+            if ($appraisal) {
+                Session::flash('error', "Appraisal $period already initiated.");
+                return redirect()->route('appraisals');
+            }
+            
+            $approval = ApprovalLayerAppraisal::select('approver_id')->where('employee_id', $request->id)->where('layer_type', 'manager')->where('layer', 1)->first();
+      
+            if (!$approval) {
+                Session::flash('error', "No Reviewer assigned, please contact admin to assign reviewer");
+                return redirect()->back();
+            }
+            
+            $calibrator = ApprovalLayerAppraisal::where('layer', 1)->where('layer_type', 'calibrator')->where('employee_id', $request->id)->value('approver_id');
+
+            if (!$calibrator) {
+                Session::flash('error', "No Layer assigned, please contact admin to assign layer");
+                return redirect()->back();
+            }
+            
+            
+            // Get form group appraisal
+            $formGroupData = $this->appService->formGroupAppraisal($request->id, 'Appraisal Form');
+            
+            // Validate formGroupData is not empty
+            if (empty($formGroupData) || !isset($formGroupData['data']) || empty($formGroupData['data']['form_appraisals'])) {
+                throw new Exception("Form group configuration is incomplete or missing.");
+            }
+                    
+            $formTypes = $formGroupData['data']['form_names'] ?? [];
+            $formDatas = $formGroupData['data']['form_appraisals'] ?? [];
+                    
+            $filteredFormData = array_filter($formDatas, function($form) use ($formTypes) {
+                return in_array($form['name'], $formTypes);
+            });
+
+            $ratings = $formGroupData['data']['rating'] ?? [];
+
+            $achievements = Achievements::where('employee_id', $request->id)->where('period', $period)->get();
+
+            $parentLink = __('Appraisal');
+            $link = 'Initiate Appraisal';
+
+            // View Cement only //
+            $viewAchievement = $employee->group_company == 'Cement' ? true : false;
+
+            // Pass the data to the view
+            return view('pages/appraisals/create', compact('step', 'parentLink', 'link', 'filteredFormData', 'formGroupData', 'goalData', 'goal', 'approval', 'ratings', 'appraisal', 'achievements', 'viewAchievement'));
+        } catch (Exception $e) {
+            Log::error('Error in create method: ' . $e->getMessage());
+            Session::flash('error', 'Failed to load appraisal form: ' . $e->getMessage());
             return redirect()->route('appraisals');
         }
-
-        if (!$accessMenu['createpa'] && !$accessMenu['accesspa']) {
-            Session::flash('error', "You are not eligible to create Appraisal $period.");
-            return redirect()->route('appraisals');
-        }
-
-        // check appraisals
-        if ($appraisal) {
-            Session::flash('error', "Appraisal $period already initiated.");
-            return redirect()->route('appraisals');
-        }
-        
-        $approval = ApprovalLayerAppraisal::select('approver_id')->where('employee_id', $request->id)->where('layer_type', 'manager')->where('layer', 1)->first();
-  
-        if (!$approval) {
-            Session::flash('error', "No Reviewer assigned, please contact admin to assign reviewer");
-            return redirect()->back();
-        }
-        
-        $calibrator = ApprovalLayerAppraisal::where('layer', 1)->where('layer_type', 'calibrator')->where('employee_id', $request->id)->value('approver_id');
-
-        if (!$calibrator) {
-            Session::flash('error', "No Layer assigned, please contact admin to assign layer");
-            return redirect()->back();
-        }
-        
-        
-        // Get form group appraisal
-        $formGroupData = $this->appService->formGroupAppraisal($request->id, 'Appraisal Form');
-                
-        $formTypes = $formGroupData['data']['form_names'] ?? [];
-        $formDatas = $formGroupData['data']['form_appraisals'] ?? [];
-                
-        $filteredFormData = array_filter($formDatas, function($form) use ($formTypes) {
-            return in_array($form['name'], $formTypes);
-        });
-
-        $ratings = $formGroupData['data']['rating'];
-
-        $achievements = Achievements::where('employee_id', $request->id)->where('period', $period)->get();
-
-        $parentLink = __('Appraisal');
-        $link = 'Initiate Appraisal';
-
-        // View Cement only //
-        $viewAchievement = $employee->group_company == 'Cement' ? true : false;
-
-        // Pass the data to the view
-        return view('pages/appraisals/create', compact('step', 'parentLink', 'link', 'filteredFormData', 'formGroupData', 'goalData', 'goal', 'approval', 'ratings', 'appraisal', 'achievements', 'viewAchievement'));
     }
 
     public function store(Request $request)
@@ -554,8 +580,8 @@ class MyAppraisalController extends Controller
     
 
     function edit(Request $request) {
-
-        $step = $request->input('step', 1);
+        try {
+            $step = $request->input('step', 1);
 
         $period = $this->appService->appraisalPeriod();
 
@@ -576,12 +602,11 @@ class MyAppraisalController extends Controller
             // Read the content of the JSON files
             $formGroupContent = $this->appService->formGroupAppraisal($appraisal->employee_id, 'Appraisal Form');
             
-            if (!$formGroupContent) {
-                $formGroupData = ['data' => ['formData' => []]];
-            } else {
-                $formGroupData = $formGroupContent;
+            if (!$formGroupContent || empty($formGroupContent['data']['form_appraisals'])) {
+                throw new Exception("Form group configuration is incomplete or missing for employee.");
             }
-
+            
+            $formGroupData = $formGroupContent;
             
             $formTypes = $formGroupData['data']['form_names'] ?? [];
             $formDatas = $formGroupData['data']['form_appraisals'] ?? [];
@@ -591,9 +616,15 @@ class MyAppraisalController extends Controller
                 return in_array($form['name'], $formTypes);
             });
             
-            $ratings = $formGroupData['data']['rating'];
+            $ratings = $formGroupData['data']['rating'] ?? [];
             
             $approval = ApprovalLayerAppraisal::select('approver_id')->where('employee_id', $appraisal->employee_id)->where('layer', 1)->first();
+            
+            $cultureData = $this->getDataByName($formGroupData['data']['form_appraisals'], 'Culture') ?? [];
+            $leadershipData = $this->getDataByName($formGroupData['data']['form_appraisals'], 'Leadership') ?? [];
+            $technicalData = $this->getDataByName($formGroupData['data']['form_appraisals'], 'Technical') ?? [];
+            $sigapData = $this->getDataByName($formGroupData['data']['form_appraisals'], 'Sigap') ?? [];
+            
             // Read the contents of the JSON file
             $formData = json_decode($appraisal->form_data, true);
             
@@ -620,7 +651,6 @@ class MyAppraisalController extends Controller
                 }
             }
 
-            
             foreach ($formData['formData'] as &$form) {                
                 if ($form['formName'] === 'Culture') {
                     foreach ($form as $key => &$value) {
@@ -655,6 +685,21 @@ class MyAppraisalController extends Controller
                         }
                     }
                 }
+                if ($form['formName'] === 'Sigap') {
+
+                    foreach ($form as $key => $value) {
+                        if (is_numeric($key)) {
+                            $scores = [];
+                            foreach ($value as $score) {
+                                $scores[] = $score;
+                            }
+                            $value = $scores;
+                        }
+
+                    }
+
+                }
+
             }
 
             // Function to merge scores
@@ -666,12 +711,18 @@ class MyAppraisalController extends Controller
                             foreach ($formData as $key => $value) {
                                 if (is_numeric($key)) {
                                     if (isset($value['score'])) {
-                                        foreach ($value['score'] as $scoreIndex => $scoreValue) {
-                                            if (isset($section['data'][$key]['score'][$scoreIndex])) {
-                                                $section['data'][$key]['score'][$scoreIndex] += $scoreValue;
-                                            } else {
-                                                $section['data'][$key]['score'][$scoreIndex] = $scoreValue;
+                                        if (is_array($value['score'])) {
+                                            foreach ($value['score'] as $scoreIndex => $scoreValue) {
+                                                if (isset($section['data'][$key]['score'][$scoreIndex])) {
+                                                    $section['data'][$key]['score'][$scoreIndex] += $scoreValue;
+                                                } else {
+                                                    $section['data'][$key]['score'][$scoreIndex] = $scoreValue;
+                                                }
                                             }
+                                        } else {
+                                            // Handle single score value (for Sigap or other forms)
+                                            $section['data'][$key]['score'] = $value['score'] ?? null;
+
                                         }
                                     }
                                 }
@@ -681,9 +732,57 @@ class MyAppraisalController extends Controller
                 }
                 return $filteredFormData;
             }
-
+            
             // Merge the scores
             $filteredFormData = mergeScores($formData, $filteredFormData);
+
+            // Process form data for display
+            foreach ($filteredFormData as &$form) {
+                if ($form['name'] === 'Leadership') {
+                    foreach ($leadershipData as $index => $leadershipItem) {
+                        foreach ($leadershipItem['items'] as $itemIndex => $item) {
+                            if (isset($form['data'][$index]['score'][$itemIndex])) {
+                                $form['data'][$index]['items'][$itemIndex]['formItem'] = $item;
+                                $form['data'][$index]['items'][$itemIndex]['score'] = $form['data'][$index]['score'][$itemIndex];
+                            }
+                        }
+                        $form['data'][$index]['title'] = $leadershipItem['title'];
+                    }
+                }
+                if ($form['name'] === 'Technical') {
+                    foreach ($technicalData as $index => $technicalItem) {
+                        foreach ($technicalItem['items'] as $itemIndex => $item) {
+                            if (isset($form['data'][$index]['score'][$itemIndex])) {
+                                $form['data'][$index]['items'][$itemIndex]['formItem'] = $item;
+                                $form['data'][$index]['items'][$itemIndex]['score'] = $form['data'][$index]['score'][$itemIndex];
+                            }
+                        }
+                        $form['data'][$index]['title'] = $technicalItem['title'];
+                    }
+                }
+                if ($form['name'] === 'Culture') {
+                    foreach ($cultureData as $index => $cultureItem) {
+                        foreach ($cultureItem['items'] as $itemIndex => $item) {
+                            if (isset($form['data'][$index]['score'][$itemIndex])) {
+                                $form['data'][$index]['items'][$itemIndex]['formItem'] = $item;
+                                $form['data'][$index]['items'][$itemIndex]['score'] = $form['data'][$index]['score'][$itemIndex];
+                            }
+                        }
+                        $form['data'][$index]['title'] = $cultureItem['title'];
+                    }
+                }
+                if ($form['name'] === 'Sigap') {
+                    foreach ($sigapData as $index => $sigapItem) {
+                        foreach ($sigapItem['items'] as $itemIndex => $item) {
+                            if (isset($form['data'][$index]['score'][$itemIndex])) {
+                                $form['data'][$index]['items'][$itemIndex]['formItem'] = $item;
+                                $form['data'][$index]['items'][$itemIndex]['score'] = $form['data'][$index]['score'][$itemIndex];
+                            }
+                        }
+                        $form['data'][$index]['title'] = $sigapItem['title'];
+                    }
+                }
+            }
 
             $achievements = Achievements::where('employee_id', $appraisal->employee_id)->where('period', $period)->get();
 
@@ -699,7 +798,11 @@ class MyAppraisalController extends Controller
 
             return view('pages.appraisals.edit', compact('step', 'goal', 'appraisal', 'goalData', 'formCount', 'filteredFormData', 'link', 'data', 'approvalRequest', 'parentLink', 'approval', 'formGroupData', 'ratings', 'viewCategory', 'achievements', 'viewAchievement', 'sefInitiate'));
         }
-
+        } catch (Exception $e) {
+            Log::error('Error in edit method: ' . $e->getMessage());
+            Session::flash('error', 'Failed to load appraisal form: ' . $e->getMessage());
+            return redirect()->route('appraisals');
+        }
     }
 
     public function update(Request $request)

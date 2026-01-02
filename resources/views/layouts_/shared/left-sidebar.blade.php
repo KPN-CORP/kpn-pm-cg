@@ -96,7 +96,7 @@
                 </li>
                 @endif
                 @if($flowAccess('Propose 360'))
-                    <li class="side-nav-item">
+                    <li class="side-nav-item d-none">
                         <a href="{{ route('proposed360') }}" onclick="showLoader()" class="side-nav-link">
                             <i class="ri-team-line"></i>
                             <span> {{ __('Propose 360') }} </span>
@@ -123,7 +123,7 @@
             @if(auth()->check())
                 @can('adminmenu')
                 <li class="side-nav-title">Admin</li>
-                <li class="side-nav-item">
+                <li class="side-nav-item d-none">
                     <a href="{{ route('admin-tasks') }}" class="side-nav-link">
                         <i class="ri-task-line"></i>
                         <span> Admin Tasks </span>

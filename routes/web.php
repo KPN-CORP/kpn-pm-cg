@@ -348,6 +348,7 @@ Route::middleware('auth', 'locale', 'notification')->group(function () {
     Route::middleware(['permission:importgoals'])->group(function () {
         Route::get('/import-goals', [ImportGoalsController::class, 'showImportForm'])->name('importg');
         Route::post('/import-goals', [ImportGoalsController::class, 'import'])->name('importgoals');
+        Route::post('/import-clustering-kpi', [ImportGoalsController::class, 'importClusteringKPI'])->name('importClusteringKPI');
         Route::get('/download-excel/{file}', [ImportGoalsController::class, 'downloadExcel'])->name('downloadExcel');
     });
 
@@ -379,7 +380,6 @@ Route::middleware('auth', 'locale', 'notification')->group(function () {
 
         Route::get('/admin-appraisal/get-detail-data/{id}', [AdminAppraisalController::class, 'getDetailData'])->name('get.detail.data');
         Route::post('/export-appraisal-detail', [AdminAppraisalController::class, 'exportAppraisalDetail']);
-
     });
     
     Route::middleware(['permission:viewonbehalf'])->group(function () {

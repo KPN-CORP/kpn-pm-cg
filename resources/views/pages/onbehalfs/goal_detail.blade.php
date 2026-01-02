@@ -18,9 +18,18 @@
                   <div class="container-card">
                     @php
                         $formData = json_decode($row->goal['form_data'], true);
+                        // Group by cluster for backward compatibility
+                        $groupedFormData = [];
+                        foreach ($formData as $item) {
+                            $cluster = $item['cluster'] ?? 'personal';
+                            $groupedFormData[$cluster][] = $item;
+                        }
                     @endphp
-                    @if ($formData)
-                    @foreach ($formData as $index => $data)
+                    @if ($groupedFormData)
+                    @foreach(['company' => 'Company Goals', 'division' => 'Division Goals', 'personal' => 'Personal Goals'] as $cluster => $title)
+                      @if(!empty($groupedFormData[$cluster]))
+                        <h5 class="mt-3">{{ $title }}</h5>
+                        @foreach ($groupedFormData[$cluster] as $index => $data)
                         <div class="card col-md-12 mb-2 border border-primary">
                             <div class="card-header bg-white pb-0">
                                 <h4>{{ __('Goal') }} {{ $index + 1 }}</h4>
@@ -65,6 +74,8 @@
                                 </div>
                             </div>
                         </div>
+                        @endforeach
+                      @endif
                     @endforeach
                     @else
                         <p>No form data available.</p>

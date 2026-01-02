@@ -214,18 +214,14 @@ document.addEventListener("DOMContentLoaded", function () {
 
     $(wrapper).on("click", ".remove_field", function (e) {
         e.preventDefault();
-        // hapus card yang diklik (atau pakai .last() kalau memang mau selalu terakhir)
+        // hapus card yang diklik
         $(this).closest(".card").remove();
 
-        reindexCards();
+        // reindex per cluster
+        reindexCardsPerCluster();
 
         // perbarui count dari DOM
         $("#count").val($(".container-card .card").length);
-
-        // (opsional) perbarui label "Goal N" agar rapi urut 1..N
-        wrapper.children(".card").each(function(idx){
-            $(this).find(".card-title").text("Goal " + (idx + 1));
-        });
 
         // hitung ulang total weightage
         updateWeightageSummary();
@@ -238,10 +234,122 @@ document.addEventListener("DOMContentLoaded", function () {
             addField(dataId); // Add an empty input field
         });
     }
+
+    // Handle add personal button
+    var addPersonalButtons = document.querySelectorAll(".add-personal-btn");
+    addPersonalButtons.forEach(function(button) {
+        button.addEventListener("click", function () {
+            var cluster = button.getAttribute("data-cluster");
+            addFieldForCluster(cluster);
+        });
+    });
 });
 
 var firstSelect = document.getElementById("uom"); // Assuming your first select has an ID "uom1"
 populateUoMSelect(firstSelect);
+
+function addFieldForCluster(cluster) {
+    var wrapper = document.getElementById(cluster + "-goals");
+    if (!wrapper) return;
+
+    var currentCount = wrapper.querySelectorAll(".card").length;
+    if (currentCount >= 10) {
+        Swal.fire({
+            title: "Maximum goals reached",
+            text: "You can only add up to 10 goals per cluster.",
+            icon: "warning"
+        });
+        return;
+    }
+
+    var globalIndex = document.querySelectorAll('[name="kpi[]"]').length;
+    var clusterIndex = currentCount + 1;
+
+    var newCard = document.createElement("div");
+    newCard.className = "card border-primary border col-md-12 mb-3 bg-primary-subtle";
+    newCard.innerHTML = `
+        <div class="card-body">
+            <div class='row align-items-end'>
+                <div class='col'><h5 class='card-title fs-16 mb-0 text-primary'>Goal ${clusterIndex}</h5></div>
+                <div class='col-auto'><a class='btn-close remove_field' type='button'></a></div>
+            </div>
+            <input type="hidden" name="cluster[]" value="${cluster}">
+            <div class="row mt-2">
+                <div class="col-md">
+                    <div class="mb-3 position-relative">
+                        <textarea name="kpi[]" id="kpi" class="form-control overflow-hidden kpi-textarea pb-2 pe-3" rows="2" placeholder="Input your goals.." required style="resize: none"></textarea>
+                        <div class="invalid-feedback">${textMandatory}</div>
+                    </div>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-md">
+                    <div class="mb-3 position-relative">
+                        <label class="form-label text-primary" for="kpi-description">Goal Descriptions</label>
+                        <textarea name="description[]" id="kpi-description" class="form-control overflow-hidden kpi-descriptions pb-2 pe-3" rows="2" placeholder="Input goal descriptions.." style="resize: none"></textarea>
+                    </div>
+                </div>
+            </div>
+            <div class="row justify-content-between">
+                <div class="col-md">
+                    <div class="mb-3">
+                        <label class="form-label text-primary" for="target">Target</label>
+                        <input type="text" oninput="validateDigits(this, '${cluster}_${clusterIndex}')" class="form-control" required>
+                        <input type="hidden" name="target[]" id="target${cluster}_${clusterIndex}">
+                        <div class="invalid-feedback">${textMandatory}</div>
+                    </div>
+                </div>
+                <div class="col-md">
+                    <div class="mb-3">
+                        <label class="form-label text-primary" for="uom">${uom}</label>
+                        <select class="form-select select2 select-uom" name="uom[]" id="uom${cluster}_${clusterIndex}" data-id="${cluster}_${clusterIndex}" title="Unit of Measure" required>
+                            <option value="">- Select -</option>
+                        </select>
+                        <input type="text" name="custom_uom[]" id="custom_uom${cluster}_${clusterIndex}" class="form-control mt-2" placeholder="Enter UoM" style="display: none">
+                        <div class="invalid-feedback">${textMandatory}</div>
+                    </div>
+                </div>
+                <div class="col-md">
+                    <div class="mb-3">
+                        <label class="form-label text-primary" for="type">${type}</label>
+                        <select class="form-select select-type" name="type[]" id="type${cluster}_${clusterIndex}" required>
+                            <option value="">- Select -</option>
+                            <option value="Higher Better">Higher Better</option>
+                            <option value="Lower Better">Lower Better</option>
+                            <option value="Exact Value">Exact Value</option>
+                        </select>
+                        <div class="invalid-feedback">${textMandatory}</div>
+                    </div>
+                </div>
+                <div class="col-6 col-md-2">
+                    <div class="mb-3">
+                        <label class="form-label text-primary" for="weightage">${weightage}</label>
+                        <div class="input-group">
+                            <input type="number" min="5" max="100" step="0.1" class="form-control" name="weightage[]" required>
+                            <span class="input-group-text">%</span>
+                            <div class="invalid-feedback">${textMandatory}</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+
+    wrapper.appendChild(newCard);
+
+    // Initialize events
+    initializeTextareaEvents();
+    var $select = $("#uom" + cluster + "_" + clusterIndex);
+    populateUoMSelect($select, function () {
+        initSelect2($select);
+    });
+
+    document.querySelectorAll('[name="weightage[]"]').forEach(function(el){
+        el.addEventListener("keyup", updateWeightageSummary);
+    });
+
+    updateWeightageSummary();
+}
 
 function checkEmptyFields(submitType) {
     const alertField = $(".mandatory-field");
@@ -277,13 +385,17 @@ function checkEmptyFields(submitType) {
 }
 
 function validate(submitType) {
+    // Check if this is a cluster form (has containers with id ending in "-goals")
+    var isClusterForm = document.querySelector('[id$="-goals"]') !== null;
+
     var weight = document.querySelectorAll('input[name="weightage[]"]');
     var sum = 0;
     for (var i = 0; i < weight.length; i++) {
         sum += parseFloat(weight[i].value) || 0; // Parse input value to integer, default to 0 if NaN
     }
 
-    if (sum != 100 && submitType === "submit_form") {
+    // Skip total weightage validation for cluster forms
+    if (!isClusterForm && sum != 100 && submitType === "submit_form") {
         Swal.fire({
             title: "Submit failed",
             html: `Your current weightage is ${sum}%, <br>Please adjust to reach the total weightage of 100%`,
@@ -401,6 +513,9 @@ function confirmSubmission(submitType) {
 
 // Function to calculate and display the sum of weightage inputs
 function updateWeightageSummary() {
+    // Check if this is a cluster form (has containers with id ending in "-goals")
+    var isClusterForm = document.querySelector('[id$="-goals"]') !== null;
+
     // Get all input elements with name="weightage[]"
     var weightageInputs = document.getElementsByName("weightage[]");
     var totalSum = 0;
@@ -420,20 +535,32 @@ function updateWeightageSummary() {
 
     // Display the total sum in a summary element
     var summaryElement = document.getElementById("totalWeightage");
+    var summaryContainer = summaryElement ? summaryElement.closest('h5, h4') : null;
 
-    if (totalSum != 100) {
-        summaryElement.classList.remove("text-success");
-        summaryElement.classList.add("text-danger"); // Add text-danger class
-        // Add or update a sibling element to display the additional message
-        if (summaryElement) {
-            summaryElement.textContent = totalSum + "% of 100%";
+    if (isClusterForm) {
+        // For cluster forms, hide the total weightage display
+        if (summaryContainer) {
+            summaryContainer.style.display = 'none';
         }
     } else {
-        summaryElement.classList.remove("text-danger"); // Remove text-danger class
-        summaryElement.classList.add("text-success"); // Remove text-danger class
-        // Hide the message element if totalSum is 100
-        if (summaryElement) {
-            summaryElement.textContent = totalSum.toFixed(0) + "%";
+        // For non-cluster forms, show and validate total = 100%
+        if (summaryContainer) {
+            summaryContainer.style.display = 'block';
+        }
+        if (totalSum != 100) {
+            summaryElement.classList.remove("text-success");
+            summaryElement.classList.add("text-danger"); // Add text-danger class
+            // Add or update a sibling element to display the additional message
+            if (summaryElement) {
+                summaryElement.textContent = totalSum + "% of 100%";
+            }
+        } else {
+            summaryElement.classList.remove("text-danger"); // Remove text-danger class
+            summaryElement.classList.add("text-success"); // Remove text-danger class
+            // Hide the message element if totalSum is 100
+            if (summaryElement) {
+                summaryElement.textContent = totalSum.toFixed(0) + "%";
+            }
         }
     }
 }
@@ -742,26 +869,51 @@ function hideSectionLoader(selector, opts){
 // Run initialization when page loads
 document.addEventListener("DOMContentLoaded", initializeTextareaEvents);
 
-function reindexCards() {
-    $(".container-card .card").each(function(i) {
-        const index = i + 1;
+function reindexCardsPerCluster() {
+    // Get all cluster containers (those with id ending in "-goals")
+    const clusterContainers = document.querySelectorAll('[id$="-goals"]');
 
-        // update title
-        $(this).find(".card-title").text("Goal " + index);
+    clusterContainers.forEach(container => {
+        const clusterId = container.getAttribute('id');
+        const cluster = clusterId.replace('-goals', ''); // Extract cluster name from id
+        const cards = container.querySelectorAll('.card');
 
-        // update target input
-        $(this).find('input[id^="target"]').attr("id", "target" + index);
-        $(this).find('input[oninput]').attr("oninput", `validateDigits(this, ${index})`);
+        cards.forEach((card, index) => {
+            const clusterIndex = index + 1;
 
-        // update UoM select
-        const $sel = $(this).find('select.select-uom');
-        $sel.attr("id", "uom" + index);
-        $sel.attr("data-id", index);
+            // update title
+            card.querySelector(".card-title").textContent = "Goal " + clusterIndex;
 
-        // update custom_uom
-        $(this).find('input[id^="custom_uom"]').attr("id", "custom_uom" + index);
+            // update target input
+            const targetInput = card.querySelector('input[id^="target"]');
+            if (targetInput) {
+                targetInput.id = "target" + cluster + "_" + clusterIndex;
+            }
 
-        // update type select
-        $(this).find('select.select-type').attr("id", "type" + index);
+            // update oninput for target
+            const targetVisibleInput = card.querySelector('input[oninput]');
+            if (targetVisibleInput) {
+                targetVisibleInput.setAttribute("oninput", `validateDigits(this, ${cluster + "_" + clusterIndex})`);
+            }
+
+            // update UoM select
+            const uomSelect = card.querySelector('select.select-uom');
+            if (uomSelect) {
+                uomSelect.id = "uom" + cluster + "_" + clusterIndex;
+                uomSelect.setAttribute("data-id", cluster + "_" + clusterIndex);
+            }
+
+            // update custom_uom
+            const customUomInput = card.querySelector('input[id^="custom_uom"]');
+            if (customUomInput) {
+                customUomInput.id = "custom_uom" + cluster + "_" + clusterIndex;
+            }
+
+            // update type select
+            const typeSelect = card.querySelector('select.select-type');
+            if (typeSelect) {
+                typeSelect.id = "type" + cluster + "_" + clusterIndex;
+            }
+        });
     });
 }

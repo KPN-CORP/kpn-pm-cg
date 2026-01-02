@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use Maatwebsite\Excel\Facades\Excel;
 use App\Imports\GoalsDataImport;
+use App\Imports\ClusteringKPIImport;
 use App\Models\GoalsImportTransaction;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -39,25 +40,25 @@ class ImportGoalsController extends Controller
         ]);
     }
 
-    public function import(Request $request)
+    public function importClusteringKPI(Request $request)
     {
         // Validasi file
         $request->validate([
             'file' => 'required|file|mimes:xlsx,csv,xls',
         ]);
-
+        
         // Pastikan file terupload
         if ($request->hasFile('file')) {
             $filePath = $request->file('file')->store($path='public/uploads');
-            Log::info("File uploaded successfully: " . $filePath);
+            Log::info("Clustering KPI file uploaded successfully: " . $filePath);
         } else {
-            Log::error("File upload failed."); 
+            Log::error("Clustering KPI file upload failed.");
             return back()->with('error', "File upload failed.");
         }
         DB::enableQueryLog();
         // Jalankan proses impor
         try {
-            $import = new GoalsDataImport($filePath);
+            $import = new ClusteringKPIImport($filePath);
             Excel::import($import, $filePath);
 
             // Simpan data ke database setelah semua baris diproses
@@ -65,15 +66,15 @@ class ImportGoalsController extends Controller
 
             // Simpan transaksi
             $import->saveTransaction();
-            Log::info("Data imported successfully.");
+            Log::info("Clustering KPI data imported successfully.");
         } catch (\Exception $e) {
-            Log::error("Import failed 2: " . $e->getMessage());
-            return back()->with('error', "Import failed 2: " . $e->getMessage());
+            Log::error("Clustering KPI import failed: " . $e->getMessage());
+            return back()->with('error', "Import failed: " . $e->getMessage());
         }
         $queries = DB::getQueryLog();
-        Log::info("Executed queries import goals admin: ", $queries);
+        Log::info("Executed queries clustering KPI import: ", $queries);
         // Redirect dengan pesan sukses
-        return redirect()->back()->with('success', 'Goals imported successfully!');
+        return redirect()->back()->with('success', 'Clustering KPI imported successfully!');
     }
 
     public function downloadExcel($file)

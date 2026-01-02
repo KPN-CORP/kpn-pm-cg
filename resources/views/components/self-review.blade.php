@@ -13,7 +13,7 @@
                 <div class="row">
                     <div class="col-lg-4 mb-3">
                         <div class="form-group">
-                            <label class="form-label" for="kpi">KPI</label>
+                            <label class="form-label" for="kpi">KPI @if(isset($data['cluster'])) ({{ ucwords($data['cluster']) }}) @endif</label>
                             <p class="mt-1 mb-0 text-muted" @style('white-space: pre-line')>{{ $data['kpi'] }}</p>
                         </div>
                     </div>

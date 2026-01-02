@@ -130,30 +130,79 @@
                         <h5 class="modal-title" id="importModalLabel">Import Goals</h5>
                         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                     </div>
-                    
-                    <form action="{{ route('importgoals') }}" method="POST" enctype="multipart/form-data">
-                        @csrf
-                        <div class="modal-body">
-                            <div class="row">
-                                <div class="col">
-                                    <div class="alert alert-info">
-                                        <strong>Notes:</strong>
-                                        <ul class="mb-0">
-                                            <li>Template Import Goals can use from the File Export at menu Reports : <strong>Reports -> Detailed Goals -> Download</strong></li>
-                                        </ul>
+
+                    <!-- Nav tabs -->
+                    <ul class="nav nav-tabs" id="importTabs" role="tablist">
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link active" id="regular-tab" data-bs-toggle="tab" data-bs-target="#regular" type="button" role="tab" aria-controls="regular" aria-selected="true">Regular Goals</button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link" id="clustering-tab" data-bs-toggle="tab" data-bs-target="#clustering" type="button" role="tab" aria-controls="clustering" aria-selected="false">Clustering KPI</button>
+                        </li>
+                    </ul>
+
+                    <div class="tab-content" id="importTabsContent">
+                        <!-- Regular Goals Tab -->
+                        <div class="tab-pane fade show active" id="regular" role="tabpanel" aria-labelledby="regular-tab">
+                            <form action="{{ route('importgoals') }}" method="POST" enctype="multipart/form-data">
+                                @csrf
+                                <div class="modal-body">
+                                    <div class="row">
+                                        <div class="col">
+                                            <div class="alert alert-info">
+                                                <strong>Notes:</strong>
+                                                <ul class="mb-0">
+                                                    <li>Template Import Goals can use from the File Export at menu Reports : <strong>Reports -> Detailed Goals -> Download</strong></li>
+                                                    <li>Headers required: Employee_ID, Employee_Name, KPI, Target, UOM, Weightage, Type, Description, Current Approver ID, Period</li>
+                                                </ul>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="file">Upload File</label>
+                                        <input type="file" name="file" id="file" class="form-control" required>
                                     </div>
                                 </div>
-                            </div>
-                            <div class="form-group">
-                                <label for="file">Upload File</label>
-                                <input type="file" name="file" id="file" class="form-control" required>
-                            </div>
+                                <div class="modal-footer">
+                                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                                    <button type="submit" class="btn btn-primary">Import Regular Goals</button>
+                                </div>
+                            </form>
                         </div>
-                        <div class="modal-footer">
-                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                            <button type="submit" class="btn btn-primary">Import</button>
+
+                        <!-- Clustering KPI Tab -->
+                        <div class="tab-pane fade" id="clustering" role="tabpanel" aria-labelledby="clustering-tab">
+                            <form action="{{ route('importClusteringKPI') }}" method="POST" enctype="multipart/form-data">
+                                @csrf
+                                <div class="modal-body">
+                                    <div class="row">
+                                        <div class="col">
+                                            <div class="alert alert-info">
+                                                <strong>Notes:</strong>
+                                                <ul class="mb-0">
+                                                    <li>Import Clustering KPI with cluster information (company, division, personal)</li>
+                                                    <li>Headers required: Employee_ID, KPI, Target, UoM, Weightage, Type, Period, Cluster</li>
+                                                    <li>Optional headers: Employee_Name, Achievement</li>
+                                                    <li>Current Approver ID always defaults to 'admin'</li>
+                                                    <li>Achievement field will be mapped to KPI description</li>
+                                                    <li>If UoM doesn't match available options, it will be set to "Other" and the value stored in custom_uom</li>
+                                                    <li>Weightage validation is not enforced (each cluster can have different weightage distribution)</li>
+                                                </ul>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="file">Upload File</label>
+                                        <input type="file" name="file" id="clustering_file" class="form-control" required>
+                                    </div>
+                                </div>
+                                <div class="modal-footer">
+                                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                                    <button type="submit" class="btn btn-primary">Import Clustering KPI</button>
+                                </div>
+                            </form>
                         </div>
-                    </form>
+                    </div>
                 </div>
             </div>
         </div>

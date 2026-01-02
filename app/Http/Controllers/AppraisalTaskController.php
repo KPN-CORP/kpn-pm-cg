@@ -167,7 +167,7 @@ public function getTeamData(Request $request)
             $goalDataArr = json_decode($goalData ?? '[]', true);
             $appraisalArr = json_decode($appraisalData ?? '[]', true);
             $employeeData = $item->employee ?? null;
-    
+            
             $formData = $this->appService->combineFormData(
                 $appraisalArr,
                 $goalDataArr,
@@ -194,12 +194,13 @@ public function getTeamData(Request $request)
                 ->where('period', $period)
                 ->exists();
         });
-    
+        
         $data = $datas->map(function ($team, $index) {
             $employee = $team->employee;
             $goal = $team->goal->first();
             $contributor = $team->contributors->first();
             $approvalReq = $team->approvalRequest->first();
+
     
             if (!$employee || !$goal) return null;
     
@@ -352,7 +353,8 @@ public function getTeamData(Request $request)
 
     public function initiate(Request $request)
     {
-        $user = $this->user;
+        try {
+            $user = $this->user;
         $period = $this->appService->appraisalPeriod();
         $id = decrypt($request->id);
 
@@ -390,7 +392,12 @@ public function getTeamData(Request $request)
         $firstCalibrator = ApprovalLayerAppraisal::where('layer', 1)->where('layer_type', 'calibrator')->where('employee_id', $id)->value('approver_id');
 
         // Get form group appraisal
-        $formGroupData = $this->appService->formGroupAppraisal($id, 'Appraisal Form');                
+        $formGroupData = $this->appService->formGroupAppraisal($id, 'Appraisal Form');
+        
+        // Validate formGroupData is not empty
+        if (empty($formGroupData) || !isset($formGroupData['data']) || empty($formGroupData['data']['form_appraisals'])) {
+            throw new Exception("Form group configuration is incomplete or missing.");
+        }
         
         $formTypes = $formGroupData['data']['form_names'] ?? [];
         $formDatas = $formGroupData['data']['form_appraisals'] ?? [];
@@ -399,7 +406,7 @@ public function getTeamData(Request $request)
             return in_array($form['name'], $formTypes);
         });
 
-        $ratings = $formGroupData['data']['rating'];
+        $ratings = $formGroupData['data']['rating'] ?? [];
 
         $filteredFormDatas = [
             'viewCategory' => 'initiate',
@@ -414,6 +421,11 @@ public function getTeamData(Request $request)
         // Pass the data to the view
         return view('pages.appraisals-task.initiate', compact('step', 'parentLink', 'link', 'filteredFormDatas', 'formGroupData', 'goal', 'approval', 'goalData', 'user', 'ratings', 'employee', 'achievements', 'viewAchievement'));
 
+        } catch (Exception $e) {
+            Log::error('Error in initiate method: ' . $e->getMessage());
+            Session::flash('error', 'Failed to load appraisal form: ' . $e->getMessage());
+            return redirect()->route('appraisals-task');
+        }
     }
 
     public function approval(Request $request)
@@ -436,6 +448,11 @@ public function getTeamData(Request $request)
 
         // Read the content of the JSON files
         $formGroupData = $this->appService->formGroupAppraisal($request->id, 'Appraisal Form Task');
+        
+        // Validate formGroupData is not empty
+        if (empty($formGroupData) || !isset($formGroupData['data']) || empty($formGroupData['data']['form_appraisals'])) {
+            throw new Exception("Form group configuration is incomplete or missing for approval.");
+        }
         
         $formTypes = $formGroupData['data']['form_names'] ?? [];
         $formDatas = $formGroupData['data']['form_appraisals'] ?? [];
@@ -576,6 +593,20 @@ public function getTeamData(Request $request)
                         }
                     }
                 }
+                if ($form['formName'] === 'Sigap') {
+
+                    foreach ($form as $key => $value) {
+                        if (is_numeric($key)) {
+                            $scores = [];
+                            foreach ($value as $score) {
+                                $scores[] = $score;
+                            }
+                            $value = $scores;
+                        }
+
+                    }
+
+                }
             }
         }
 
@@ -618,13 +649,31 @@ public function getTeamData(Request $request)
                         }
                     }
                 }
+                if ($form['formName'] === 'Sigap') {
+
+                    foreach ($form as $key => $value) {
+                        if (is_numeric($key)) {
+                            $scores = [];
+                            foreach ($value as $score) {
+                                $scores[] = $score;
+                            }
+                            $value = $scores;
+                        }
+
+                    }
+
+                }
             }
         }
 
         $form_name = $manager ? 'Appraisal Form Review' : 'Appraisal Form 360' ;
 
-        $formGroupData = $this->appService->formGroupAppraisal($id, $form_name);   
-
+        $formGroupData = $this->appService->formGroupAppraisal($id, $form_name);
+        
+        // Validate formGroupData is not empty
+        if (empty($formGroupData) || !isset($formGroupData['data']) || empty($formGroupData['data']['form_appraisals'])) {
+            throw new Exception("Form group configuration is incomplete or missing for review.");
+        }
         
         $formTypes = $formGroupData['data']['form_names'] ?? [];
         $formDatas = $formGroupData['data']['form_appraisals'] ?? [];
@@ -632,6 +681,7 @@ public function getTeamData(Request $request)
         $filteredFormData = array_filter($formDatas, function($form) use ($formTypes) {
             return in_array($form['name'], $formTypes);
         });
+
         
         // Merge the scores
         if ($appraisal || $appraisalContributor) {
@@ -643,7 +693,7 @@ public function getTeamData(Request $request)
             'filteredFormData' => $filteredFormData,
         ];
 
-        $ratings = $formGroupData['data']['rating'];
+        $ratings = $formGroupData['data']['rating'] ?? [];
 
         $employee = EmployeeAppraisal::where('employee_id', $id)->first();
 
@@ -858,6 +908,7 @@ public function getTeamData(Request $request)
             $cultureData = $this->getDataByName($appraisalForm['data']['form_appraisals'], 'Culture') ?? [];
             $leadershipData = $this->getDataByName($appraisalForm['data']['form_appraisals'], 'Leadership') ?? [];
             $technicalData = $this->getDataByName($appraisalForm['data']['form_appraisals'], 'Technical') ?? [];
+            $sigapData = $this->getDataByName($appraisalForm['data']['form_appraisals'], 'Sigap') ?? [];
 
             $formData = $this->appService->combineFormData($appraisalData, $goalData, 'employee', $employeeData, $period);
 
@@ -866,6 +917,7 @@ public function getTeamData(Request $request)
                 $appraisalData['cultureScore'] = round($formData['totalCultureScore'], 2);
                 $appraisalData['leadershipScore'] = round($formData['totalLeadershipScore'], 2);
                 $appraisalData['technicalScore'] = round($formData['totalTechnicalScore'], 2);
+                $appraisalData['sigapScore'] = round($formData['totalSigapScore'], 2);
             }
             
             foreach ($formData['formData'] as &$form) {
@@ -906,6 +958,20 @@ public function getTeamData(Request $request)
                             }
                         }
                         $form[$index]['title'] = $cultureItem['title'];
+                    }
+                }
+                if ($form['formName'] === 'Sigap') {
+                    foreach ($sigapData as $index => $sigapItem) {
+                        foreach ($sigapItem['items'] as $itemIndex => $item) {
+                            if (isset($form[$index][$itemIndex])) {
+                                $form[$index][$itemIndex] = [
+                                    'formItem' => $item,
+                                    'score' => $form[$index][$itemIndex]['score']
+                                ];
+                            }
+                        }
+                        $form[$index]['title'] = $sigapItem['title'];
+                        $form[$index]['items'] = $sigapItem['items'];
                     }
                 }
             }

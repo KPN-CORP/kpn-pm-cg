@@ -113,6 +113,7 @@
                                 'formIndex' => $index,
                                 'name' => $row['name'],
                                 'data' => $row['data'],
+                                'ratings' => $ratings ?? [],
                                 'viewCategory' => $viewCategory
                                 ])
                             </div>

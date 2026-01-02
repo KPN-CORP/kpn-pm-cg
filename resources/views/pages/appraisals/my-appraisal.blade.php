@@ -129,7 +129,7 @@
                         @endphp
                         @if ($viewAchievement)
                             <div class="card-body m-0 py-2">
-                                <div class="rounded mb-2 p-3 bg-secondary-subtle bg-opacity-10 text-primary align-items-center">
+                                <div class="rounded mb-2 p-3 bg-secondary-subtle bg-opacity-10 text-primary align-items-center d-none">
                                     <div class="row mb-2">
                                         <span class="fs-16 mx-1">
                                             Achievements
@@ -180,7 +180,7 @@
 
                                                         <div class="file-card d-flex flex-wrap gap-2 align-items-center" data-existing="1"
                                                             data-path="{{ $path }}" data-size="{{ $size }}" data-url="{{ $url }}">
-                                                            <span class="d-inline-flex align-items-center gap-1 border rounded-pill p-1 pe-2">
+                                                            <span class="d-inline-flex align-items-center gap-1 border rounded-pill p-1">
                                                                 <a href="{{ $url }}" target="_blank" rel="noopener noreferrer"
                                                                     class="badge text-bg-warning border-0 rounded-pill px-2 py-1 text-decoration-none"
                                                                     style="font-size:.75rem">
@@ -189,10 +189,10 @@
                                                                     <i class="ri-file-text-line"></i>
                                                                 </a>
 
-                                                                @if ($row->request->status != 'Approved')
+                                                                {{-- @if ($row->request->status != 'Approved')
                                                                     <button type="button" class="btn-close rounded-circle border-0 p-0 ms-1"
                                                                         title="Remove file" aria-label="Remove file"></button>
-                                                                @endif
+                                                                @endif --}}
                                                             </span>
                                                         </div>
 
@@ -225,7 +225,8 @@
                                                                                                                                                                                                                                                             $item['formName'] === 'KPI' ? $row->appraisalData['kpiScore'] :
                                     ($item['formName'] === 'Culture' ? $row->appraisalData['cultureScore'] :
                                         ($item['formName'] === 'Leadership' ? $row->appraisalData['leadershipScore'] :
-                                            ($item['formName'] === 'Technical' ? $row->appraisalData['technicalScore'] : '')))
+                                            ($item['formName'] === 'Technical' ? $row->appraisalData['technicalScore'] :
+                                                ($item['formName'] === 'Sigap' ? $row->appraisalData['sigapScore'] : ''))))
                                                                                                                                                                                                                                                         }}
                                                 </span>
                                                 <span>
@@ -340,6 +341,42 @@
                                                         @endforelse
                                                     </div>
                                                 </div>
+                                            @elseif($item['formName'] == 'Sigap')
+                                                <div class="collapse" id="collapse-{{ $index . '' . $indexItem }}">
+                                                    <div class="card card-body mb-3">
+                                                        @forelse($row->formData['formData'] as $form)
+                                                            @if($form['formName'] === 'Sigap')
+                                                                @foreach($form as $key => $item)
+                                                                    @if(is_numeric($key))
+                                                                        <div class="{{ $loop->last ? '' : 'border-bottom' }} mb-3">
+                                                                            @if(isset($item['title']))
+                                                                                <h5 class="mb-3"><u>{{ $item['title'] }}</u></h5>
+                                                                            @endif
+                                                                            @if(isset($item['definition']))
+                                                                                <p class="text-muted mb-3">{{ $item['definition'] }}</p>
+                                                                            @endif
+                                                                            @if(isset($item['score']))
+                                                                                <p><strong>Score:</strong> {{ $item['score'] }}</p>
+                                                                            @endif
+                                                                            @if(isset($item['score'], $item['items'][$item['score']]))
+                                                                            <div class="alert border mt-2">
+                                                                                <p class="mb-1">
+                                                                                    {{ $item['items'][$item['score']]['desc_idn'] }}
+                                                                                </p>
+                                                                                <p class="mb-0 italic" style="font-style: italic;">
+                                                                                    {{ $item['items'][$item['score']]['desc_eng'] }}
+                                                                                </p>
+                                                                            </div>
+                                                                        @endif
+                                                                        </div>
+                                                                    @endif
+                                                                @endforeach
+                                                            @endif
+                                                        @empty
+                                                            <p>No Data</p>
+                                                        @endforelse
+                                                    </div>
+                                                </div>
                                             @else
                                                 <div class="collapse" id="collapse-{{ $index . '' . $indexItem }}">
                                                     <div class="card card-body mb-3 p-2">
@@ -357,7 +394,7 @@
                                                                                         <div class="row">
                                                                                             <div class="col-lg-4 mb-3">
                                                                                                 <div class="form-group">
-                                                                                                    <label class="form-label" for="kpi">KPI</label>
+                                                                                                    <label class="form-label" for="kpi">KPI @if(isset($data['cluster'])) ({{ ucwords($data['cluster']) }}) @endif</label>
                                                                                                     <p class="mt-1 mb-0 text-muted" @style('white-space: pre-line')>{{ $data['kpi'] }}</p>
                                                                                                 </div>
                                                                                             </div>

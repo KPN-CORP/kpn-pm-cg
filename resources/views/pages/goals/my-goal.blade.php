@@ -81,6 +81,12 @@
             @php
                 // Assuming $dateTimeString is the date string '2024-04-29 06:52:40'
                 $formData = json_decode($row->request->goal['form_data'], true);
+                // Group by cluster for backward compatibility
+                $groupedFormData = [];
+                foreach ($formData as $item) {
+                    $cluster = $item['cluster'] ?? 'personal';
+                    $groupedFormData[$cluster][] = $item;
+                }
             @endphp
             <div class="row">
                 <div class="col-md-12">
@@ -179,8 +185,15 @@
                         <div class="card-body p-0">
                             <table class="table table-striped table-bordered m-0">
                                 <tbody>
-                                @if ($formData)
-                                @foreach ($formData as $index => $data)
+                                @if ($groupedFormData)
+                                @foreach(['company' => 'Company Goals', 'division' => 'Division Goals', 'personal' => 'Personal Goals'] as $cluster => $title)
+                                  @if(!empty($groupedFormData[$cluster]))
+                                    <tr>
+                                      <td colspan="5" class="bg-light">
+                                        <strong>{{ $title }} :</strong>
+                                      </td>
+                                    </tr>
+                                    @foreach ($groupedFormData[$cluster] as $index => $data)
                                     <tr>
                                         <td scope="row">
                                             <div class="row p-2">
@@ -205,7 +218,7 @@
                                                 <div class="col-lg col-sm-12 p-2">
                                                     <div class="form-group">
                                                         <h5>{{ __('Type') }}</h5>
-                                                        <p class="mt-1 mb-0 text-muted">{{ $data['type'] }}</p>
+                                                        <p class="mt-1 mb-0 text-muted">{{ ucwords($data['type']) }}</p>
                                                     </div>
                                                 </div>
                                                 <div class="col-lg col-sm-12 p-2">
@@ -226,9 +239,13 @@
                                         </td>
                                     </tr>
                                     @endforeach
-                                    @else
-                                    <p>No form data available.</p>
-                                    @endif 
+                                  @endif
+                                @endforeach
+                                @else
+                                <tr>
+                                    <td colspan="5" class="text-center">No goals data available</td>
+                                </tr>
+                                @endif 
                                 </tbody>
                             </table>
                         </div>

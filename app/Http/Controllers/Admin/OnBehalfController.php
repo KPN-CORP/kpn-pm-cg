@@ -822,16 +822,16 @@ class OnBehalfController extends Controller
             // Group the data based on job levels
             $datas = $allData->groupBy(function ($data) {
                 $jobLevel = $data->employee->job_level;
-                if (in_array($jobLevel, ['2A', '2B', '2C', '2D', '3A', '3B'])) {
-                    return 'Level23';
-                } elseif (in_array($jobLevel, ['4A', '4B', '5A', '5B'])) {
-                    return 'Level45';
-                } elseif (in_array($jobLevel, ['6A', '6B', '7A', '7B'])) {
-                    return 'Level67';
-                } elseif (in_array($jobLevel, ['8A', '8B', '9A', '9B'])) {
-                    return 'Level89';
-                }
-                return 'Other Levels';
+                // if (in_array($jobLevel, ['2A', '2B', '2C', '2D', '3A', '3B'])) {
+                //     return 'Level23';
+                // } elseif (in_array($jobLevel, ['4A', '4B', '5A', '5B'])) {
+                //     return 'Level45';
+                // } elseif (in_array($jobLevel, ['6A', '6B', '7A', '7B'])) {
+                //     return 'Level67';
+                // } elseif (in_array($jobLevel, ['8A', '8B', '9A', '9B'])) {
+                //     return 'Level89';
+                // }
+                return 'AllLevels';
             })->map(function ($group) use ($dataWithRequests, $id, $period, $category) {
                 Log::info('Processing group.', ['groupSize' => $group->count()]);
 

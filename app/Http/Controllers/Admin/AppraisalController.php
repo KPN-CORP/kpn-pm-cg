@@ -57,9 +57,9 @@ class AppraisalController extends Controller
         $filterInputs = $this->getFilterInputs($request, $restrictionData);
         $criteria = $this->buildCriteria($restrictionData);
         $query = $this->buildAppraisalQuery($criteria, $filterInputs);
-
+        
         $datas = $this->transformAppraisalData($query->get(), $filterInputs['period']);
-
+        
         $layerHeaders = $this->getLayerHeaders($datas);
         $groupCompanies = $this->getDistinctValues('group_company', $criteria);
         $companies = $this->getDistinctCompany('company_name', $criteria);
@@ -205,6 +205,7 @@ class AppraisalController extends Controller
             $availability = $this->checkLayerAvailability($layer, $employee->employee_id, $period);
 
             if ($employee->appraisal->first()) {
+
                 # code...
                 $masterRating = MasterRating::select('id_rating_group', 'parameter', 'value', 'min_range', 'max_range')
                     ->where('id_rating_group', $employee->appraisal->first()->formGroupAppraisal->id_rating_group)
@@ -468,6 +469,7 @@ class AppraisalController extends Controller
                 
                 $cultureData = $this->appService->getDataByName($appraisalForm['data']['form_appraisals'], 'Culture') ?? [];
                 $leadershipData = $this->appService->getDataByName($appraisalForm['data']['form_appraisals'], 'Leadership') ?? [];
+                $sigapData = $this->appService->getDataByName($appraisalForm['data']['form_appraisals'], 'Sigap') ?? [];
                 
                 
                 if($employeeForm){
@@ -550,6 +552,7 @@ class AppraisalController extends Controller
                     $formData['kpiScore'] = round($formData['kpiScore'], 2);
                     $formData['cultureScore'] = round($formData['cultureScore'], 2);
                     $formData['leadershipScore'] = round($formData['leadershipScore'], 2);
+                    $formData['sigapScore'] = round($formData['sigapScore'], 2);
                 }
 
                 foreach ($formData['formData'] as &$form) {
@@ -578,6 +581,21 @@ class AppraisalController extends Controller
                                 }
                             }
                             $form[$index]['title'] = $cultureItem['title'];
+                        }
+                    }
+
+                    if ($form['formName'] === 'Sigap') {
+                        foreach ($sigapData as $index => $sigapItem) {
+                            foreach ($sigapItem['items'] as $itemIndex => $item) {
+                                if (isset($form[$index][$itemIndex])) {
+                                    $form[$index][$itemIndex] = [
+                                        'formItem' => $item,
+                                        'score' => $form[$index][$itemIndex]['score']
+                                    ];
+                                }
+                            }
+                            $form[$index]['title'] = $sigapItem['title'];
+                            $form[$index]['items'] = $sigapItem['items'];
                         }
                     }
                 
@@ -632,6 +650,7 @@ class AppraisalController extends Controller
                 
                 $cultureData = $this->appService->getDataByName($appraisalForm['data']['form_appraisals'], 'Culture') ?? [];
                 $leadershipData = $this->appService->getDataByName($appraisalForm['data']['form_appraisals'], 'Leadership') ?? [];
+                $sigapData = $this->appService->getDataByName($appraisalForm['data']['form_appraisals'], 'Sigap') ?? [];
     
                 $jobLevel = $employeeData->job_level;
 
@@ -643,12 +662,13 @@ class AppraisalController extends Controller
 
                 // $formData = $this->appService->combineFormData($result['calculated_data'][0], $goalData, 'employee', $employeeData, $datas->first()->period);
                 $formData = $this->appService->combineFormData($appraisalData[0], $goalData, 'employee', $employeeData, $datas->first()->period);
-                
                 if (isset($formData['kpiScore'])) {
                     $appraisalData['kpiScore'] = round($formData['kpiScore'], 2);
                     $appraisalData['cultureScore'] = round($formData['cultureScore'], 2);
                     $appraisalData['leadershipScore'] = round($formData['leadershipScore'], 2);
+                    $appraisalData['sigapScore'] = round($formData['sigapScore'], 2);
                 }
+
                 
                 foreach ($formData['formData'] as &$form) {
                     if ($form['formName'] === 'Leadership') {
@@ -675,6 +695,20 @@ class AppraisalController extends Controller
                                 }
                             }
                             $form[$index]['title'] = $cultureItem['title'];
+                        }
+                    }
+                    if ($form['formName'] === 'Sigap') {
+                        foreach ($sigapData as $index => $sigapItem) {
+                            foreach ($sigapItem['items'] as $itemIndex => $item) {
+                                if (isset($form[$index][$itemIndex])) {
+                                    $form[$index][$itemIndex] = [
+                                        'formItem' => $item,
+                                        'score' => $form[$index][$itemIndex]['score']
+                                    ];
+                                }
+                            }
+                            $form[$index]['title'] = $sigapItem['title'];
+                            $form[$index]['items'] = $sigapItem['items'];
                         }
                     }
                 }
@@ -721,8 +755,6 @@ class AppraisalController extends Controller
     
                 $goalData = $datas->isNotEmpty() ? json_decode($datas->first()->appraisal->goal->form_data, true) : [];
                 $appraisalData = $datas->isNotEmpty() ? json_decode($datas->first()->form_data, true) : [];
-
-                
                 
                 $appraisalData['contributor_type'] = $datas->first()->contributor_type;
                 
@@ -742,6 +774,7 @@ class AppraisalController extends Controller
                 
                 $cultureData = $this->appService->getDataByName($appraisalForm['data']['form_appraisals'], 'Culture') ?? [];
                 $leadershipData = $this->appService->getDataByName($appraisalForm['data']['form_appraisals'], 'Leadership') ?? [];
+                $sigapData = $this->appService->getDataByName($appraisalForm['data']['form_appraisals'], 'Sigap') ?? [];
                 
                 $jobLevel = $employeeData->job_level;
                 
@@ -751,12 +784,14 @@ class AppraisalController extends Controller
                 
                 $result = $this->appService->appraisalSummary($weightageContent, $appraisalData, $employeeData->employee_id, $jobLevel);
 
+                
                 $formData = $this->appService->combineFormData($appraisalData[0], $goalData, $datas->first()->contributor_type, $employeeData, $datas->first()->period);
                 
                 if (isset($formData['totalKpiScore'])) {
                     $appraisalData['kpiScore'] = round($formData['totalKpiScore'], 2);
                     $appraisalData['cultureScore'] = round($formData['totalCultureScore'], 2);
                     $appraisalData['leadershipScore'] = round($formData['totalLeadershipScore'], 2);
+                    $appraisalData['sigapScore'] = round($formData['totalSigapScore'], 2);
                 }
                 
                 foreach ($formData['formData'] as &$form) {
@@ -784,6 +819,20 @@ class AppraisalController extends Controller
                                 }
                             }
                             $form[$index]['title'] = $cultureItem['title'];
+                        }
+                    }
+                    if ($form['formName'] === 'Sigap') {
+                        foreach ($sigapData as $index => $sigapItem) {
+                            foreach ($sigapItem['items'] as $itemIndex => $item) {
+                                if (isset($form[$index][$itemIndex])) {
+                                    $form[$index][$itemIndex] = [
+                                        'formItem' => $item,
+                                        'score' => $form[$index][$itemIndex]['score']
+                                    ];
+                                }
+                            }
+                            $form[$index]['title'] = $sigapItem['title'];
+                            $form[$index]['items'] = $sigapItem['items'];
                         }
                     }
                 }

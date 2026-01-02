@@ -256,11 +256,14 @@ class MyGoalController extends Controller
         $uomOptions = json_decode(File::get($path), true);
 
         $uomOption = $uomOptions['UoM'];
+
+        // Get cluster KPIs
+        $clusterKPIs = $this->appService->getClusterKPIs($id);
         
         $parentLink = __('Goal');
         $link = 'Create';
 
-        return view('pages.goals.form', compact('datas', 'link', 'parentLink', 'uomOption', 'period'));
+        return view('pages.goals.form', compact('datas', 'link', 'parentLink', 'uomOption', 'period', 'clusterKPIs'));
 
     }
 
@@ -331,10 +334,27 @@ class MyGoalController extends Controller
                 $totalWeightages += (float)$weightage[$index];
             }
 
+            // Group formData by cluster
+            $groupedData = [];
+            foreach ($formData as $item) {
+                $cluster = $item['cluster'] ?? 'personal';
+                $groupedData[$cluster][] = $item;
+            }
 
-            $data = json_decode($goal->form_data, true);
+            // Get cluster KPIs for any missing ones
+            $clusterKPIs = $this->appService->getClusterKPIs($goal->employee_id);
+            foreach (['company', 'division'] as $cluster) {
+                if (!isset($groupedData[$cluster]) && !empty($clusterKPIs[$cluster])) {
+                    $groupedData[$cluster] = $clusterKPIs[$cluster];
+                }
+            }
+            if (!isset($groupedData['personal'])) {
+                $groupedData['personal'] = [];
+            }
+
+            $data = $groupedData;
             
-            return view('pages.goals.edit', compact('goal', 'formCount', 'link', 'data', 'uomOption', 'selectedUoM', 'typeOption', 'selectedType', 'approvalRequest', 'totalWeightages', 'parentLink'));
+            return view('pages.goals.edit', compact('goal', 'formCount', 'link', 'data', 'uomOption', 'selectedUoM', 'typeOption', 'selectedType', 'approvalRequest', 'totalWeightages', 'parentLink', 'clusterKPIs'));
         }
 
     }
@@ -437,6 +457,7 @@ class MyGoalController extends Controller
             $kpiData = [];
             foreach ($request->input('kpi', []) as $index => $kpi) {
                 $kpiData[$index] = [
+                    'cluster' => $request->input('cluster.' . $index, 'personal'), // Get cluster from request
                     'kpi' => $kpi,
                     'description' => $request->description[$index] ?? '',
                     'target' => $request->target[$index],
@@ -588,6 +609,7 @@ class MyGoalController extends Controller
             $kpiData = [];
             foreach ($request->input('kpi', []) as $index => $kpi) {
                 $kpiData[$index] = [
+                    'cluster' => $request->input('cluster.' . $index, 'personal'), // Get cluster from request
                     'kpi' => $kpi,
                     'description' => $request->description[$index] ?? '',
                     'target' => $request->target[$index],

@@ -24,11 +24,12 @@
                     <div class="card-body p-2">
                         <ul class="nav nav-pills mb-3 border-bottom justify-content-evenly justify-content-md-start">
                                 @foreach ($calibrations as $level => $data)
-                                    <li class="nav-item">
+                                    <li class="nav-item d-none">
                                         <a href="#{{ strtolower($level) }}" data-bs-toggle="tab" 
                                         aria-expanded="{{ $level == $activeLevel ? 'true' : 'false' }}" 
                                         class="nav-link {{ $level == $activeLevel ? 'active' : '' }}">
-                                            Job Level {{ str_replace('Level', '', $level) == '23' ? '2-3' : (str_replace('Level', '', $level) == '45' ? '4-5' : (str_replace('Level', '', $level) == '67' ? '6-7' : '8-9')) }}
+                                            Job Level 
+                                            {{ str_replace('Level', '', $level) == '23' ? '2-3' : (str_replace('Level', '', $level) == '45' ? '4-5' : (str_replace('Level', '', $level) == '67' ? '6-7' : '8-9')) }}
                                         </a>
                                     </li>
                                 @endforeach

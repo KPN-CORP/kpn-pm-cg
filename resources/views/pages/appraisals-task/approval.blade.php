@@ -107,6 +107,8 @@
                                 'formIndex' => $index,
                                 'name' => $row['name'],
                                 'data' => $row['data'],
+                                'ratings' => $ratings ?? [],
+                                'viewCategory' => 'initiate'
                                 ])
                             </div>
                             @endforeach

@@ -98,7 +98,7 @@
                 }
             @endphp
             @if ($viewAchievement)
-            <div class="rounded mb-2 p-3 bg-white text-primary align-items-center">
+            <div class="rounded mb-2 p-3 bg-white text-primary align-items-center d-none">
                 <div class="row mb-2">
                     <span class="fs-16 mx-1">
                         Achievements
@@ -192,7 +192,7 @@
                             <button class="btn rounded mb-2 py-2 bg-secondary-subtle bg-opacity-10 text-primary align-items-center d-flex justify-content-between" type="button" data-bs-toggle="collapse" data-bs-target="#collapse-{{ $indexItem }}" aria-expanded="false" aria-controls="collapse-{{ $indexItem }}">
                                 <span class="fs-16 ms-1">
                                     {{ $item['formName'] }} 
-                                    | Score : {{ $item['formName'] === 'KPI' ? $appraisalData['kpiScore'] : ($item['formName'] === 'Culture' ? $appraisalData['cultureScore'] : ($item['formName'] === 'Leadership' ? $appraisalData['leadershipScore'] : $appraisalData['technicalScore'])) }}
+                                    | Score : {{ $item['formName'] === 'KPI' ? $appraisalData['kpiScore'] : ($item['formName'] === 'Culture' ? $appraisalData['cultureScore'] : ($item['formName'] === 'Leadership' ? $appraisalData['leadershipScore'] : ($item['formName'] === 'Technical' ? $appraisalData['technicalScore'] : ($item['formName'] === 'Sigap' ? $appraisalData['sigapScore'] : '')))) }}
                                 </span>  
                                 <span>
                                     <p class="d-none d-md-inline me-1">Details</p><i class="ri-arrow-down-s-line"></i>
@@ -298,6 +298,42 @@
                                                         @endif
                                                     @endforeach
                                                 </div>
+                                                @endif
+                                            @endforeach
+                                        @endif
+                                    @empty
+                                        <p>No Data</p>
+                                    @endforelse
+                                </div>
+                            </div>
+                            @elseif($item['formName'] == 'Sigap')
+                            <div class="collapse" id="collapse-{{ $indexItem }}">
+                                <div class="card card-body mb-3">
+                                    @forelse($formData['formData'] as $form)
+                                        @if($form['formName'] === 'Sigap')
+                                            @foreach($form as $key => $item)
+                                                @if(is_numeric($key))
+                                                    <div class="{{ $loop->last ? '' : 'border-bottom' }} mb-3">
+                                                        @if(isset($item['title']))
+                                                            <h5 class="mb-3"><u>{{ $item['title'] }}</u></h5>
+                                                        @endif
+                                                        @if(isset($item['definition']))
+                                                            <p class="text-muted mb-3">{{ $item['definition'] }}</p>
+                                                        @endif
+                                                        @if(isset($item['score']))
+                                                            <p><strong>Score:</strong> {{ $item['score'] }}</p>
+                                                        @endif
+                                                        @if(isset($item['score'], $item['items'][$item['score']]))
+                                                        <div class="alert border mt-2">
+                                                            <p class="mb-1">
+                                                                {{ $item['items'][$item['score']]['desc_idn'] }}
+                                                            </p>
+                                                            <p class="mb-0 italic" style="font-style: italic;">
+                                                                {{ $item['items'][$item['score']]['desc_eng'] }}
+                                                            </p>
+                                                        </div>
+                                                    @endif
+                                                    </div>
                                                 @endif
                                             @endforeach
                                         @endif

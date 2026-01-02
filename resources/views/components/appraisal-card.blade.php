@@ -10,7 +10,7 @@
     <button class="btn rounded mb-2 py-2 bg-secondary-subtle bg-opacity-10 text-primary align-items-center d-flex justify-content-between" type="button" data-bs-toggle="collapse" data-bs-target="#collapse-{{ $indexItem }}" aria-expanded="false" aria-controls="collapse-{{ $indexItem }}">
         <span class="fs-16 ms-1">
             {{ $item['formName'] }} 
-            | Score : {{ $item['formName'] === 'KPI' ? $appraisalData['totalKpiScore'] : ($item['formName'] === 'Culture' ? $appraisalData['totalCultureScore'] : $appraisalData['totalLeadershipScore']) }}
+            | Score : {{ $item['formName'] === 'KPI' ? $appraisalData['totalKpiScore'] : ($item['formName'] === 'Culture' ? $appraisalData['totalCultureScore'] : ($item['formName'] === 'Leadership' ? $appraisalData['totalLeadershipScore'] : ($item['formName'] === 'Technical' ? $appraisalData['totalTechnicalScore'] : ($item['formName'] === 'Sigap' ? $appraisalData['totalSigapScore'] : $appraisalData['totalSigapScore'])))) }}
         </span>  
         <span>
             <p class="d-none d-md-inline me-1">Details</p><i class="ri-arrow-down-s-line"></i>
@@ -52,6 +52,49 @@
             @endforelse
         </div>
     </div>
+    @elseif($item['formName'] == 'Sigap')
+    <div class="collapse" id="collapse-{{ $indexItem }}">
+        <div class="card card-body mb-3">
+            @forelse($formData['formData'] as $form)
+                @if($form['formName'] === 'Sigap')
+                    @foreach($form as $key => $item)
+                        @if(is_numeric($key))
+                            @php
+                                $score = ($formData['contributor_type'] == 'summary') ? ($item[0]['score'] ?? null) : ($item['score'] ?? null);
+                            @endphp
+
+                            <div class="{{ $loop->last ? '' : 'border-bottom' }} mb-3">
+                                {{-- Title --}}
+                                @if(isset($item['title']))
+                                    <h5 class="mb-3"><u>{{ $item['title'] }}</u></h5>
+                                @endif
+
+                                {{-- Score --}}
+                                @if($score)
+                                    <p><strong>Score:</strong> {{ $score }}</p>
+                                @endif
+
+                                {{-- Description --}}
+                                @if($score && isset($item['items'][$score]))
+                                    <div class="alert border mt-2">
+                                        <p class="mb-1">
+                                            {{ $item['items'][$score]['desc_idn'] }}
+                                        </p>
+                                        <p class="mb-0 italic" style="font-style: italic;">
+                                            {{ $item['items'][$score]['desc_eng'] }}
+                                        </p>
+                                    </div>
+                                @endif
+                            </div>
+                        @endif
+                    @endforeach
+                @endif
+
+            @empty
+                <p>No Data</p>
+            @endforelse
+        </div>
+        </div>
     @elseif($item['formName'] == 'Culture')
     <div class="collapse" id="collapse-{{ $indexItem }}">
         <div class="card card-body mb-3">

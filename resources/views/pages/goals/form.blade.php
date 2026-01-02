@@ -146,98 +146,111 @@
             <div class="card col-md-12 m-0 shadow">
                 <div class="card-body pb-0 px-2 px-md-3">
                     <div class="container-card">
-                      <div class="card border-primary border col-md-12 mb-3 bg-primary-subtle">
-                          <div class="card-body">
-                              <h5 class="card-title fs-16 text-primary">Goal {{ $index + 1 }}</h5>
-                              <div class="row">
-                                <div class="col-md">
-                                    <div class="mb-3 position-relative">
-                                        <textarea name="kpi[]" id="kpi" class="form-control overflow-hidden kpi-textarea pb-2 pe-3" rows="2" placeholder="Input your goals.." required style="resize: none">{{ old('kpi.0') }}</textarea>
-                                        <div class="invalid-feedback">
-                                            {{ __('This field is mandatory') }}
-                                        </div>
+                      @php $goalIndex = 0; @endphp
+                      @foreach(['company' => 'Company Goals', 'division' => 'Division Goals', 'personal' => 'Personal Goals'] as $cluster => $title)
+                        @if(!empty($clusterKPIs[$cluster]) || $cluster == 'personal' || $cluster == 'division')
+                          <h5 class="mt-3">{{ $title }}</h5>
+                          @if($cluster == 'personal' || $cluster == 'division')
+                            <div id="{{ $cluster }}-goals">
+                          @endif
+                          @foreach($clusterKPIs[$cluster] ?? [] as $kpi)
+                            <div class="card border-primary border col-md-12 mb-3 bg-primary-subtle">
+                                <div class="card-body">
+                                    <h5 class="card-title fs-16 text-primary">Goal {{ $goalIndex + 1 }}</h5>
+                                    <input type="hidden" name="cluster[]" value="{{ $cluster }}">
+                                    <div class="row">
+                                      <div class="col-md">
+                                          <div class="mb-3 position-relative">
+                                              <textarea name="kpi[]" id="kpi" class="form-control overflow-hidden kpi-textarea pb-2 pe-3" rows="2" placeholder="Input your goals.." {{ in_array($cluster, ['personal', 'division']) ? 'required' : 'readonly' }} style="resize: none">{{ $kpi['kpi'] ?? old('kpi.' . $goalIndex) }}</textarea>
+                                              <div class="invalid-feedback">
+                                                  {{ __('This field is mandatory') }}
+                                              </div>
+                                          </div>
+                                      </div>
                                     </div>
-                                </div>
-                              </div>
-                              <div class="row">
-                                <div class="col-md">
-                                    <div class="mb-3 position-relative">
-                                        <label class="form-label text-primary" for="kpi-description">Goal Descriptions</label>
-                                        <textarea name="description[]" id="kpi-description" class="form-control overflow-hidden kpi-descriptions pb-2 pe-3" rows="2" placeholder="Input goal descriptions.." style="resize: none">{{ old('description.0') }}</textarea>
+                                    <div class="row">
+                                      <div class="col-md">
+                                          <div class="mb-3 position-relative">
+                                              <label class="form-label text-primary" for="kpi-description">Goal Descriptions</label>
+                                              <textarea name="description[]" id="kpi-description" class="form-control overflow-hidden kpi-descriptions pb-2 pe-3" rows="2" placeholder="Input goal descriptions.." style="resize: none" {{ in_array($cluster, ['personal', 'division']) ? '' : 'readonly' }}>{{ $kpi['description'] ?? old('description.' . $goalIndex) }}</textarea>
+                                          </div>
+                                      </div>
                                     </div>
-                                </div>
-                              </div>
-                              <div class="row justify-content-between">
-                                  <div class="col-md">
-                                      <div class="mb-3">
-                                          <label class="form-label text-primary" for="target">Target</label>
-                                          <input  type="text" oninput="validateDigits(this, {{ $index }})" value="{{ old('target.0') ? old('target.0') : '' }}" class="form-control" required>
-                                          <input type="hidden" name="target[]" id="target{{ $index }}" value="{{ old('target.0') }}">
-                                          <div class="invalid-feedback">
-                                            {{ __('This field is mandatory') }}
-                                        </div>
-                                      </div>
-                                  </div>
-                                  <div class="col-md">
-                                      <div class="mb-3">
-                                          <label class="form-label text-primary" for="uom">{{ __('Uom') }}</label>
-                                          <select class="form-select select2 max-w-full select-uom" data-id="{{ $index }}" name="uom[]" id="uom{{ $index }}" title="Unit of Measure" required>
-                                              <option value="">- Select -</option>
-                                              @foreach ($uomOption as $label => $options)
-                                              <optgroup label="{{ $label }}">
-                                                  @foreach ($options as $option)
-                                                      <option value="{{ $option }}">
-                                                          {{ $option }}
-                                                      </option>
-                                                  @endforeach
-                                              </optgroup>
-                                              @endforeach
-                                          </select>
-                                          <div class="invalid-feedback">
-                                            {{ __('This field is mandatory') }}
-                                        </div>
-                                          <input type="text" class="form-control mt-2" name="custom_uom[]" id="custom_uom{{ $index }}" @style('display: none') placeholder="Enter UoM">
-                                      </div>
-                                  </div>
-                                  <div class="col-md">
-                                      <div class="mb-3">
-                                          <label class="form-label text-primary" for="type">{{ __('Type') }}</label>
-                                          <select class="form-select select-type" name="type[]" id="type{{ $index }}" required>
-                                              <option value="">- Select -</option>
-                                              <option value="Higher Better">Higher Better</option>
-                                              <option value="Lower Better">Lower Better</option>
-                                              <option value="Exact Value">Exact Value</option>
-                                          </select>
-                                          <div class="invalid-feedback">
-                                            {{ __('This field is mandatory') }}
-                                        </div>
-                                      </div>
-                                  </div>
-                                  <div class="col-6 col-md-2">
-                                      <div class="mb-3">
-                                          <label class="form-label text-primary" for="weightage">{{ __('Weightage') }}</label>
-                                          <div class="input-group">
-                                              <input type="number" min="5" max="100" step="0.1" class="form-control" name="weightage[]" value="{{ old('weightage.0') }}" required>
-                                              <span class="input-group-text">%</span>
+                                    <div class="row justify-content-between">
+                                        <div class="col-md">
+                                            <div class="mb-3">
+                                                <label class="form-label text-primary" for="target">Target</label>
+                                                <input  type="text" oninput="validateDigits(this, {{ $goalIndex }})" value="{{ $kpi['target'] ?? old('target.' . $goalIndex) }}" class="form-control" {{ in_array($cluster, ['personal', 'division']) ? 'required' : 'readonly' }}>
+                                                <input type="hidden" name="target[]" id="target{{ $goalIndex }}" value="{{ $kpi['target'] ?? old('target.' . $goalIndex) }}">
                                                 <div class="invalid-feedback">
-                                                    {{ __('This field is mandatory') }}
-                                                </div>
-                                          </div>                                  
-                                      </div>
-                                      {{ $errors->first("weightage") }}
-                                  </div>
-                              </div>
-                          </div>
-                      </div>
-                  </div>
+                                                  {{ __('This field is mandatory') }}
+                                              </div>
+                                            </div>
+                                        </div>
+                                        <div class="col-md">
+                                            <div class="mb-3">
+                                                <label class="form-label text-primary" for="uom">{{ __('Uom') }}</label>
+                                                <select class="form-select select2 max-w-full select-uom" data-id="{{ $goalIndex }}" name="uom[]" id="uom{{ $goalIndex }}" title="Unit of Measure" {{ in_array($cluster, ['personal', 'division']) ? 'required' : 'disabled' }}>
+                                                    <option value="">- Select -</option>
+                                                    @foreach ($uomOption as $label => $options)
+                                                    <optgroup label="{{ $label }}">
+                                                        @foreach ($options as $option)
+                                                            <option value="{{ $option }}" {{ ($kpi['uom'] ?? '') == $option ? 'selected' : '' }}>
+                                                                {{ $option }}
+                                                            </option>
+                                                        @endforeach
+                                                    </optgroup>
+                                                    @endforeach
+                                                </select>
+                                                <div class="invalid-feedback">
+                                                  {{ __('This field is mandatory') }}
+                                              </div>
+                                                <input type="text" class="form-control mt-2" name="custom_uom[]" id="custom_uom{{ $goalIndex }}" @style('display: none') placeholder="Enter UoM" value="{{ $kpi['custom_uom'] ?? '' }}">
+                                            </div>
+                                        </div>
+                                        <div class="col-md">
+                                            <div class="mb-3">
+                                                <label class="form-label text-primary" for="type">{{ __('Type') }}</label>
+                                                <select class="form-select select-type" name="type[]" id="type{{ $goalIndex }}" {{ in_array($cluster, ['personal', 'division']) ? 'required' : 'disabled' }}>
+                                                    <option value="">- Select -</option>
+                                                    <option value="Higher Better" {{ ($kpi['type'] ?? '') == 'Higher Better' ? 'selected' : '' }}>Higher Better</option>
+                                                    <option value="Lower Better" {{ ($kpi['type'] ?? '') == 'Lower Better' ? 'selected' : '' }}>Lower Better</option>
+                                                    <option value="Exact Value" {{ ($kpi['type'] ?? '') == 'Exact Value' ? 'selected' : '' }}>Exact Value</option>
+                                                </select>
+                                                <div class="invalid-feedback">
+                                                  {{ __('This field is mandatory') }}
+                                              </div>
+                                            </div>
+                                        </div>
+                                        <div class="col-6 col-md-2">
+                                            <div class="mb-3">
+                                                <label class="form-label text-primary" for="weightage">{{ __('Weightage') }}</label>
+                                                <div class="input-group">
+                                                    <input type="number" min="5" max="100" step="0.1" class="form-control" name="weightage[]" value="{{ $kpi['weightage'] ?? old('weightage.' . $goalIndex) }}" required>
+                                                    <span class="input-group-text">%</span>
+                                                      <div class="invalid-feedback">
+                                                          {{ __('This field is mandatory') }}
+                                                      </div>
+                                                </div>                                  
+                                            </div>
+                                            {{ $errors->first("weightage") }}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            @php $goalIndex++; @endphp
+                          @endforeach
+                          @if($cluster == 'personal' || $cluster == 'division')
+                            </div>
+                            <div class="mt-3">
+                              <a class="btn btn-outline-primary rounded add-personal-btn" data-cluster="{{ $cluster }}"><i class="ri-add-line me-1"></i><span>{{ __('Add ' . ucfirst($cluster) . ' Goal') }}</span></a>
+                            </div>
+                          @endif
+                        @endif
+                      @endforeach
                 </div>
                 <div class="card-footer">
-                    <input type="hidden" id="count" value="{{ 1 }}">
-                    <div class="col-md text-end text-md-start">
-                        <div class="mb-3">
-                            <a class="btn btn-outline-primary rounded" id="addButton" data-id="input"><i class="ri-add-line me-1"></i><span>{{ __('Add') }}</span></a>
-                        </div>
-                    </div>
+                    <input type="hidden" id="count" value="{{ $goalIndex }}">
                     <input type="hidden" name="submit_type" id="submitType" value=""> <!-- Hidden input to store the button clicked -->
                     <div class="row">
                         <div class="col-md d-md-flex align-items-center">
