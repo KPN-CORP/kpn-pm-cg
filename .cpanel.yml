@@ -2,7 +2,7 @@
 deployment:
   tasks:
     # - export DEPLOYPATH=/home/hcispanel/kpn-pm_stage
-    - export DEPLOYPATH=/home/hcispanel/kpn-pm
+    - export DEPLOYPATH=/home/hcispanel/kpn-pm-cg
 
     # Copy essential Laravel application directories to deployment path
     - /bin/cp -r app bootstrap config database routes resources $DEPLOYPATH
@@ -10,8 +10,8 @@ deployment:
     - /bin/cp -r public/build $DEPLOYPATH/public
 
     # Copy public assets to the public_html directory
-    # - /bin/cp -r public/css public/img public/images public/js public/scss /home/hcispanel/public_html/kpncorporation-stage.hcis.live
-    - /bin/cp -r public/css public/img public/images public/js public/scss /home/hcispanel/public_html/hcis.live
+    - /bin/cp -r public/css public/img public/images public/js public/scss /home/hcispanel/public_html/kpncorporation-stage.hcis.live
+    # - /bin/cp -r public/css public/img public/images public/js public/scss /home/hcispanel/public_html/kpncorporation-cg.hcis.live
 
     # Change directory to the deployment path
     - cd $DEPLOYPATH
