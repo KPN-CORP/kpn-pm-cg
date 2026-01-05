@@ -134,18 +134,48 @@ class TeamGoalController extends Controller
             });
         });
 
-        $notasks = ApprovalLayer::with([
-            'employee',
-            'employee.managerL1',
-        ])
-        ->where('approver_id', $user)
-        ->whereHas('employee', fn($q) => $q->where('access_menu->doj', 1))
-        ->whereHas('employee', fn($q) => $q->whereNull('deleted_at'))
+        $notasks = ApprovalLayer::where('approver_id', $user)
         ->whereDoesntHave('subordinates', function ($q) use ($user, $filterYear) {
             $q->where('period', $filterYear ?? $this->period)
               ->where('category', $this->category);
         })
-        ->get();  
+        ->get();
+
+        // Manually load employee from kpncorp database to handle cross-database relationship
+        $notasks = $notasks->filter(function($approval) {
+            // Load employee from kpncorp database
+            $employee = DB::connection('kpncorp')
+                ->table('employees')
+                ->where('employee_id', $approval->employee_id)
+                ->first();
+
+            if (!$employee) {
+                return false; // Skip if employee not found
+            }
+
+            // Check access menu and deleted_at conditions
+            if ($employee) {
+                $access_menu = json_decode($employee->access_menu, true) ?? [];
+                $doj = $access_menu['doj'] ?? 0;
+                
+                if ($doj != 1 || !is_null($employee->deleted_at)) {
+                    return false; // Filter out employees that don't meet conditions
+                }
+            }
+
+            // Attach employee object to approval layer
+            $approval->employee = $employee;
+
+            // Load managerL1 if needed
+            if ($employee) {
+                $approval->employee->managerL1 = DB::connection('kpncorp')
+                    ->table('employees')
+                    ->where('employee_id', $employee->manager_id ?? null)
+                    ->first();
+            }
+
+            return true;
+        })->values();  
 
         $notasks = $notasks->map(function($item) {
             // Format created_at
