@@ -34,6 +34,6 @@ class Proposed360 extends Model
     }
 
     public function approvalFlow(){ return $this->belongsTo(ApprovalFlow::class,'approval_flow_id'); }
-    public function employee(){ return $this->belongsTo(Employee::class,'employee_id','employee_id'); }
-    public function proposer(){ return $this->belongsTo(Employee::class,'proposer_employee_id','employee_id'); }
+    public function employee(){ return $this->belongsTo(Employee::class,'employee_id','employee_id')->using('kpncorp'); }
+    public function proposer(){ return $this->belongsTo(Employee::class,'proposer_employee_id','employee_id')->using('kpncorp'); }
 }
