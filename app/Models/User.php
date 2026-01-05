@@ -14,6 +14,8 @@ use Tymon\JWTAuth\Contracts\JWTSubject;
 
 class User extends Authenticatable implements JWTSubject
 {
+    protected $connection = 'kpncorp';
+
     /**
      * Get the identifier that will be stored in the JWT.
      *
