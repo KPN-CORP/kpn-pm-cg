@@ -150,12 +150,13 @@
                       @foreach(['company' => 'Company Goals', 'division' => 'Division Goals', 'personal' => 'Personal Goals'] as $cluster => $title)
                         @if(!empty($clusterKPIs[$cluster]) || $cluster == 'personal' || $cluster == 'division')
                           <h5 class="mt-3">{{ $title }}</h5>
+                          @php $clusterIndex = 0; @endphp
                           @if($cluster == 'personal' || $cluster == 'division')
                             <div id="{{ $cluster }}-goals">
                               <!-- Default Goal Card (Cannot be deleted) -->
                               <div class="card border-primary border col-md-12 mb-3 bg-primary-subtle">
                                   <div class="card-body">
-                                      <h5 class="card-title fs-16 text-primary">Goal {{ $goalIndex + 1 }}</h5>
+                                      <h5 class="card-title fs-16 text-primary">Goal {{ $clusterIndex + 1 }}</h5>
                                       <input type="hidden" name="cluster[]" value="{{ $cluster }}">
                                       <div class="row">
                                         <div class="col-md">
@@ -236,13 +237,12 @@
                                       </div>
                                   </div>
                               </div>
-                              @php $goalIndex++; @endphp
-                          @endif
+                              @php $goalIndex++; $clusterIndex++; @endphp
                           @endif
                           @foreach($clusterKPIs[$cluster] ?? [] as $kpi)
                             <div class="card border-primary border col-md-12 mb-3 bg-primary-subtle">
                                 <div class="card-body">
-                                    <h5 class="card-title fs-16 text-primary">Goal {{ $goalIndex + 1 }}</h5>
+                                    <h5 class="card-title fs-16 text-primary">Goal {{ $clusterIndex + 1 }}</h5>
                                     <input type="hidden" name="cluster[]" value="{{ $cluster }}">
                                     <div class="row">
                                       <div class="col-md">
@@ -324,7 +324,7 @@
                                     </div>
                                 </div>
                             </div>
-                            @php $goalIndex++; @endphp
+                            @php $goalIndex++; $clusterIndex++; @endphp
                           @endforeach
                           @if($cluster == 'personal' || $cluster == 'division')
                             </div>
@@ -347,7 +347,7 @@
                         <div class="col-md-auto">
                             <div class="mb-3 text-center">
                                 <a id="submitButton" data-id="save_draft" name="save_draft" class="btn btn-outline-info rounded save-draft me-1"><span class="d-sm-inline d-none">Save as </span>Draft</a>
-                                <a href="{{ url()->previous() }}" class="btn btn-outline-secondary rounded me-1">{{ __('Cancel') }}</a>
+                                <a href="{{ url('goals') }}" class="btn btn-outline-secondary rounded me-1">{{ __('Cancel') }}</a>
                                 <a id="submitButton" data-id="submit_form" name="submit_form" class="btn btn-primary rounded shadow"><span class="spinner-border spinner-border-sm me-1 d-none" role="status" aria-hidden="true"></span>{{ __('Submit') }}</a>
                             </div>
                         </div>
