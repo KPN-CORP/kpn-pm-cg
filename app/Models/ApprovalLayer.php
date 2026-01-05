@@ -12,7 +12,7 @@ class ApprovalLayer extends Model
 
     public function employee()
     {
-        return $this->belongsTo(Employee::class, 'employee_id', 'employee_id')->using('kpncorp');
+        return $this->belongsTo(Employee::class, 'employee_id', 'employee_id');
     }
 
     public function subordinates()
@@ -26,10 +26,10 @@ class ApprovalLayer extends Model
     }
     public function previousApprovers()
     {
-        return $this->hasMany(Employee::class, 'employee_id', 'approver_id')->using('kpncorp');
+        return $this->hasMany(Employee::class, 'employee_id', 'approver_id');
     }
     public function view_employee()
     {
-        return $this->belongsTo(Employee::class, 'employee_id', 'employee_id')->using('kpncorp');
+        return $this->belongsTo(Employee::class, 'employee_id', 'employee_id');
     }
 }

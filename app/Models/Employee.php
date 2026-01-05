@@ -80,6 +80,6 @@ class Employee extends Model
 
     public function managerL1()
     {
-        return $this->belongsTo(Employee::class, 'manager_l1_id', 'employee_id')->using('kpncorp');
+        return $this->belongsTo(Employee::class, 'manager_l1_id', 'employee_id');
     }
 }

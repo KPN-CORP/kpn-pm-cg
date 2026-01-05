@@ -21,7 +21,7 @@ class Goal extends Model
     }
     public function employee()
     {
-        return $this->belongsTo(Employee::class, 'employee_id', 'employee_id')->using('kpncorp');
+        return $this->belongsTo(Employee::class, 'employee_id', 'employee_id');
     }
     public function employeeAppraisal()
     {

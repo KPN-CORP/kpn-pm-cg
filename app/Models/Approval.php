@@ -19,6 +19,6 @@ class Approval extends Model
     }
     public function approverName()
     {
-        return $this->belongsTo(Employee::class, 'approver_id', 'employee_id')->using('kpncorp');
+        return $this->belongsTo(Employee::class, 'approver_id', 'employee_id');
     }
 }
