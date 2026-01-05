@@ -1949,7 +1949,7 @@ class AppService
         ];
 
         return [
-            'company' => $companyKPIs,
+            'company' => [],
             'division' => [],
             'personal' => [] // Personal will be added by user
         ];

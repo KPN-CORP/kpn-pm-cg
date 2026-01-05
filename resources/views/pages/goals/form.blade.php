@@ -134,7 +134,7 @@
             </div>
             <div class="col-auto">
                 <button type="button" id="getLatestGoal" class="btn btn-sm btn-outline-info rounded d-inline-flex align-items-center gap-2">
-                <span class="label"><i class="ri-bard-fill me-1"></i>Get My Last Year’s Goal</span>
+                <span class="label"><i class="ri-bard-fill me-1 d-none"></i>Get My Last Year’s Goal</span>
                 <span class="loading d-none align-items-center gap-2">
                     <span class="spinner-border spinner-border-sm text-info me-1" role="status" aria-hidden="true"></span>
                     <span>Generating...</span>
