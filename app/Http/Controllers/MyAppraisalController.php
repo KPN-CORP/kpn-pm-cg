@@ -119,15 +119,15 @@ class MyAppraisalController extends Controller
                     ->first() : null;
 
             // Setelah data digabungkan, gunakan combineFormData untuk setiap jenis kontributor
-            $formGroupData = $this->appService->formGroupAppraisal($user, 'Appraisal Form', $period);
-            
-            $cultureData = $this->getDataByName($formGroupData['data']['form_appraisals'], 'Culture') ?? [];
-            $leadershipData = $this->getDataByName($formGroupData['data']['form_appraisals'], 'Leadership') ?? [];
-            $technicalData = $this->getDataByName($formGroupData['data']['form_appraisals'], 'Technical') ?? [];
-            $sigapData = $this->getDataByName($formGroupData['data']['form_appraisals'], 'Sigap') ?? [];
 
             $data = [];
             foreach ($formattedData as $request) {
+                $formGroupData = $this->appService->formGroupAppraisal($user, 'Appraisal Form', $request->period);
+    
+                $cultureData = $this->getDataByName($formGroupData['data']['form_appraisals'], 'Culture') ?? [];
+                $leadershipData = $this->getDataByName($formGroupData['data']['form_appraisals'], 'Leadership') ?? [];
+                $technicalData = $this->getDataByName($formGroupData['data']['form_appraisals'], 'Technical') ?? [];
+                $sigapData = $this->getDataByName($formGroupData['data']['form_appraisals'], 'Sigap') ?? [];
 
                 if ($request->appraisal->goal->form_status != 'Draft' || $request->created_by == Auth::user()->id) {
 
@@ -302,7 +302,7 @@ class MyAppraisalController extends Controller
 
             // View Cement only //
             $viewAchievement = $employeeData->group_company == 'Cement' ? true : false;
-            
+
             return view('pages.appraisals.my-appraisal', compact('data', 'link', 'parentLink', 'uomOption', 'typeOption', 'accessMenu', 'selectYear', 'adjustByManager', 'achievements', 'viewAchievement'));
 
         } catch (Exception $e) {
