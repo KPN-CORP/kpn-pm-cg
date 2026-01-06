@@ -13,7 +13,7 @@ class Employee extends Model
     protected $table = 'employees';
 
     use HasFactory;
-    use SoftDeletes;
+    // use SoftDeletes;
     
     protected $fillable = [
         // Kolom-kolom lainnya,
