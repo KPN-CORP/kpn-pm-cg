@@ -417,13 +417,13 @@ class MyAppraisalController extends Controller
     public function store(Request $request)
     {
         try {
+
             // Log::info('Store started');
             $submit_status = $request->submit_type == 'submit_draft' ? 'Draft' : 'Submitted';
             $messages = $request->submit_type == 'submit_draft' ? 'Draft saved successfully.' : 'Appraisal submitted successfully.';
             $period = $this->appService->appraisalPeriod();
 
             // Validasi data
-            // Log::info('Validated data', $request->all());
             $validatedData = $request->validate([
                 'form_group_id' => 'required|string',
                 'employee_id'   => 'required|string|size:11',
@@ -480,7 +480,13 @@ class MyAppraisalController extends Controller
                 // Simpan path web (akses via /storage)
                 $paths[] = "storage/{$baseDir}/{$filename}";
             }
-
+            // Log::info('Validated data', $request->all());
+            Log::info('Appraisal Data', [
+                    'employee_id' => $validatedData['employee_id'],
+                    'form_group_id' => $validatedData['form_group_id'],
+                    'data' => json_encode($datas),
+                    'period' => $period,
+                ]);
             // Simpan appraisal
             $appraisal = new Appraisal;
             $appraisal->id = $contributorCheck->appraisal_id ?? Str::uuid();
@@ -515,7 +521,7 @@ class MyAppraisalController extends Controller
             $approval->save();
 
             // Log::info('Appraisal saved successfully, redirecting...');
-            return redirect('appraisals')->with('success', $messages);
+            // return redirect('appraisals')->with('success', $messages);
 
         } catch (ValidationException $e) {
             // Kembalikan ke form dengan error validasi

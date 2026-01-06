@@ -36,11 +36,21 @@
                         </div>
                     </div>
                     <div class="col-lg-2 mb-3">
-                        <div class="form-group">
-                            <label class="form-label" for="target">{{ __('Achievement In') }} {{ is_null($data['custom_uom']) ? $data['uom']: $data['custom_uom'] }}</label>
-                            <input type="number" id="achievement-{{ $index + 1 }}" name="formData[{{ $formIndex }}][{{ $index }}][achievement]" placeholder="{{ __('Enter Achievement') }}.." value="{{ isset($data['actual']) ? $data['actual'] : "" }}" class="form-control achievement mt-1" />
-                            <div class="text-danger error-message"></div>
-                        </div>
+                        @if (strtolower($data['cluster']) != 'company' && !isset($data['actual']))
+                            <div class="form-group">
+                                <label class="form-label" for="target">{{ __('Achievement In') }} {{ is_null($data['custom_uom']) ? $data['uom']: $data['custom_uom'] }}
+                                </label>
+                                <input type="number" id="achievement-{{ $index + 1 }}" name="formData[{{ $formIndex }}][{{ $index }}][achievement]" placeholder="{{ __('Enter Achievement') }}.." value="{{ isset($data['actual']) ? $data['actual'] : "" }}" class="form-control achievement mt-1" />
+                                <div class="text-danger error-message"></div>
+                            </div> 
+                        @else
+                            <div class="form-group">
+                                <label class="form-label d-none" for="target">{{ __('Achievement In') }} {{ is_null($data['custom_uom']) ? $data['uom']: $data['custom_uom'] }}
+                                </label>
+                                <input type="number" id="achievement-{{ $index + 1 }}" name="formData[{{ $formIndex }}][{{ $index }}][achievement]" placeholder="{{ __('Enter Achievement') }}.." value="{{ isset($data['actual']) ? $data['actual'] : "" }}" class="mt-1 d-none" />
+                                <div class="text-danger error-message"></div>
+                            </div>                          
+                        @endif
                     </div>
                 </div>
                 <hr class="mt-0 mb-2">

@@ -37,7 +37,7 @@ $(function () {
   function validateStep(step) {
     let isValid = true, $firstInvalid = null;
     const $scope  = $(`.form-step[data-step="${step}"]`);
-    const $fields = $scope.find('.form-select, [required], .achievement');
+    const $fields = $scope.find('.achievement, [required]');
 
     $fields.each(function(){
       const $el = $(this);
@@ -203,7 +203,6 @@ $(function () {
     const step = $(this).data('step'); // 'submit_draft'
     const employeeID = document.getElementById('employee_id').value;
     const userID = document.getElementById('user_id').value;
-    console.log(employeeID, userID);
     
     $('#submitType').val(submitType);
     if (!validateStep(currentStep)) return false;
