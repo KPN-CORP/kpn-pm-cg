@@ -27,11 +27,11 @@ use stdClass;
 
 class AppService
 {
-    public function formGroupAppraisal($employee_id, $form_name)
+    public function formGroupAppraisal($employee_id, $form_name, $period)
     {
         $employee = EmployeeAppraisal::select('employee_id', 'group_company', 'job_level', 'company_name', 'work_area_code')->where('employee_id', $employee_id)->first();
         
-        $datas = FormGroupAppraisal::with(['formAppraisals', 'rating'])->where('name', $form_name)->get();
+        $datas = FormGroupAppraisal::with(['formAppraisals', 'rating'])->where('name', $form_name)->where('period', $period)->get();
 
         $data = json_decode($datas, true);
 
@@ -69,7 +69,30 @@ class AppService
     }
 
     // Function to calculate the average score
-    public function averageScore(
+    public function averageScore($formData)
+    {
+        $totalScore = 0;
+        $totalCount = 0;
+
+        foreach ($formData as $key => $section) {
+            if (is_array($section)) {
+                foreach ($section as $subSection) {
+                    if (is_array($subSection) && array_key_exists('score', $subSection)) {
+                        $score = $subSection['score'] ?? 0;
+                        $totalScore += (is_numeric($score) ? $score : 0); // Konversi null jadi 0
+                        $totalCount++;
+                    }
+                }
+            }
+        }
+
+        if ($totalCount === 0) {
+            return 0; // Prevent division by zero
+        }
+
+        return $totalScore / $totalCount;
+    }
+    public function sigapAverageScore(
         array $formData,
         string $contributorType,
         array $sigapWeightage360
@@ -247,25 +270,13 @@ class AppService
                     }
                 } elseif ($form['formName'] === "Culture") {
                     // Calculate average score for Culture form
-                    $cultureAverageScore = $this->averageScore(
-                        $form,
-                        $typeWeightage360,
-                        $sigapWeightage360Map
-                    );
+                    $cultureAverageScore = $this->averageScore($form);
                 } elseif ($form['formName'] === "Leadership") {
                     // Calculate average score for Leadership form
-                    $leadershipAverageScore = $this->averageScore(
-                        $form,
-                        $typeWeightage360,
-                        $sigapWeightage360Map
-                    );
+                    $leadershipAverageScore = $this->averageScore($form);
                 } elseif ($form['formName'] === "Technical") {
                     // Calculate average score for Technical form
-                    $technicalAverageScore = $this->averageScore(
-                        $form,
-                        $typeWeightage360,
-                        $sigapWeightage360Map
-                    );
+                    $technicalAverageScore = $this->averageScore($form);
                 } elseif ($form['formName'] === "Sigap") {
                     // Calculate average score for Sigap form
                     $sigapAverageScore = $this->averageScoreSigap($form);
@@ -365,7 +376,7 @@ class AppService
         $appraisalDatas['totalCultureScore'] = round($cultureAverageScore, 2); // get KPI Final Score
         $appraisalDatas['totalLeadershipScore'] = round($leadershipAverageScore, 2); // get KPI Final Score
         $appraisalDatas['totalTechnicalScore'] = round($technicalAverageScore, 2);
-        $appraisalDatas['totalSigapScore'] = round($sigapAverageScore  * $sigapWeightage / 100, 2);
+        $appraisalDatas['totalSigapScore'] = round($sigapAverageScore, 2);
         $appraisalDatas['cultureScore360'] = $cultureAverageScore * $cultureWeightage360 / 100; // get KPI Final Score
         $appraisalDatas['leadershipScore360'] = $leadershipAverageScore * $leadershipWeightage360 / 100; // get KPI Final Score
         $appraisalDatas['technicalScore360'] = $technicalAverageScore * $technicalWeightage360 / 100; // get KPI Final Score
@@ -384,7 +395,7 @@ class AppService
         $scores = [$totalKpiScore,$cultureAverageScore,$leadershipAverageScore,$technicalAverageScore,$sigapAverageScore];
         // get KPI Final Score
 
-        $appraisalDatas['totalScore'] =  $totalKpiScore + $appraisalDatas['cultureScore'] + $appraisalDatas['leadershipScore'] + $appraisalDatas['technicalScore'] + $appraisalDatas['sigapScore']; // Update
+        $appraisalDatas['totalScore'] =   $appraisalDatas['kpiScore'] + $appraisalDatas['cultureScore'] + $appraisalDatas['leadershipScore'] + $appraisalDatas['technicalScore'] + $appraisalDatas['sigapScore']; // Update
 
         $appraisalDatas['contributorRating'] = $appraisalDatas['totalScore']; // old
 
@@ -439,28 +450,16 @@ class AppService
                 }
                 if ($form['formName'] === "Culture") {
                     // Calculate average score for Culture form
-                    $cultureAverageScore = $this->averageScore(
-                        $form,
-                        $appraisalDatas['contributor_type'],
-                        $sigapWeightage360Map
-                    );
+                    $cultureAverageScore = $this->averageScore($form);
                 } elseif ($form['formName'] === "Leadership") {
                     // Calculate average score for Leadership form
-                    $leadershipAverageScore = $this->averageScore(
-                        $form,
-                        $appraisalDatas['contributor_type'],
-                        $sigapWeightage360Map
-                    );
+                    $leadershipAverageScore = $this->averageScore($form);
                 } elseif ($form['formName'] === "Technical") {
                     // Calculate average score for Technical form
-                    $technicalAverageScore = $this->averageScore(
-                        $form,
-                        $appraisalDatas['contributor_type'],
-                        $sigapWeightage360Map
-                    );
+                    $technicalAverageScore = $this->averageScore($form);
                 } elseif ($form['formName'] === "Sigap") {
                     // Calculate average score for SIGAP form
-                    $sigapAverageScore = $this->averageScore(
+                    $sigapAverageScore = $this->sigapAverageScore(
                         $form,
                         $appraisalDatas['contributor_type'],
                         $sigapWeightage360Map
@@ -613,7 +612,7 @@ class AppService
         // $appraisalDatas['totalCultureScore'] = round($cultureAverageScore * $cultureWeightage / 100 , 2); // get KPI Final Score
         $appraisalDatas['totalLeadershipScore'] = round($totalLeadershipScore, 2); // get KPI Final Score
         $appraisalDatas['totalTechnicalScore'] = round($totalTechnicalScore, 2); // get KPI Final Score
-        $appraisalDatas['totalSigapScore'] = round($totalSigapScore * $sigapWeightage / 100, 2); // get SIGAP Final Score
+        $appraisalDatas['totalSigapScore'] = round($totalSigapScore, 2); // get SIGAP Final Score
         // $appraisalDatas['totalLeadershipScore'] = round($leadershipAverageScore * $leadershipWeightage / 100 , 2); // get KPI Final Score
         $appraisalDatas['cultureScore360'] = $cultureAverageScore * $cultureWeightage360 / 100; // get KPI Final Score
         $appraisalDatas['leadershipScore360'] = $leadershipAverageScore * $leadershipWeightage360 / 100; // get KPI Final Score
@@ -634,17 +633,18 @@ class AppService
         $scores = [$totalKpiScore,$cultureAverageScore,$leadershipAverageScore,$totalTechnicalScore,$totalSigapScore];
         // get KPI Final Score
 
-        $appraisalDatas['totalScore'] =  round($totalKpiScore + $appraisalDatas['cultureScore'] + $appraisalDatas['leadershipScore'] + $appraisalDatas['technicalScore'] + $appraisalDatas['sigapScore'], 2); // Update
+        $appraisalDatas['totalScore'] =  round($appraisalDatas['kpiScore'] + $appraisalDatas['cultureScore'] + $appraisalDatas['leadershipScore'] + $appraisalDatas['technicalScore'] + $appraisalDatas['sigapScore'], 2); // Update
 
         $appraisalDatas['contributorRating'] = $appraisalDatas['totalScore'];
     
         return $appraisalDatas;
     }
 
-    private function getSigap360Weightage(
+    private function get360Weightage(
         array $weightageFormData,
         string $jobLevel,
-        array $availableContributorTypes
+        array $availableContributorTypes,
+        string $competencyName = 'Sigap'
     ): array {
         $weightages = [
             'employee' => 0,
@@ -659,7 +659,7 @@ class AppService
             }
 
             foreach ($item['competencies'] as $competency) {
-                if ($competency['competency'] !== 'Sigap') {
+                if ($competency['competency'] !== $competencyName) {
                     continue;
                 }
 
@@ -690,6 +690,14 @@ class AppService
         $weightages['manager'] += $pooled;
 
         return $weightages;
+    }
+
+    private function getSigap360Weightage(
+        array $weightageFormData,
+        string $jobLevel,
+        array $availableContributorTypes
+    ): array {
+        return $this->get360Weightage($weightageFormData, $jobLevel, $availableContributorTypes, 'Sigap');
     }
 
 
@@ -834,7 +842,7 @@ class AppService
 
     }
 
-    function suggestedRating($id, $formId)
+    function suggestedRating($id, $formId, $period)
     {
         try {
 
@@ -858,7 +866,7 @@ class AppService
                 $appraisalDataCollection = [];
                 $goalDataCollection = [];
 
-                $formGroupContent = $this->formGroupAppraisal($datas->first()->employee_id, 'Appraisal Form');
+                $formGroupContent = $this->formGroupAppraisal($datas->first()->employee_id, 'Appraisal Form', $period);
                 
                 if (!$formGroupContent) {
                     $appraisalForm = ['data' => ['formData' => []]];

@@ -392,7 +392,7 @@ public function getTeamData(Request $request)
         $firstCalibrator = ApprovalLayerAppraisal::where('layer', 1)->where('layer_type', 'calibrator')->where('employee_id', $id)->value('approver_id');
 
         // Get form group appraisal
-        $formGroupData = $this->appService->formGroupAppraisal($id, 'Appraisal Form');
+        $formGroupData = $this->appService->formGroupAppraisal($id, 'Appraisal Form', $period);
         
         // Validate formGroupData is not empty
         if (empty($formGroupData) || !isset($formGroupData['data']) || empty($formGroupData['data']['form_appraisals'])) {
@@ -447,7 +447,7 @@ public function getTeamData(Request $request)
         }
 
         // Read the content of the JSON files
-        $formGroupData = $this->appService->formGroupAppraisal($request->id, 'Appraisal Form Task');
+        $formGroupData = $this->appService->formGroupAppraisal($request->id, 'Appraisal Form Task', $period);
         
         // Validate formGroupData is not empty
         if (empty($formGroupData) || !isset($formGroupData['data']) || empty($formGroupData['data']['form_appraisals'])) {
@@ -668,7 +668,7 @@ public function getTeamData(Request $request)
 
         $form_name = $manager ? 'Appraisal Form Review' : 'Appraisal Form 360' ;
 
-        $formGroupData = $this->appService->formGroupAppraisal($id, $form_name);
+        $formGroupData = $this->appService->formGroupAppraisal($id, $form_name, $period);
         
         // Validate formGroupData is not empty
         if (empty($formGroupData) || !isset($formGroupData['data']) || empty($formGroupData['data']['form_appraisals'])) {
@@ -897,7 +897,7 @@ public function getTeamData(Request $request)
 
             // Setelah data digabungkan, gunakan combineFormData untuk setiap jenis kontributor
 
-            $formGroupData = $this->appService->formGroupAppraisal($employeeData->employee_id, 'Appraisal Form');
+            $formGroupData = $this->appService->formGroupAppraisal($employeeData->employee_id, 'Appraisal Form', $period);
             
             if (!$formGroupData) {
                 $appraisalForm = ['data' => ['formData' => []]];

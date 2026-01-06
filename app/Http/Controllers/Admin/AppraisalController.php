@@ -459,7 +459,7 @@ class AppraisalController extends Controller
                 $appraisalDataCollection = [];
                 $goalDataCollection = [];
 
-                $formGroupContent = $this->appService->formGroupAppraisal($datas->first()->employee_id, 'Appraisal Form');
+                $formGroupContent = $this->appService->formGroupAppraisal($datas->first()->employee_id, 'Appraisal Form', $period);
                 
                 if (!$formGroupContent) {
                     $appraisalForm = ['data' => ['formData' => []]];
@@ -640,7 +640,7 @@ class AppraisalController extends Controller
     
                 // Setelah data digabungkan, gunakan combineFormData untuk setiap jenis kontributor
 
-                $formGroupContent = $this->appService->formGroupAppraisal($datas->first()->employee_id, 'Appraisal Form');
+                $formGroupContent = $this->appService->formGroupAppraisal($datas->first()->employee_id, 'Appraisal Form', $period);
             
                 if (!$formGroupContent) {
                     $appraisalForm = ['data' => ['formData' => []]];
@@ -764,7 +764,7 @@ class AppraisalController extends Controller
                 
                 // Setelah data digabungkan, gunakan combineFormData untuk setiap jenis kontributor
                 
-                $formGroupContent = $this->appService->formGroupAppraisal($datas->first()->employee_id, 'Appraisal Form');
+                $formGroupContent = $this->appService->formGroupAppraisal($datas->first()->employee_id, 'Appraisal Form', $period);
                 
                 if (!$formGroupContent) {
                     $appraisalForm = ['data' => ['formData' => []]];

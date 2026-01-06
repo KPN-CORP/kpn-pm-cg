@@ -891,7 +891,7 @@ class OnBehalfController extends Controller
 
                 // Cache suggested ratings
                 if (!isset($suggestedRatings[$employeeId][$formId])) {
-                    $suggestedRatings[$employeeId][$formId] = $this->appService->suggestedRating($employeeId, $formId);
+                    $suggestedRatings[$employeeId][$formId] = $this->appService->suggestedRating($employeeId, $formId, $period);
                 }
 
                 // Cache rating values

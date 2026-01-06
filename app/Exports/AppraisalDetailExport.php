@@ -236,7 +236,7 @@ class AppraisalDetailExport implements FromCollection, WithHeadings, WithMapping
 
         $employeeData = $contributor->employee;
 
-        $formGroupContent = $this->appService->formGroupAppraisal($contributor->employee_id, 'Appraisal Form');
+        $formGroupContent = $this->appService->formGroupAppraisal($contributor->employee_id, 'Appraisal Form', $contributor->period);
         $appraisalForm = $formGroupContent ?: ['data' => ['formData' => []]];
 
         if (!$formGroupContent) {
@@ -327,7 +327,7 @@ class AppraisalDetailExport implements FromCollection, WithHeadings, WithMapping
 
         // Setelah data digabungkan, gunakan combineFormData untuk setiap jenis kontributor
 
-        $formGroupContent = $this->appService->formGroupAppraisal($datas->first()->employee_id, 'Appraisal Form');
+        $formGroupContent = $this->appService->formGroupAppraisal($datas->first()->employee_id, 'Appraisal Form', $contributor->period);
 
         if (!$formGroupContent) {
             $appraisalForm = ['data' => ['formData' => []]];
@@ -407,7 +407,7 @@ class AppraisalDetailExport implements FromCollection, WithHeadings, WithMapping
         $appraisalDataCollection = [];
         $goalDataCollection = [];
 
-        $formGroupContent = $this->appService->formGroupAppraisal($datas->first()->employee_id, 'Appraisal Form');
+        $formGroupContent = $this->appService->formGroupAppraisal($datas->first()->employee_id, 'Appraisal Form', $contributor->period);
 
         if (!$formGroupContent) {
             $appraisalForm = ['data' => ['formData' => []]];

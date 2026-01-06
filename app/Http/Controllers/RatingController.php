@@ -170,7 +170,7 @@ class RatingController extends Controller
 
                 // Cache suggested ratings
                 if (!isset($suggestedRatings[$employeeId][$formId])) {
-                    $suggestedRatings[$employeeId][$formId] = $this->appService->suggestedRating($employeeId, $formId);
+                    $suggestedRatings[$employeeId][$formId] = $this->appService->suggestedRating($employeeId, $formId, $this->period);
                 }
 
                 // Cache rating values
@@ -591,7 +591,7 @@ class RatingController extends Controller
                     $formId = $data->approvalRequest->where('period', $this->period)->first()->form_id;
 
                     if (!isset($suggestedRatings[$employeeId][$formId])) {
-                        $suggestedRatings[$employeeId][$formId] = $this->appService->suggestedRating($employeeId, $formId);
+                        $suggestedRatings[$employeeId][$formId] = $this->appService->suggestedRating($employeeId, $formId, $this->period);
                     }
 
                     if (!isset($ratingValues[$employeeId])) {

@@ -119,7 +119,7 @@ class MyAppraisalController extends Controller
                     ->first() : null;
 
             // Setelah data digabungkan, gunakan combineFormData untuk setiap jenis kontributor
-            $formGroupData = $this->appService->formGroupAppraisal($user, 'Appraisal Form');
+            $formGroupData = $this->appService->formGroupAppraisal($user, 'Appraisal Form', $period);
             
             $cultureData = $this->getDataByName($formGroupData['data']['form_appraisals'], 'Culture') ?? [];
             $leadershipData = $this->getDataByName($formGroupData['data']['form_appraisals'], 'Leadership') ?? [];
@@ -381,7 +381,7 @@ class MyAppraisalController extends Controller
             
             
             // Get form group appraisal
-            $formGroupData = $this->appService->formGroupAppraisal($request->id, 'Appraisal Form');
+            $formGroupData = $this->appService->formGroupAppraisal($request->id, 'Appraisal Form', $period);
             
             // Validate formGroupData is not empty
             if (empty($formGroupData) || !isset($formGroupData['data']) || empty($formGroupData['data']['form_appraisals'])) {
@@ -600,7 +600,7 @@ class MyAppraisalController extends Controller
             $approvalRequest = ApprovalRequest::where('form_id', $appraisal->id)->first();
 
             // Read the content of the JSON files
-            $formGroupContent = $this->appService->formGroupAppraisal($appraisal->employee_id, 'Appraisal Form');
+            $formGroupContent = $this->appService->formGroupAppraisal($appraisal->employee_id, 'Appraisal Form', $period);
             
             if (!$formGroupContent || empty($formGroupContent['data']['form_appraisals'])) {
                 throw new Exception("Form group configuration is incomplete or missing for employee.");

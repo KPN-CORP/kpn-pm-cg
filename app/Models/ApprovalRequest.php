@@ -70,7 +70,7 @@ class ApprovalRequest extends Model
 
     public function manager()
     {
-        return $this->belongsTo(EmployeeAppraisal::class, 'current_approval_id', 'employee_id');
+        return $this->belongsTo(EmployeeAppraisal::class, 'current_approval_id', 'employee_id')->withTrashed();
     }
     public function approval()
     {
