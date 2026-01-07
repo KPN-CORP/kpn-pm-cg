@@ -12,6 +12,8 @@ class ApprovalSnapshots extends Model
     protected $fillable = [
         'form_id',
         'form_data',
+        'employee_id',
+        'created_by',
     ];
 
     public function employee()

@@ -13,6 +13,7 @@ use App\Models\EmployeeAppraisal;
 use App\Models\FormAppraisal;
 use App\Models\FormGroupAppraisal;
 use App\Models\Goal;
+use App\Models\KpiCompany;
 use App\Models\MasterWeightage;
 use App\Models\User;
 use Carbon\Carbon;
@@ -333,6 +334,10 @@ class MyAppraisalController extends Controller
 
             $period = $this->appService->appraisalPeriod();
 
+            $kpiCompanies = KpiCompany::where('employee_id', $request->id)
+                ->where('period', $period)
+                ->first();
+
             $goalChecked = Goal::where('employee_id', $request->id)->where('period', $period)->exists();
 
             $goal = Goal::where('employee_id', $request->id)->where('period', $period)->first();
@@ -348,7 +353,22 @@ class MyAppraisalController extends Controller
 
             // check goals
             if ($goalChecked) {
+
+                // decode form_data
                 $goalData = json_decode($goal->form_data, true);
+
+                $kpiData = is_string($kpiCompanies['form_data'])
+                    ? json_decode($kpiCompanies['form_data'], true)
+                    : $kpiCompanies['form_data'];
+
+                foreach ($goalData as $index => &$goalItem) {
+                    $goalItem['actual'] = $kpiData[$index]['achievement'] ?? null;
+                }
+                unset($goalItem); // penting!
+
+                // ⬅️ simpan kembali ke model
+                $goal->form_data = json_encode($goalData);
+
             } else {
                 Session::flash('error', "Your Goal for $period are not found.");
                 return redirect()->route('appraisals');

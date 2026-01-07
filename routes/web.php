@@ -14,6 +14,7 @@ use App\Http\Controllers\AssignmentController;
 use App\Http\Controllers\AuditTrailController;
 use App\Http\Controllers\ImportGoalsController;
 use App\Http\Controllers\ImportKpiController;
+use App\Http\Controllers\KpiCompanyImportController;
 use App\Http\Controllers\Auth\AuthenticatedSessionController;
 use App\Http\Controllers\Auth\ConfirmablePasswordController;
 use App\Http\Controllers\Auth\EmailVerificationNotificationController;
@@ -357,6 +358,9 @@ Route::middleware('auth', 'locale', 'notification')->group(function () {
         Route::post('/import-kpi/submit', [ImportKpiController::class, 'importKpi'])->name('importkpisubmit');
         Route::delete('/achievements/{id}', [ImportKpiController::class, 'destroy'])->name('achievements.destroy');
         Route::get('/download-template', [ImportKpiController::class, 'downloadTemplate'])->name('downloadTemplateImport');
+        Route::get('/import-kpi-company', [KpiCompanyImportController::class, 'showImportForm'])->name('importkpicompany');
+        Route::post('/import-kpi-company', [KpiCompanyImportController::class, 'import'])->name('importKpiCompany');
+        Route::post('/download-kpi-company/{file}', [KpiCompanyImportController::class, 'downloadExcel'])->name('downloadTemplateImport');
     });
 
     Route::middleware(['permission:reminderpa'])->group(function () {
