@@ -20,7 +20,7 @@
         @if (isset($calibrations) && !empty($calibrations))            
         <div class="row">
             <div class="col-md p-0 p-md-2">
-                <div class="card">
+                <div class="card d-none">
                     <div class="card-body p-2">
                         <ul class="nav nav-pills mb-3 border-bottom justify-content-evenly justify-content-md-start">
                                 @foreach ($calibrations as $level => $data)
@@ -75,7 +75,7 @@
                                         <div class="col-md-5 order-2 order-md-1">
                                             <div class="table-responsive">
 
-                                                <table id="table-{{ $level }}" class="table table-sm small text-center">
+                                                <table id="table-{{ $level }}" class="table table-sm small text-center d-none">
                                                     <thead>
                                                         <tr>
                                                             <td rowspan="2" class="align-middle table-secondary fw-bold">KPI</td>

@@ -329,7 +329,7 @@ class MyAppraisalController extends Controller
 
     public function create(Request $request)
     {
-        try {
+        // try {
             $step = $request->input('step', 1);
 
             $period = $this->appService->appraisalPeriod();
@@ -357,17 +357,43 @@ class MyAppraisalController extends Controller
                 // decode form_data
                 $goalData = json_decode($goal->form_data, true);
 
-                $kpiData = is_string($kpiCompanies['form_data'])
-                    ? json_decode($kpiCompanies['form_data'], true)
-                    : $kpiCompanies['form_data'];
-
-                foreach ($goalData as $index => &$goalItem) {
-                    $goalItem['actual'] = $kpiData[$index]['achievement'] ?? null;
+                // VALIDASI kpiCompanies
+                if (
+                    empty($kpiCompanies) ||
+                    !isset($kpiCompanies['form_data']) ||
+                    empty($kpiCompanies['form_data'])
+                ) {
+                    // jika KPI tidak ada, set actual = null semua
+                    foreach ($goalData as &$goalItem) {
+                        $goalItem['actual'] = null;
+                    }
+                    unset($goalItem);
+                } else {
+                
+                    // decode form_data KPI
+                    $kpiData = is_string($kpiCompanies['form_data'])
+                        ? json_decode($kpiCompanies['form_data'], true)
+                        : $kpiCompanies['form_data'];
+                
+                    // pastikan hasil decode array
+                    if (!is_array($kpiData)) {
+                        foreach ($goalData as &$goalItem) {
+                            $goalItem['actual'] = null;
+                        }
+                        unset($goalItem);
+                    } else {
+                
+                        // mapping berdasarkan index (asumsi urutan sama)
+                        foreach ($goalData as $index => &$goalItem) {
+                            $goalItem['actual'] = $kpiData[$index]['achievement'] ?? null;
+                        }
+                        unset($goalItem);
+                    }
                 }
-                unset($goalItem); // penting!
-
-                // ⬅️ simpan kembali ke model
+                
+                // simpan kembali ke model
                 $goal->form_data = json_encode($goalData);
+
 
             } else {
                 Session::flash('error', "Your Goal for $period are not found.");
@@ -427,11 +453,11 @@ class MyAppraisalController extends Controller
 
             // Pass the data to the view
             return view('pages/appraisals/create', compact('step', 'parentLink', 'link', 'filteredFormData', 'formGroupData', 'goalData', 'goal', 'approval', 'ratings', 'appraisal', 'achievements', 'viewAchievement'));
-        } catch (Exception $e) {
-            Log::error('Error in create method: ' . $e->getMessage());
-            Session::flash('error', 'Failed to load appraisal form: ' . $e->getMessage());
-            return redirect()->route('appraisals');
-        }
+        // } catch (Exception $e) {
+        //     Log::error('Error in create method: ' . $e->getMessage());
+        //     Session::flash('error', 'Failed to load appraisal form: ' . $e->getMessage());
+        //     return redirect()->route('appraisals');
+        // }
     }
 
     public function store(Request $request)

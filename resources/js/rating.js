@@ -306,18 +306,18 @@ document.addEventListener('DOMContentLoaded', function() {
                     confirmButtonColor: "#3e60d5",
                     confirmButtonText: 'OK'
                 });
-            } else if (!tableIsValid) {
-                Swal.fire({
-                    title: 'Rating Mismatch!',
-                    html: `
-                        <p>The following ratings do not match the expected values:</p>
-                        <pre>${mismatchedRatings.join('\n')}</pre>
-                        <p>Please adjust your ratings to match the expected distribution. Mismatched cells are highlighted in the table.</p>
-                    `,
-                    icon: 'warning',
-                    confirmButtonColor: "#3e60d5",
-                    confirmButtonText: 'OK'
-                });
+            // } else if (!tableIsValid) {
+            //     Swal.fire({
+            //         title: 'Rating Mismatch!',
+            //         html: `
+            //             <p>The following ratings do not match the expected values:</p>
+            //             <pre>${mismatchedRatings.join('\n')}</pre>
+            //             <p>Please adjust your ratings to match the expected distribution. Mismatched cells are highlighted in the table.</p>
+            //         `,
+            //         icon: 'warning',
+            //         confirmButtonColor: "#3e60d5",
+            //         confirmButtonText: 'OK'
+            //     });
             } else {
                 let ratingsList = '';
                 for (const [employee, rating] of Object.entries(ratings)) {
