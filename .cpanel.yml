@@ -11,7 +11,7 @@ deployment:
 
     # Copy public assets to the public_html directory
     # - /bin/cp -r public/css public/img public/images public/js public/scss /home/hcispanel/public_html/kpncorporation-stage.hcis.live
-    - /bin/cp -r public/css public/img public/images public/js public/scss /home/hcispanel/public_html/kpncorporation-cg.hcis.live
+    - /bin/cp -r public/css public/img public/images public/js public/scss /home/hcispanel/public_html/kpncorporation-cg
 
     # Change directory to the deployment path
     - cd $DEPLOYPATH
