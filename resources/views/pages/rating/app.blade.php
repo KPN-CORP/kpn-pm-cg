@@ -133,7 +133,7 @@
                                                     </div>
                                                 </div>
                                             </div>
-                                            <div id="alertField" class="alert alert-warning alert-dismissible {{ ((!$calibratorCount && !$ratingDone ) || $requestApproved) && $employeeCount <= 2 ? '' : 'fade' }}" role="alert" {{ ((!$calibratorCount && !$ratingDone) || $requestApproved) && $employeeCount <= 2 ? '' : 'hidden' }}>
+                                            <div id="alertField" class="alert alert-warning alert-dismissible d-none {{ ((!$calibratorCount && !$ratingDone ) || $requestApproved) && $employeeCount <= 2 ? '' : 'fade' }}" role="alert" {{ ((!$calibratorCount && !$ratingDone) || $requestApproved) && $employeeCount <= 2 ? '' : 'hidden' }}>
                                                 <div class="row fs-5">
                                                     <div class="col-auto my-auto">
                                                         <i class="ri-information-line h3 fw-light"></i>
@@ -164,7 +164,12 @@
                                                 @csrf
                                                 <input type="hidden" name="calibrator_pending_count" value="{{ $calibrations[$level]['calibratorPendingCount'] }}">
                                                 <input type="hidden" name="id_calibration_group" value="{{ $id_calibration_group }}">
-                                                <input type="hidden" name="approver_id" id="approver_id" value="{{ Auth::user()->employee_id }}">
+                                                <input
+                                                    type="hidden"
+                                                    name="approver_id"
+                                                    id="approver_id"
+                                                    value="{{ request()->route('id') ?? Auth::user()->employee_id }}"
+                                                >
                                                 @forelse ($ratingDatas[$level] as $index => $item)
                                                 @php
                                                  $suggestRating = $item->previous_rating ?? $item->suggested_rating;

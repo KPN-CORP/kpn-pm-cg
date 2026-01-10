@@ -30,6 +30,7 @@ class AppServiceProvider extends ServiceProvider
         View::share('appraisalPeriod', $appService->appraisalPeriod());
         View::share('flowAccess', fn($moduleTransaction) => $appService->checkFlowAccess($moduleTransaction));
         View::share('userRatingAccess', fn() => $appService->checkKpiUnit());
+        View::share('isCalibrator', fn($id) => $appService->isCalibrator($id));
 
     }
 }

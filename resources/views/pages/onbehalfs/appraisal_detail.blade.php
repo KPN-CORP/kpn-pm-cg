@@ -122,9 +122,10 @@
                                                     {{ $item['formName'] }}
                                                     | Score : {{
                                                         match ($item['formName']) {
-                                                            'KPI' => $row->formData['kpiScore'],
-                                                            'Culture' => $row->formData['cultureScore'],
-                                                            'Leadership' => $row->formData['leadershipScore'],
+                                                            'KPI' => $row->formData['totalKpiScore'],
+                                                            'Culture' => $row->formData['totalCultureScore'],
+                                                            'Leadership' => $row->formData['totalLeadershipScore'],
+                                                            'Sigap' => $row->formData['totalSigapScore'],
                                                             default => '-'
                                                         }
                                                     }}

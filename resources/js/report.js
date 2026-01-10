@@ -299,6 +299,7 @@ function exportExcel() {
     const location = $("#location").val();
     const period = $("#filterYear").val();
     
+    
     $("#export_report_type").val(reportType);
     $("#export_group_company").val(groupCompany);
     $("#export_company").val(company);

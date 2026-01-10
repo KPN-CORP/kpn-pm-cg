@@ -36,7 +36,7 @@
                         </div>
                     </div>
                     <div class="col-lg-2 mb-3">
-                        @if (strtolower($data['cluster']) != 'company' && !isset($data['actual']))
+                        @if (strtolower($data['cluster'] ?? '') != 'company' || !isset($data['actual']))
                             <div class="form-group">
                                 <label class="form-label" for="target">{{ __('Achievement In') }} {{ is_null($data['custom_uom']) ? $data['uom']: $data['custom_uom'] }}
                                 </label>

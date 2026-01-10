@@ -152,7 +152,7 @@ class MyAppraisalController extends Controller
                         $appraisalData['cultureScore'] = round($formData['totalCultureScore'], 2);
                         $appraisalData['leadershipScore'] = round($formData['totalLeadershipScore'], 2);
                         $appraisalData['technicalScore'] = round($formData['totalTechnicalScore'], 2);
-                        $appraisalData['sigapScore'] = round($formData['sigapScore'], 2);
+                        $appraisalData['sigapScore'] = round($formData['totalSigapScore'], 2);
                     }
                     
                     foreach ($formData['formData'] as &$form) {
@@ -329,7 +329,7 @@ class MyAppraisalController extends Controller
 
     public function create(Request $request)
     {
-        // try {
+        try {
             $step = $request->input('step', 1);
 
             $period = $this->appService->appraisalPeriod();
@@ -453,11 +453,11 @@ class MyAppraisalController extends Controller
 
             // Pass the data to the view
             return view('pages/appraisals/create', compact('step', 'parentLink', 'link', 'filteredFormData', 'formGroupData', 'goalData', 'goal', 'approval', 'ratings', 'appraisal', 'achievements', 'viewAchievement'));
-        // } catch (Exception $e) {
-        //     Log::error('Error in create method: ' . $e->getMessage());
-        //     Session::flash('error', 'Failed to load appraisal form: ' . $e->getMessage());
-        //     return redirect()->route('appraisals');
-        // }
+        } catch (Exception $e) {
+            Log::error('Error in create method: ' . $e->getMessage());
+            Session::flash('error', 'Failed to load appraisal form: ' . $e->getMessage());
+            return redirect()->route('appraisals');
+        }
     }
 
     public function store(Request $request)

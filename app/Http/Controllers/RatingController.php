@@ -392,6 +392,8 @@ class RatingController extends Controller
 
             Log::info('Returning view with data.', ['activeLevel' => $activeLevel, 'id_calibration_group' => $id_calibration_group]);
 
+            dd($ratingDatas);
+
             return view('pages.rating.app', compact('ratingDatas', 'calibrations', 'masterRating', 'link', 'parentLink', 'activeLevel', 'id_calibration_group'));
         } catch (Exception $e) {
             Log::error('Error in index method: ' . $e->getMessage());

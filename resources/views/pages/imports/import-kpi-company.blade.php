@@ -157,6 +157,11 @@
                                 </div>
                             </div>
                             <div class="form-group mb-3">
+                                <a href="{{ route('downloadTemplateImportKPICompany') }}" class="btn btn-outline-info">
+                                    <i class="bi bi-download"></i> Download Template Import
+                                </a>
+                            </div>
+                            <div class="form-group mb-3">
                                 <label for="period" class="form-label">Period (Year)</label>
                                 <input type="number" name="period" id="period" class="form-control" min="2000" max="2100" value="{{ date('Y') }}" required>
                             </div>

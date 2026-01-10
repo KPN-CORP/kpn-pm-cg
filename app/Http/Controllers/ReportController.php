@@ -37,14 +37,8 @@ class ReportController extends Controller
         ->where('category', $this->category)
         ->distinct()
         ->orderBy('year')
-        
         ->get();
-
-        $selectYear->transform(function ($req) {
-            $req->year = Carbon::parse($req->created_at)->format('Y');
-            return $req;
-        });
-
+        
         return view('reports.app', compact('locations', 'companies', 'groupCompanies', 'selectYear'),  [
             'parentLink' => $parentLink, 'link' => $link
         ]);

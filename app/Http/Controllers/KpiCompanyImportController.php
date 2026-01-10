@@ -85,9 +85,10 @@ class KpiCompanyImportController extends Controller
     /**
      * Download file
      */
-    public function downloadExcel($file)
+    public function downloadExcel()
     {
-        $filePath = storage_path($file);
+        $filePath = Storage::path('public/templates/kpi_company_import_template.xlsx');
+
 
         if (file_exists($filePath)) {
             return Response::download($filePath);

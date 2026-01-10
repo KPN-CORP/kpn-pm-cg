@@ -188,14 +188,32 @@ class AppService
         }
     }
 
+
+    // ============== Conversion percentage to rating number =================
+    // === all BU ===
+    // public function conversion($evaluate) {
+    //     if ($evaluate < 60) {
+    //         return 1;
+    //     } elseif ($evaluate >= 60 && $evaluate < 95) {
+    //         return 2;
+    //     } elseif ($evaluate >= 95 && $evaluate <= 100) {
+    //         return 3;
+    //     } elseif ($evaluate > 100 && $evaluate <= 120) {
+    //         return 4;
+    //     } else {
+    //         return 5;
+    //     }
+    // }
+
+    // === CG setting ===
     public function conversion($evaluate) {
-        if ($evaluate < 60) {
+        if ($evaluate < 40) {
             return 1;
-        } elseif ($evaluate >= 60 && $evaluate < 95) {
+        } elseif ($evaluate >= 40 && $evaluate < 60) {
             return 2;
-        } elseif ($evaluate >= 95 && $evaluate <= 100) {
+        } elseif ($evaluate >= 60 && $evaluate <= 80) {
             return 3;
-        } elseif ($evaluate > 100 && $evaluate <= 120) {
+        } elseif ($evaluate > 80 && $evaluate <= 95) {
             return 4;
         } else {
             return 5;
@@ -287,7 +305,7 @@ class AppService
             // Handle the case where formData is null or not an array
             $appraisalDatas = []; // Optionally, set to an empty array
         }
-        
+
         $weightageContent = json_decode($weightageData->form_data, true);
         
         $kpiWeightage = 0;
@@ -311,6 +329,7 @@ class AppService
             }
 
             if (in_array($jobLevel, $item['jobLevel'])) {
+
                 foreach ($item['competencies'] as $competency) {
                     // Validate competency structure
                     if (!is_array($competency)) {
@@ -331,7 +350,6 @@ class AppService
                     if (!isset($competency['competency']) || !isset($competency['weightage'])) {
                         continue;
                     }
-
                     switch ($competency['competency']) {
                         case 'KPI':
                             $kpiWeightage = floatval($competency['weightage']);
@@ -1961,6 +1979,14 @@ class AppService
             'division' => [],
             'personal' => [] // Personal will be added by user
         ];
+    }
+
+    public static function isCalibrator(string $employeeId): bool
+    {
+        return ApprovalLayerAppraisal::query()
+            ->where('approver_id', $employeeId)
+            ->where('layer_type', 'calibrator')
+            ->exists();
     }
 
 }

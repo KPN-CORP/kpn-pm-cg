@@ -1178,8 +1178,8 @@ public function getTeamData(Request $request)
                 'approver_id' => 'required|string|size:11',
                 'formGroupName' => 'required|string|min:5|max:100',
                 'formData' => 'required|array',
-                'attachment'    => 'nullable|array',
-                'attachment.*'  => 'file|mimes:pdf,doc,docx,xls,xlsx,ppt,pptx,jpg,jpeg,png|max:10240',
+                // 'attachment'    => 'nullable|array',
+                // 'attachment.*'  => 'file|mimes:pdf,doc,docx,xls,xlsx,ppt,pptx,jpg,jpeg,png|max:10240',
             ]);
 
             DB::beginTransaction(); // Start the database transaction
@@ -1277,65 +1277,66 @@ public function getTeamData(Request $request)
 
                 $appraisal = Appraisal::where('id', $appraisalId)->first();
 
-                $existingRaw  = $appraisal->file;
-                $existingList = is_array($existingRaw) ? $existingRaw : (json_decode($existingRaw, true) ?: ($existingRaw ? [$existingRaw] : []));
-                $kept = $request['keep_files'] ?? [];      // bentuk "storage/files/appraisals/xxx.ext"
-                $kept = array_values(array_filter($kept, fn($p) => is_string($p) && $p !== ''));
+                // =========== Proses pengelolaan file attachment (jika ada) ===============
+                // $existingRaw  = $appraisal->file;
+                // $existingList = is_array($existingRaw) ? $existingRaw : (json_decode($existingRaw, true) ?: ($existingRaw ? [$existingRaw] : []));
+                // $kept = $request['keep_files'] ?? [];      // bentuk "storage/files/appraisals/xxx.ext"
+                // $kept = array_values(array_filter($kept, fn($p) => is_string($p) && $p !== ''));
 
-                // Hapus fisik file yang TIDAK di-keep
-                $toDelete = array_values(array_diff($existingList, $kept));
-                foreach ($toDelete as $webPath) {
-                    $diskPath = Str::after($webPath, 'storage/'); // "files/appraisals/xxx.ext"
-                    if ($diskPath && Storage::disk('public')->exists($diskPath)) {
-                        Storage::disk('public')->delete($diskPath);
-                    }
-                }
+                // // Hapus fisik file yang TIDAK di-keep
+                // $toDelete = array_values(array_diff($existingList, $kept));
+                // foreach ($toDelete as $webPath) {
+                //     $diskPath = Str::after($webPath, 'storage/'); // "files/appraisals/xxx.ext"
+                //     if ($diskPath && Storage::disk('public')->exists($diskPath)) {
+                //         Storage::disk('public')->delete($diskPath);
+                //     }
+                // }
     
                 // Lanjutkan proses update file, validasi, dll...
-                $timestamp  = Carbon::now()->format('His');
-                $baseDir    = 'files/docs_pa';                       // di disk 'public'
-                Storage::disk('public')->makeDirectory($baseDir);       // idempotent
+                // $timestamp  = Carbon::now()->format('His');
+                // $baseDir    = 'files/docs_pa';                       // di disk 'public'
+                // Storage::disk('public')->makeDirectory($baseDir);       // idempotent
 
-                $paths = [];
-                $filesInput = $request->file('attachment', []);
+                // $paths = [];
+                // $filesInput = $request->file('attachment', []);
 
-                $files = [];
-                if ($filesInput instanceof UploadedFile) {
-                    $files = [$filesInput];
-                } elseif (is_array($filesInput)) {
-                    $files = array_values(array_filter($filesInput, fn($f) => $f instanceof UploadedFile));
-                }
+                // $files = [];
+                // if ($filesInput instanceof UploadedFile) {
+                //     $files = [$filesInput];
+                // } elseif (is_array($filesInput)) {
+                //     $files = array_values(array_filter($filesInput, fn($f) => $f instanceof UploadedFile));
+                // }
 
                 // (Opsional tapi disarankan) Validasi TOTAL 10MB (kept + new)
-                $totalBytesKept = array_sum(array_map(function ($webPath) {
-                    $diskPath = Str::after($webPath, 'storage/');
-                    return Storage::disk('public')->exists($diskPath) ? Storage::disk('public')->size($diskPath) : 0;
-                }, $kept));
-                $totalBytesNew = array_sum(array_map(fn(UploadedFile $f) => $f->getSize(), $files));
-                if (($totalBytesKept + $totalBytesNew) > 10 * 1024 * 1024) {
-                    return back()->withErrors(['attachment' => 'Total file size exceeds 10MB.'])->withInput();
-                }
+                // $totalBytesKept = array_sum(array_map(function ($webPath) {
+                //     $diskPath = Str::after($webPath, 'storage/');
+                //     return Storage::disk('public')->exists($diskPath) ? Storage::disk('public')->size($diskPath) : 0;
+                // }, $kept));
+                // $totalBytesNew = array_sum(array_map(fn(UploadedFile $f) => $f->getSize(), $files));
+                // if (($totalBytesKept + $totalBytesNew) > 10 * 1024 * 1024) {
+                //     return back()->withErrors(['attachment' => 'Total file size exceeds 10MB.'])->withInput();
+                // }
 
-                $startIdx = count($kept);
-                foreach ($files as $i => $file) {
-                    if (!($file instanceof UploadedFile)) continue;
-                    $origName = $file->getClientOriginalName();
-                    $baseName = pathinfo($origName, PATHINFO_FILENAME);
-                    $clean = preg_replace('/[^\pL0-9 _.-]+/u', '', $baseName); // buang char aneh
-                    $clean = trim(preg_replace('/\s+/', ' ', $clean));         // rapikan spasi
-                    $clean = str_replace(' ', '_', mb_substr($clean, 0, 80));  // ganti spasi -> underscore
-                    $ext      = strtolower($file->getClientOriginalExtension() ?: $file->extension());
-                    $seq = str_pad($startIdx + $i + 1, 2, '0', STR_PAD_LEFT);
-                    $safeExt  = $ext ?: 'bin';
-                    $filename = "{$clean}_{$period}_{$timestamp}_{$seq}.{$safeExt}";
+                // $startIdx = count($kept);
+                // foreach ($files as $i => $file) {
+                //     if (!($file instanceof UploadedFile)) continue;
+                //     $origName = $file->getClientOriginalName();
+                //     $baseName = pathinfo($origName, PATHINFO_FILENAME);
+                //     $clean = preg_replace('/[^\pL0-9 _.-]+/u', '', $baseName); // buang char aneh
+                //     $clean = trim(preg_replace('/\s+/', ' ', $clean));         // rapikan spasi
+                //     $clean = str_replace(' ', '_', mb_substr($clean, 0, 80));  // ganti spasi -> underscore
+                //     $ext      = strtolower($file->getClientOriginalExtension() ?: $file->extension());
+                //     $seq = str_pad($startIdx + $i + 1, 2, '0', STR_PAD_LEFT);
+                //     $safeExt  = $ext ?: 'bin';
+                //     $filename = "{$clean}_{$period}_{$timestamp}_{$seq}.{$safeExt}";
 
-                    Storage::disk('public')->putFileAs($baseDir, $file, $filename);
+                //     Storage::disk('public')->putFileAs($baseDir, $file, $filename);
 
-                    // Simpan path web (akses via /storage)
-                    $paths[] = "storage/{$baseDir}/{$filename}";
-                }
+                //     // Simpan path web (akses via /storage)
+                //     $paths[] = "storage/{$baseDir}/{$filename}";
+                // }
 
-                $finalPaths = array_values(array_merge($kept, $paths));
+                // $finalPaths = array_values(array_merge($kept, $paths));
 
 
                 if ($submit_status === 'Approved') {
@@ -1358,7 +1359,7 @@ public function getTeamData(Request $request)
                             'form_data' => json_encode($datas),
                             'form_status' => $statusForm,
                             'updated_by' => $request->userid,
-                            'file' => empty($finalPaths) ? null : json_encode($finalPaths),
+                            // 'file' => empty($finalPaths) ? null : json_encode($finalPaths),
                         ]);
     
                         ApprovalRequest::where('form_id', $calibration->appraisal_id)
