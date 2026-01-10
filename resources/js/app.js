@@ -30,6 +30,10 @@ import 'datatables.net';
 import 'datatables.net-buttons';
 import 'jszip';
 import 'datatables.net-buttons/js/buttons.html5.js';
+// resources/js/app.js
+import 'daterangepicker/daterangepicker.css';
+import 'admin-resources/jquery.vectormap/jquery-jvectormap-1.2.2.css';
+
 
 import './plugins/perfect-scrollbar.min.js';
 

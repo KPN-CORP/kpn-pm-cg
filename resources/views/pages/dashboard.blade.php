@@ -1,10 +1,7 @@
 @extends('layouts_.vertical', ['page_title' => 'Dashboard', 'mode' => $mode ?? '', 'demo' => $demo ?? ''])
 
 @section('css')
-    @vite([
-        'node_modules/daterangepicker/daterangepicker.css',
-        'node_modules/admin-resources/jquery.vectormap/jquery-jvectormap-1.2.2.css'
-    ])
+    @vite(['resources/js/app.js'])
     <style>
         .kpi-card:hover { transform: translateY(-2px); transition: .2s; box-shadow: 0 6px 18px rgba(0,0,0,.06); }
         .avatar { width:40px; height:40px; border-radius:50%; object-fit:cover; }

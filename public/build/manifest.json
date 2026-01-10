@@ -76,7 +76,7 @@
     "src": "resources/fonts/remixicon.woff2"
   },
   "resources/js/app.js": {
-    "file": "assets/app-G6HODPQk.js",
+    "file": "assets/app-DeIGTV19.js",
     "name": "app",
     "src": "resources/js/app.js",
     "isEntry": true,
@@ -84,7 +84,7 @@
       "_jquery-BT3bhPE2.js"
     ],
     "css": [
-      "assets/app-DVNhP-d0.css"
+      "assets/app-BU5vXRMx.css"
     ]
   },
   "resources/js/guide.js": {
