@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-    <title>403 | Access Denied</title>
+    <title>401 | Unauthorized</title>
 
     <!-- Google Font -->
     <link href="https://fonts.googleapis.com/css?family=Nunito:300,400,600,700,800&display=swap" rel="stylesheet">
@@ -43,12 +43,8 @@
                 <h1 class="h3 fw-bold mb-3">Access Denied</h1>
 
                 <p class="text-muted mb-4">
-                    The page you are looking for seems to be off limits.
+                    You are not authorized to view this page.
                 </p>
-
-                <a href="{{ url('/') }}" class="btn btn-primary px-4">
-                    Return to Home
-                </a>
             </div>
         </div>
     </main>

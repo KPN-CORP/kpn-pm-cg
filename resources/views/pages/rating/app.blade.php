@@ -117,7 +117,23 @@
                                         <div class="col-md text-end order-1 order-md-2 mb-2">
                                             {{-- {{ $calibratorCount .' '. $ratingDone .' '. $requestApproved}} --}}
                                             <a class="btn btn-outline-info m-1 {{(( !$calibratorCount && !$ratingDone ) || $requestApproved == $ratingDone) ? '' : 'd-none' }}" data-bs-toggle="modal" data-bs-id="{{ $level }}" data-bs-target="#importModal{{ $level }}" title="Import Rating"><i class="ri-upload-cloud-2-line d-md-none"></i><span class="d-none d-md-block">Upload Rating</span></a>
-                                            <a href="{{ route('rating.export', $level) }}" class="btn btn-outline-success m-1"><i class="ri-download-cloud-2-line d-md-none "></i><span class="d-none d-md-block">Download Rating</span></a>
+                                            @if (request()->route('id'))
+                                                <form action="{{ route('rating.exportonbehalf') }}"
+                                                    method="POST"
+                                                    class="d-inline">
+                                                    @csrf
+
+                                                    <input type="hidden" name="level" value="{{ $level }}">
+                                                    <input type="hidden" name="user" value="{{ request()->route('id') }}">
+
+                                                    <button type="submit" class="btn btn-outline-success m-1">
+                                                        <i class="ri-user-shared-line d-md-none"></i>
+                                                        <span class="d-none d-md-block">Download Rating</span>
+                                                    </button>
+                                                </form>
+                                            @else
+                                                <a href="{{ route('rating.export', $level) }}" class="btn btn-outline-success m-1"><i class="ri-download-cloud-2-line d-md-none "></i><span class="d-none d-md-block">Download Rating</span></a>
+                                            @endif
                                             <button class="btn btn-primary m-1 {{ $ratingDone ? '' : 'd-none' }}" data-id="{{ $level }}">Submit Rating</button>
                                         </div>
                                     </div>
@@ -290,7 +306,7 @@
                                                     <!-- Hidden field to pass rating quotas data -->
                                                     <input type="hidden" name="ratingCounts" value="{{ $data['count'] }}">
                                                     <input type="hidden" name="ratingQuotas" value="{{ json_encode($data['combined']) }}">
-                                                    
+                                                    <input type="hidden" name="user" value="{{ request()->route('id') }}">
                                                 </div>
                                                 <!-- Submit button inside the form -->
                                                 <div class="modal-footer">

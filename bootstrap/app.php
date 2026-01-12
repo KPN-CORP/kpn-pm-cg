@@ -20,6 +20,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'locale' => \App\Http\Middleware\LanguageSwitcher::class,
             'notification' => \App\Http\Middleware\NotificationMiddleware::class,
             'flow_access' => \App\Http\Middleware\FlowAccessMiddleware::class,
+            'restrict_bu' => \App\Http\Middleware\RestrictBusinessUnitMiddleware::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions) {
