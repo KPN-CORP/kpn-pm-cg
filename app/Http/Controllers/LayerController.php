@@ -294,19 +294,20 @@ class LayerController extends Controller
     public function show(Request $request)
     {
         $employeeId = $request->input('employee_id');
- 
+
+        // =========================
+        // 1. Ambil layer data (DB utama)
+        // =========================
         $approvalLayers1 = DB::table('approval_layer_backups as al')
             ->select(
                 'al.employee_id',
                 'al.updated_by',
                 'al.updated_at',
-                'usr.name as updated_by_name',
                 DB::raw("GROUP_CONCAT(al.layer ORDER BY al.layer ASC SEPARATOR '|') AS layers"),
                 DB::raw("GROUP_CONCAT(al.approver_id ORDER BY al.layer ASC SEPARATOR '|') AS approver_ids")
             )
-            ->leftJoin('users as usr', 'usr.id', '=', 'al.updated_by')
             ->where('al.employee_id', $employeeId)
-            ->groupBy('al.employee_id', 'al.updated_by', 'al.updated_at', 'usr.name')
+            ->groupBy('al.employee_id', 'al.updated_by', 'al.updated_at')
             ->orderBy('al.updated_at', 'desc')
             ->get();
 
@@ -315,51 +316,76 @@ class LayerController extends Controller
                 'al.employee_id',
                 'al.updated_by',
                 'al.updated_at',
-                'usr.name as updated_by_name',
                 DB::raw("GROUP_CONCAT(al.layer ORDER BY al.layer ASC SEPARATOR '|') AS layers"),
                 DB::raw("GROUP_CONCAT(al.approver_id ORDER BY al.layer ASC SEPARATOR '|') AS approver_ids")
             )
-            ->leftJoin('users as usr', 'usr.id', '=', 'al.updated_by')
             ->where('al.employee_id', $employeeId)
-            ->groupBy('al.employee_id', 'al.updated_by', 'al.updated_at', 'usr.name')
+            ->groupBy('al.employee_id', 'al.updated_by', 'al.updated_at')
             ->orderBy('al.updated_at', 'desc')
             ->get();
 
         $approvalLayers = $approvalLayers2->merge($approvalLayers1);
 
+        // =========================
+        // 2. Kumpulkan semua employee_id & approver_id
+        // =========================
         $employeeIds = $approvalLayers
-        ->pluck('employee_id')
-        ->merge(
-            $approvalLayers->pluck('approver_ids')
-                ->filter()
-                ->flatMap(fn ($ids) => explode('|', $ids))
-        )
-        ->unique()
-        ->values();
+            ->pluck('employee_id')
+            ->merge(
+                $approvalLayers->pluck('approver_ids')
+                    ->filter()
+                    ->flatMap(fn ($ids) => explode('|', $ids))
+            )
+            ->unique()
+            ->values();
 
+        // =========================
+        // 3. Ambil EMPLOYEES dari kpncorp
+        // =========================
         $employees = DB::connection('kpncorp')
-        ->table('employees')
-        ->whereIn('employee_id', $employeeIds)
-        ->get()
-        ->keyBy('employee_id');
+            ->table('employees')
+            ->whereIn('employee_id', $employeeIds)
+            ->get()
+            ->keyBy('employee_id');
 
-        $approvalLayers = $approvalLayers->map(function ($item) use ($employees) {
+        // =========================
+        // 4. Ambil USERS (updated_by) dari kpncorp
+        // =========================
+        $userIds = $approvalLayers
+            ->pluck('updated_by')
+            ->filter()
+            ->unique()
+            ->values();
+
+        $users = DB::connection('kpncorp')
+            ->table('users')
+            ->whereIn('id', $userIds)
+            ->get()
+            ->keyBy('id');
+
+        // =========================
+        // 5. Mapping hasil akhir
+        // =========================
+        $approvalLayers = $approvalLayers->map(function ($item) use ($employees, $users) {
 
             // Employee utama
             $item->fullname = $employees[$item->employee_id]->fullname ?? '-';
 
             // Approver names
-            $approverIds = explode('|', $item->approver_ids);
+            $approverIds = explode('|', $item->approver_ids ?? '');
             $item->approver_names = collect($approverIds)
                 ->map(fn ($id) => $employees[$id]->fullname ?? '-')
                 ->implode('|');
 
+            // Updated by name (USER)
+            $item->updated_by_name = $users[$item->updated_by]->name ?? '-';
+
             return $item;
         });
 
-
         return response()->json($approvalLayers);
     }
+
 
     function layerAppraisal() {
 
