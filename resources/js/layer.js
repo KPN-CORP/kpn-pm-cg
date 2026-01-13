@@ -58,7 +58,7 @@ function viewHistory(employeeId) {
                 <td>
                     ${item.layers.split('|').map((layer, i) => `L${layer}: ${item.approver_names.split('|')[i]}`).join('<br>')}
                 </td>
-                <td>${item.name}</td>
+                <td>${item.updated_by_name ?? 'system'}</td>
                 <td>${item.updated_at}</td>
             `;
             tableBody.appendChild(row);

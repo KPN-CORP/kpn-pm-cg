@@ -73,28 +73,81 @@ class LayerController extends Controller
             }
         }
         
-        $employeeTable = DB::connection('kpncorp')->getDatabaseName() . '.employees';
+        // $approvalLayers = DB::table('approval_layers as al')
+        // ->select('al.employee_id', 'emp.fullname', 'emp.job_level', 'emp.contribution_level_code', 'emp.group_company', 'emp.office_area')
+        // ->selectRaw("GROUP_CONCAT(al.layer ORDER BY al.layer ASC SEPARATOR '|') AS layers")
+        // ->selectRaw("GROUP_CONCAT(al.approver_id ORDER BY al.layer ASC SEPARATOR '|') AS approver_ids")
+        // ->selectRaw("GROUP_CONCAT(emp1.fullname ORDER BY al.layer ASC SEPARATOR '|') AS approver_names")
+        // ->selectRaw("GROUP_CONCAT(emp1.job_level ORDER BY al.layer ASC SEPARATOR '|') AS approver_job_levels")
+        // ->leftJoin('employees as emp', 'emp.employee_id', '=', 'al.employee_id')
+        // ->leftJoin('employees as emp1', 'emp1.employee_id', '=', 'al.approver_id')
+        // ->whereNull('emp.deleted_at') // Add condition to check if deleted_at is null
+        // ->groupBy('al.employee_id', 'emp.fullname', 'emp.job_level', 'emp.contribution_level_code', 'emp.group_company', 'emp.office_area')
+        // ->orderBy('emp.fullname')
+        // ->when(!empty($criteria), function ($query) use ($criteria) {
+        //     $query->where(function ($query) use ($criteria) {
+        //     foreach ($criteria as $key => $values) {
+        //         if (!empty($values)) {
+        //         $query->whereIn("emp.$key", $values);
+        //         }
+        //     }
+        //     });
+        // })
+        // ->get();
+
         $approvalLayers = DB::table('approval_layers as al')
-        ->select('al.employee_id', 'emp.fullname', 'emp.job_level', 'emp.contribution_level_code', 'emp.group_company', 'emp.office_area')
-        ->selectRaw("GROUP_CONCAT(al.layer ORDER BY al.layer ASC SEPARATOR '|') AS layers")
-        ->selectRaw("GROUP_CONCAT(al.approver_id ORDER BY al.layer ASC SEPARATOR '|') AS approver_ids")
-        ->selectRaw("GROUP_CONCAT(emp1.fullname ORDER BY al.layer ASC SEPARATOR '|') AS approver_names")
-        ->selectRaw("GROUP_CONCAT(emp1.job_level ORDER BY al.layer ASC SEPARATOR '|') AS approver_job_levels")
-        ->leftJoin($employeeTable . ' as emp', 'emp.employee_id', '=', 'al.employee_id')
-        ->leftJoin($employeeTable . ' as emp1', 'emp1.employee_id', '=', 'al.approver_id')
-        ->whereNull('emp.deleted_at') // Add condition to check if deleted_at is null
-        ->groupBy('al.employee_id', 'emp.fullname', 'emp.job_level', 'emp.contribution_level_code', 'emp.group_company', 'emp.office_area')
-        ->orderBy('emp.fullname')
-        ->when(!empty($criteria), function ($query) use ($criteria) {
-            $query->where(function ($query) use ($criteria) {
-            foreach ($criteria as $key => $values) {
-                if (!empty($values)) {
-                $query->whereIn("emp.$key", $values);
+            ->select(
+                'al.employee_id',
+                DB::raw("GROUP_CONCAT(al.layer ORDER BY al.layer ASC SEPARATOR '|') AS layers"),
+                DB::raw("GROUP_CONCAT(al.approver_id ORDER BY al.layer ASC SEPARATOR '|') AS approver_ids")
+            )
+            ->groupBy('al.employee_id')
+            ->get();
+        $employeeIds = collect();
+
+        foreach ($approvalLayers as $row) {
+            $employeeIds->push($row->employee_id);
+
+            if ($row->approver_ids) {
+                $employeeIds = $employeeIds->merge(explode('|', $row->approver_ids));
+            }
+        }
+
+        $employeeIds = $employeeIds->unique()->values();
+
+        $employees = Employee::on('kpncorp')
+            ->whereIn('employee_id', $employeeIds)
+            ->whereNull('deleted_at')
+            ->get()
+            ->keyBy('employee_id');
+        $approvalLayers->transform(function ($item) use ($employees) {
+
+            $approverNames = [];
+            $approverJobLevels = [];
+
+            if ($item->approver_ids) {
+                foreach (explode('|', $item->approver_ids) as $approverId) {
+                    $emp = $employees->get($approverId);
+
+                    $approverNames[] = $emp->fullname ?? '-';
+                    $approverJobLevels[] = $emp->job_level ?? '-';
                 }
             }
-            });
-        })
-        ->get();
+
+            $emp = $employees->get($item->employee_id);
+
+            $item->fullname = $emp->fullname ?? '-';
+            $item->job_level = $emp->job_level ?? '-';
+            $item->contribution_level_code = $emp->contribution_level_code ?? '-';
+            $item->group_company = $emp->group_company ?? '-';
+            $item->office_area = $emp->office_area ?? '-';
+
+            // 🔥 FIELD YANG SEBELUMNYA DARI SQL
+            $item->approver_names = implode('|', $approverNames);
+            $item->approver_job_levels = implode('|', $approverJobLevels);
+
+            return $item;
+        });
 
         $employees = Employee::select('employee_id', 'fullname')
         ->whereNotIn('job_level', ['2A', '2B', '2C', '2D', '3A', '3B','4A'])
@@ -241,36 +294,69 @@ class LayerController extends Controller
     public function show(Request $request)
     {
         $employeeId = $request->input('employee_id');
-        $employeeTable = DB::connection('kpncorp')->getDatabaseName() . '.employees';
+ 
         $approvalLayers1 = DB::table('approval_layer_backups as al')
-        ->select('al.employee_id', 'emp.fullname', 'emp.job_level', 'emp.contribution_level_code', 'emp.group_company', 'emp.office_area', 'al.updated_by', 'al.updated_at', 'usr.name')
-        ->selectRaw("GROUP_CONCAT(al.layer ORDER BY al.layer ASC SEPARATOR '|') AS layers")
-        ->selectRaw("GROUP_CONCAT(al.approver_id ORDER BY al.layer ASC SEPARATOR '|') AS approver_ids")
-        ->selectRaw("GROUP_CONCAT(emp1.fullname ORDER BY al.layer ASC SEPARATOR '|') AS approver_names")
-        ->selectRaw("GROUP_CONCAT(emp1.job_level ORDER BY al.layer ASC SEPARATOR '|') AS approver_job_levels")
-        ->leftJoin($employeeTable . ' as emp', 'emp.employee_id', '=', 'al.employee_id')
-        ->leftJoin($employeeTable . ' as emp1', 'emp1.employee_id', '=', 'al.approver_id')
-        ->leftJoin('users as usr', 'usr.id', '=', 'al.updated_by')
-        ->groupBy('al.employee_id', 'emp.fullname', 'emp.job_level', 'emp.contribution_level_code', 'emp.group_company', 'emp.office_area', 'al.updated_by', 'al.updated_at', 'usr.name')
-        ->orderBy('al.updated_at', 'desc')
-        ->where('al.employee_id', $employeeId)
-        ->get();
+            ->select(
+                'al.employee_id',
+                'al.updated_by',
+                'al.updated_at',
+                'usr.name as updated_by_name',
+                DB::raw("GROUP_CONCAT(al.layer ORDER BY al.layer ASC SEPARATOR '|') AS layers"),
+                DB::raw("GROUP_CONCAT(al.approver_id ORDER BY al.layer ASC SEPARATOR '|') AS approver_ids")
+            )
+            ->leftJoin('users as usr', 'usr.id', '=', 'al.updated_by')
+            ->where('al.employee_id', $employeeId)
+            ->groupBy('al.employee_id', 'al.updated_by', 'al.updated_at', 'usr.name')
+            ->orderBy('al.updated_at', 'desc')
+            ->get();
 
         $approvalLayers2 = DB::table('approval_layers as al')
-        ->select('al.employee_id', 'emp.fullname', 'emp.job_level', 'emp.contribution_level_code', 'emp.group_company', 'emp.office_area', 'al.updated_by', 'al.updated_at', 'usr.name')
-        ->selectRaw("GROUP_CONCAT(al.layer ORDER BY al.layer ASC SEPARATOR '|') AS layers")
-        ->selectRaw("GROUP_CONCAT(al.approver_id ORDER BY al.layer ASC SEPARATOR '|') AS approver_ids")
-        ->selectRaw("GROUP_CONCAT(emp1.fullname ORDER BY al.layer ASC SEPARATOR '|') AS approver_names")
-        ->selectRaw("GROUP_CONCAT(emp1.job_level ORDER BY al.layer ASC SEPARATOR '|') AS approver_job_levels")
-        ->leftJoin($employeeTable . ' as emp', 'emp.employee_id', '=', 'al.employee_id')
-        ->leftJoin($employeeTable . ' as emp1', 'emp1.employee_id', '=', 'al.approver_id')
-        ->leftJoin('users as usr', 'usr.id', '=', 'al.updated_by')
-        ->groupBy('al.employee_id', 'emp.fullname', 'emp.job_level', 'emp.contribution_level_code', 'emp.group_company', 'emp.office_area', 'al.updated_by', 'al.updated_at', 'usr.name')
-        ->orderBy('al.updated_at', 'desc')
-        ->where('al.employee_id', $employeeId)
-        ->get();
+            ->select(
+                'al.employee_id',
+                'al.updated_by',
+                'al.updated_at',
+                'usr.name as updated_by_name',
+                DB::raw("GROUP_CONCAT(al.layer ORDER BY al.layer ASC SEPARATOR '|') AS layers"),
+                DB::raw("GROUP_CONCAT(al.approver_id ORDER BY al.layer ASC SEPARATOR '|') AS approver_ids")
+            )
+            ->leftJoin('users as usr', 'usr.id', '=', 'al.updated_by')
+            ->where('al.employee_id', $employeeId)
+            ->groupBy('al.employee_id', 'al.updated_by', 'al.updated_at', 'usr.name')
+            ->orderBy('al.updated_at', 'desc')
+            ->get();
 
         $approvalLayers = $approvalLayers2->merge($approvalLayers1);
+
+        $employeeIds = $approvalLayers
+        ->pluck('employee_id')
+        ->merge(
+            $approvalLayers->pluck('approver_ids')
+                ->filter()
+                ->flatMap(fn ($ids) => explode('|', $ids))
+        )
+        ->unique()
+        ->values();
+
+        $employees = DB::connection('kpncorp')
+        ->table('employees')
+        ->whereIn('employee_id', $employeeIds)
+        ->get()
+        ->keyBy('employee_id');
+
+        $approvalLayers = $approvalLayers->map(function ($item) use ($employees) {
+
+            // Employee utama
+            $item->fullname = $employees[$item->employee_id]->fullname ?? '-';
+
+            // Approver names
+            $approverIds = explode('|', $item->approver_ids);
+            $item->approver_names = collect($approverIds)
+                ->map(fn ($id) => $employees[$id]->fullname ?? '-')
+                ->implode('|');
+
+            return $item;
+        });
+
 
         return response()->json($approvalLayers);
     }
@@ -389,13 +475,13 @@ class LayerController extends Controller
         // Define validation rules
         $validator = Validator::make($request->all(), [
             'employee_id' => 'required|string',
-            'manager' => 'nullable|string|exists:kpncorp.employees,employee_id',
+            'manager' => 'nullable|string|exists:employees,employee_id',
             'peers' => 'nullable|array',
-            'peers.*' => 'nullable|string|exists:kpncorp.employees,employee_id', // Validate each peer ID
+            'peers.*' => 'nullable|string|exists:employees,employee_id', // Validate each peer ID
             'subs' => 'nullable|array',
-            'subs.*' => 'nullable|string|exists:kpncorp.employees,employee_id', // Validate each subordinate ID
+            'subs.*' => 'nullable|string|exists:employees,employee_id', // Validate each subordinate ID
             'calibrators' => 'nullable|array',
-            'calibrators.*' => 'nullable|string|exists:kpncorp.employees,employee_id', // Validate each calibrator ID
+            'calibrators.*' => 'nullable|string|exists:employees,employee_id', // Validate each calibrator ID
         ]);
 
         // Check if the validation fails
