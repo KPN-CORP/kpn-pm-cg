@@ -78,7 +78,7 @@ class ApprovalRequest extends Model
     }
     public function initiated()
     {
-        return $this->belongsTo(User::class, 'created_by', 'id')->select(['id', 'employee_id', 'name']);
+        return $this->belongsTo(User::class, 'created_by', 'id');
     }
     public function updatedBy()
     {

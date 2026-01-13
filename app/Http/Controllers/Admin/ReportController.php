@@ -126,6 +126,7 @@ class ReportController extends Controller
         ]);
     }
     
+    // public function getReportContent($reportType)
     public function getReportContent(Request $request)
     {
         $user = Auth::user();
@@ -135,6 +136,11 @@ class ReportController extends Controller
         $group_company = $request->input('group_company', []);
         $location = $request->input('location', []);
         $company = $request->input('company', []);
+        // $report_type = $reportType;
+        // $period = '2025';
+        // $group_company = [];
+        // $location = [];
+        // $company = [];
         $permissionLocations = $this->permissionLocations;
         $permissionCompanies = $this->permissionCompanies;
         $permissionGroupCompanies = $this->permissionGroupCompanies;
@@ -143,7 +149,7 @@ class ReportController extends Controller
 
         // Start building the query
         if ($report_type === 'Goal') {
-            $query = ApprovalRequest::with(['employee', 'manager', 'goal', 'initiated'])->where('category', $this->category)->whereHas('employee')->whereHas('manager')->whereHas('initiated');
+            $query = ApprovalRequest::with(['initiated:id,employee_id,name','employee', 'manager', 'goal'])->where('category', $this->category)->whereHas('employee')->whereHas('manager');
 
             $criteria = [
                 'work_area_code' => $permissionLocations,
