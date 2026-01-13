@@ -361,7 +361,7 @@ Route::middleware('auth', 'locale', 'notification', 'restrict_bu')->group(functi
         Route::get('/download-template', [ImportKpiController::class, 'downloadTemplate'])->name('downloadTemplateImport');
         Route::get('/import-kpi-company', [KpiCompanyImportController::class, 'showImportForm'])->name('importkpicompany');
         Route::post('/import-kpi-company', [KpiCompanyImportController::class, 'import'])->name('importKpiCompany');
-        Route::post('/download-kpi-company', [KpiCompanyImportController::class, 'downloadExcel'])->name('downloadTemplateImportKPICompany');
+        Route::get('/download-kpi-company', [KpiCompanyImportController::class, 'downloadExcel'])->name('downloadTemplateImportKPICompany');
     });
 
     Route::middleware(['permission:reminderpa'])->group(function () {

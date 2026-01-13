@@ -73,14 +73,15 @@ class LayerController extends Controller
             }
         }
         
+        $employeeTable = DB::connection('kpncorp')->getDatabaseName() . '.employees';
         $approvalLayers = DB::table('approval_layers as al')
         ->select('al.employee_id', 'emp.fullname', 'emp.job_level', 'emp.contribution_level_code', 'emp.group_company', 'emp.office_area')
         ->selectRaw("GROUP_CONCAT(al.layer ORDER BY al.layer ASC SEPARATOR '|') AS layers")
         ->selectRaw("GROUP_CONCAT(al.approver_id ORDER BY al.layer ASC SEPARATOR '|') AS approver_ids")
         ->selectRaw("GROUP_CONCAT(emp1.fullname ORDER BY al.layer ASC SEPARATOR '|') AS approver_names")
         ->selectRaw("GROUP_CONCAT(emp1.job_level ORDER BY al.layer ASC SEPARATOR '|') AS approver_job_levels")
-        ->leftJoin('employees as emp', 'emp.employee_id', '=', 'al.employee_id')
-        ->leftJoin('employees as emp1', 'emp1.employee_id', '=', 'al.approver_id')
+        ->leftJoin($employeeTable . ' as emp', 'emp.employee_id', '=', 'al.employee_id')
+        ->leftJoin($employeeTable . ' as emp1', 'emp1.employee_id', '=', 'al.approver_id')
         ->whereNull('emp.deleted_at') // Add condition to check if deleted_at is null
         ->groupBy('al.employee_id', 'emp.fullname', 'emp.job_level', 'emp.contribution_level_code', 'emp.group_company', 'emp.office_area')
         ->orderBy('emp.fullname')
@@ -240,15 +241,15 @@ class LayerController extends Controller
     public function show(Request $request)
     {
         $employeeId = $request->input('employee_id');
-        
+        $employeeTable = DB::connection('kpncorp')->getDatabaseName() . '.employees';
         $approvalLayers1 = DB::table('approval_layer_backups as al')
         ->select('al.employee_id', 'emp.fullname', 'emp.job_level', 'emp.contribution_level_code', 'emp.group_company', 'emp.office_area', 'al.updated_by', 'al.updated_at', 'usr.name')
         ->selectRaw("GROUP_CONCAT(al.layer ORDER BY al.layer ASC SEPARATOR '|') AS layers")
         ->selectRaw("GROUP_CONCAT(al.approver_id ORDER BY al.layer ASC SEPARATOR '|') AS approver_ids")
         ->selectRaw("GROUP_CONCAT(emp1.fullname ORDER BY al.layer ASC SEPARATOR '|') AS approver_names")
         ->selectRaw("GROUP_CONCAT(emp1.job_level ORDER BY al.layer ASC SEPARATOR '|') AS approver_job_levels")
-        ->leftJoin('employees as emp', 'emp.employee_id', '=', 'al.employee_id')
-        ->leftJoin('employees as emp1', 'emp1.employee_id', '=', 'al.approver_id')
+        ->leftJoin($employeeTable . ' as emp', 'emp.employee_id', '=', 'al.employee_id')
+        ->leftJoin($employeeTable . ' as emp1', 'emp1.employee_id', '=', 'al.approver_id')
         ->leftJoin('users as usr', 'usr.id', '=', 'al.updated_by')
         ->groupBy('al.employee_id', 'emp.fullname', 'emp.job_level', 'emp.contribution_level_code', 'emp.group_company', 'emp.office_area', 'al.updated_by', 'al.updated_at', 'usr.name')
         ->orderBy('al.updated_at', 'desc')
@@ -261,8 +262,8 @@ class LayerController extends Controller
         ->selectRaw("GROUP_CONCAT(al.approver_id ORDER BY al.layer ASC SEPARATOR '|') AS approver_ids")
         ->selectRaw("GROUP_CONCAT(emp1.fullname ORDER BY al.layer ASC SEPARATOR '|') AS approver_names")
         ->selectRaw("GROUP_CONCAT(emp1.job_level ORDER BY al.layer ASC SEPARATOR '|') AS approver_job_levels")
-        ->leftJoin('employees as emp', 'emp.employee_id', '=', 'al.employee_id')
-        ->leftJoin('employees as emp1', 'emp1.employee_id', '=', 'al.approver_id')
+        ->leftJoin($employeeTable . ' as emp', 'emp.employee_id', '=', 'al.employee_id')
+        ->leftJoin($employeeTable . ' as emp1', 'emp1.employee_id', '=', 'al.approver_id')
         ->leftJoin('users as usr', 'usr.id', '=', 'al.updated_by')
         ->groupBy('al.employee_id', 'emp.fullname', 'emp.job_level', 'emp.contribution_level_code', 'emp.group_company', 'emp.office_area', 'al.updated_by', 'al.updated_at', 'usr.name')
         ->orderBy('al.updated_at', 'desc')
