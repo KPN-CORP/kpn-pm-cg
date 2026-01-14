@@ -396,7 +396,7 @@ class MyAppraisalController extends Controller
 
 
             } else {
-                Session::flash('error', "Your Goal for $period are not found.");
+                Session::flash('error', "Your Goal for $period are not found. Please create your Goal first.");
                 return redirect()->route('appraisals');
             }
 
