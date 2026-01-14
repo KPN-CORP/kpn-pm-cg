@@ -54,7 +54,7 @@
                                         <input name="schedule_periode" id="schedule_periode" type="text" class="form-control" placeholder="-" readonly>
                                         <select id="schedule_periode_master" onchange="changePeriod()" class="form-select d-none" class="form-select">
                                             <option value="">-</option>
-                                            @for($year = now()->year; $year <= now()->year + 1; $year++)
+                                            @for($year = now()->year - 1; $year <= now()->year + 1; $year++)
                                                 <option value="{{ $year }}">{{ $year }}</option>
                                             @endfor
                                         </select>
