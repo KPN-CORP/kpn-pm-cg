@@ -139,7 +139,7 @@ class OnBehalfController extends Controller
             // Mengambil data pengajuan berdasarkan employee_id atau manager_id
             $datas = ApprovalRequest::with(['employee', 'goal', 'updatedBy', 'initiated', 'approval' => function ($query) {
                 $query->with('approverName'); // Load nested relationship
-            }])->where('category', $filterCategory)->where('period', $period)->whereHas('employee')->whereHas('manager');
+            }])->where('category', $filterCategory)->where('period', $period)->whereHas('employee')->whereHas('manager')->whereHas('goal');
             
             $criteria = [
                 'work_area_code' => $permissionLocations,

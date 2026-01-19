@@ -46,7 +46,7 @@ class KpiCompanyImportController extends Controller
         
         // Pastikan file terupload
         if ($request->hasFile('file')) {
-            $filePath = $request->file('file')->store('uploads');
+            $filePath = $request->file('file')->store('public/uploads');
             Log::info("KPI Company Achievement file uploaded: " . $filePath);
         } else {
             Log::error("KPI Company Achievement file upload failed.");
