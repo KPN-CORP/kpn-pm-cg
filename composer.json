@@ -27,7 +27,7 @@
         "spatie/laravel-permission": "^6.7",
         "ttskch/select2-bootstrap4-theme": "^1.5",
         "tymon/jwt-auth": "*",
-        "yajra/laravel-datatables": "^11.0"
+        "yajra/laravel-datatables": "*"
     },
     "require-dev": {
         "fakerphp/faker": "^1.23",

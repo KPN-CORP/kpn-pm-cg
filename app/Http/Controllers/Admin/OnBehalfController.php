@@ -129,6 +129,8 @@ class OnBehalfController extends Controller
         $link = 'On Behalf';
 
         $data = [];
+
+        ini_set('memory_limit', '512M');
         
         if ($filterCategory == 'Goals') {
 

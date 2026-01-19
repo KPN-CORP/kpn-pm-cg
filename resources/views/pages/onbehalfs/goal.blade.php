@@ -36,7 +36,7 @@
                       <td class="text-center">
                         <a href="javascript:void(0)" data-bs-id="{{ $row->employee_id }}" data-bs-toggle="popover" data-bs-trigger="hover focus" data-bs-content="{{ $row->approvalLayer ? 'Manager L'.$row->approvalLayer.' : '.$row->name : $row->name }}" class="badge py-1 px-2 rounded-pill {{ $row->goal->form_status == 'Draft' || $row->status == 'Sendback' ? 'bg-secondary' : ($row->status === 'Approved' ? 'bg-success' : 'bg-warning')}} ">{{ $row->goal->form_status == 'Draft' ? 'Draft': ($row->status == 'Pending' ? __('Pending') : ($row->status == 'Sendback' ? 'Waiting For Revision' : $row->status)) }}</a></td>
                       <td class="text-center">{{ $row->formatted_created_at }}</td>
-                      <td>{{ $row->initiated->name ? $row->initiated->name .' ('. $row->initiated->employee_id .')'  : '-' }}</td>
+                      <td>{{ $row->initiated ? $row->initiated->name .' ('. $row->initiated->employee_id .')'  : '-' }}</td>
                       <td class="text-center">{{ $row->formatted_updated_at }}</td>
                       <td>{{ $row->updatedBy ? $row->updatedBy->name.' ('.$row->updatedBy->employee_id.')' : '-' }}</td>
                       @if ($data)
