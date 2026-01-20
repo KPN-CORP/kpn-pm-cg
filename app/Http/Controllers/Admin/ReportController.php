@@ -149,7 +149,7 @@ class ReportController extends Controller
 
         // Start building the query
         if ($report_type === 'Goal') {
-            $query = ApprovalRequest::with(['initiated:id,employee_id,name','employee', 'manager', 'goal'])->where('category', $this->category)->whereHas('employee')->whereHas('manager');
+            $query = ApprovalRequest::with(['initiated:id,employee_id,name','employee', 'manager', 'goal'])->where('category', $this->category)->whereHas('employee')->whereHas('goal');
 
             $criteria = [
                 'work_area_code' => $permissionLocations,
