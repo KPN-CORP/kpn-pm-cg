@@ -172,7 +172,7 @@ class ClusteringKPIImport implements
                 // soft delete approval_requests terkait
                 DB::table('approval_requests')
                     ->whereIn('form_id', $goalIds)
-                    ->where('form_type', 'goals') // kalau ada kolom ini (recommended)
+                    ->where('category', 'Goals') // kalau ada kolom ini (recommended)
                     ->update(['deleted_at' => now()]);
 
 
