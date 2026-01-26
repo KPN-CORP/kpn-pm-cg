@@ -157,11 +157,24 @@ class ClusteringKPIImport implements
 
                 $formId = (string) Str::uuid();
 
-                DB::table('goals')
+                $goalIds = DB::table('goals')
                     ->where('employee_id', $employeeId)
                     ->where('category', $data['category'])
                     ->where('period', $data['period'])
+                    ->whereNull('deleted_at')
+                    ->pluck('id');
+
+                // soft delete goals
+                DB::table('goals')
+                    ->whereIn('id', $goalIds)
                     ->update(['deleted_at' => now()]);
+
+                // soft delete approval_requests terkait
+                DB::table('approval_requests')
+                    ->whereIn('form_id', $goalIds)
+                    ->where('form_type', 'goals') // kalau ada kolom ini (recommended)
+                    ->update(['deleted_at' => now()]);
+
 
                 DB::table('goals')->insert([
                     'id' => $formId,
