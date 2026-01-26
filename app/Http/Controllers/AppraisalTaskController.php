@@ -14,6 +14,7 @@ use App\Models\Calibration;
 use App\Models\Employee;
 use App\Models\EmployeeAppraisal;
 use App\Models\Goal;
+use App\Models\KpiCompany;
 use App\Models\KpiUnits;
 use App\Models\MasterCalibration;
 use App\Services\AppService;
@@ -384,6 +385,39 @@ public function getTeamData(Request $request)
         
         if ($goal) {
             $goalData = json_decode($goal->form_data, true);
+
+            // ambil KPI company
+            $kpiCompanies = KpiCompany::where('employee_id', $id)
+                ->where('period', $period)
+                ->first();
+
+            if (
+                empty($kpiCompanies) ||
+                empty($kpiCompanies->form_data)
+            ) {
+                // KPI tidak ada → actual = null
+                foreach ($goalData as &$goalItem) {
+                    $goalItem['actual'] = null;
+                }
+                unset($goalItem);
+            } else {
+
+                $kpiData = is_string($kpiCompanies->form_data)
+                    ? json_decode($kpiCompanies->form_data, true)
+                    : $kpiCompanies->form_data;
+
+                if (!is_array($kpiData)) {
+                    foreach ($goalData as &$goalItem) {
+                        $goalItem['actual'] = null;
+                    }
+                    unset($goalItem);
+                } else {
+                    foreach ($goalData as $index => &$goalItem) {
+                        $goalItem['actual'] = $kpiData[$index]['achievement'] ?? null;
+                    }
+                    unset($goalItem);
+                }
+            }
         } else {
             Session::flash('error', "Goal for $period are not found.");
             return redirect()->back();
