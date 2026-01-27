@@ -413,7 +413,7 @@ class AppService
         $scores = [$totalKpiScore,$cultureAverageScore,$leadershipAverageScore,$technicalAverageScore,$sigapAverageScore];
         // get KPI Final Score
 
-        $appraisalDatas['totalScore'] =   $appraisalDatas['kpiScore'] + $appraisalDatas['cultureScore'] + $appraisalDatas['leadershipScore'] + $appraisalDatas['technicalScore'] + $appraisalDatas['sigapScore']; // Update
+        $appraisalDatas['totalScore'] =   $totalKpiScore + $appraisalDatas['cultureScore'] + $appraisalDatas['leadershipScore'] + $appraisalDatas['technicalScore'] + $appraisalDatas['sigapScore']; // Update
 
         $appraisalDatas['contributorRating'] = $appraisalDatas['totalScore']; // old
 
@@ -651,7 +651,7 @@ class AppService
         $scores = [$totalKpiScore,$cultureAverageScore,$leadershipAverageScore,$totalTechnicalScore,$totalSigapScore];
         // get KPI Final Score
 
-        $appraisalDatas['totalScore'] =  round($appraisalDatas['kpiScore'] + $appraisalDatas['cultureScore'] + $appraisalDatas['leadershipScore'] + $appraisalDatas['technicalScore'] + $appraisalDatas['sigapScore'], 2); // Update
+        $appraisalDatas['totalScore'] =  round($totalKpiScore + $appraisalDatas['cultureScore'] + $appraisalDatas['leadershipScore'] + $appraisalDatas['technicalScore'] + $appraisalDatas['sigapScore'], 2); // Update
 
         $appraisalDatas['contributorRating'] = $appraisalDatas['totalScore'];
     
