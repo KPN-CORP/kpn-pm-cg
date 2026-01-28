@@ -418,7 +418,7 @@ class AppService
             : $totalKpiScore;
 
         // job level adjustment
-        if (in_array($appraisalDatas['jobLevel'], ['1A', '2A', '2B', '2C', '2D', '3A', '3B'])) {
+        if (in_array($jobLevel, ['1A', '2A', '2B', '2C', '2D', '3A', '3B'])) {
             $kpiUsedScore = $kpiUsedScore * 0.9;
         }
 
@@ -671,7 +671,7 @@ class AppService
             : $totalKpiScore;
 
         // job level adjustment
-        if (in_array($appraisalDatas['jobLevel'], ['1A', '2A', '2B', '2C', '2D', '3A', '3B'])) {
+        if (in_array($jobLevel, ['1A', '2A', '2B', '2C', '2D', '3A', '3B'])) {
             $kpiUsedScore = $kpiUsedScore * 0.9;
         }
 
