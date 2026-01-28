@@ -413,7 +413,22 @@ class AppService
         $scores = [$totalKpiScore,$cultureAverageScore,$leadershipAverageScore,$technicalAverageScore,$sigapAverageScore];
         // get KPI Final Score
 
-        $appraisalDatas['totalScore'] =   $totalKpiScore + $appraisalDatas['cultureScore'] + $appraisalDatas['leadershipScore'] + $appraisalDatas['technicalScore'] + $appraisalDatas['sigapScore']; // Update
+        $kpiUsedScore = ($appraisalDatas['sigapScore'] == 0)
+            ? $appraisalDatas['kpiScore']
+            : $totalKpiScore;
+
+        // job level adjustment
+        if (in_array($appraisalDatas['jobLevel'], ['1A', '2A', '2B', '2C', '2D', '3A', '3B'])) {
+            $kpiUsedScore = $kpiUsedScore * 0.9;
+        }
+
+        $appraisalDatas['totalScore'] =
+            $kpiUsedScore
+            + $appraisalDatas['cultureScore']
+            + $appraisalDatas['leadershipScore']
+            + $appraisalDatas['technicalScore']
+            + $appraisalDatas['sigapScore'];
+
 
         $appraisalDatas['contributorRating'] = $appraisalDatas['totalScore']; // old
 
@@ -651,7 +666,21 @@ class AppService
         $scores = [$totalKpiScore,$cultureAverageScore,$leadershipAverageScore,$totalTechnicalScore,$totalSigapScore];
         // get KPI Final Score
 
-        $appraisalDatas['totalScore'] =  round($totalKpiScore + $appraisalDatas['cultureScore'] + $appraisalDatas['leadershipScore'] + $appraisalDatas['technicalScore'] + $appraisalDatas['sigapScore'], 2); // Update
+        $kpiUsedScore = ($appraisalDatas['sigapScore'] == 0)
+            ? $appraisalDatas['kpiScore']
+            : $totalKpiScore;
+
+        // job level adjustment
+        if (in_array($appraisalDatas['jobLevel'], ['1A', '2A', '2B', '2C', '2D', '3A', '3B'])) {
+            $kpiUsedScore = $kpiUsedScore * 0.9;
+        }
+
+        $appraisalDatas['totalScore'] =
+            $kpiUsedScore
+            + $appraisalDatas['cultureScore']
+            + $appraisalDatas['leadershipScore']
+            + $appraisalDatas['technicalScore']
+            + $appraisalDatas['sigapScore'];
 
         $appraisalDatas['contributorRating'] = $appraisalDatas['totalScore'];
     
