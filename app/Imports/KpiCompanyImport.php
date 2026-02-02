@@ -71,18 +71,25 @@ class KpiCompanyImport implements ToCollection, WithHeadingRow, WithValidation
 
                 // Create KPI Company record
                 foreach ($this->kpiBuffer as $employeeId => $kpis) {
-                    KpiCompany::updateOrCreate(
-                        [
-                            'employee_id' => $employeeId,
-                            'period'      => $this->period,
-                        ],
-                        [
-                            'id'        => (string) Str::uuid(),
-                            'form_data' => json_encode($kpis),
-                        ]
-                    );
-                }
 
+                    $kpi = KpiCompany::where('employee_id', $employeeId)
+                        ->where('period', $this->period)
+                        ->first();
+
+                    if ($kpi) {
+                        // UPDATE
+                        $kpi->update([
+                            'form_data' => json_encode($kpis),
+                        ]);
+                    } else {
+                        $newKpiCompany = new KpiCompany();
+                        $newKpiCompany->employee_id = $employeeId;
+                        $newKpiCompany->period = $this->period;
+                        $newKpiCompany->form_data = json_encode($kpis);
+                        $newKpiCompany->save();
+                        // CREATE
+                    }
+                }
 
 
 

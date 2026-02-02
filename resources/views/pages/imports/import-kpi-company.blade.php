@@ -109,10 +109,34 @@
                                                         </tbody>
                                                     </table>
                                                 @else
-                                                    {{ $import->detail_error }}
+                                                    @if(is_array($import->detail_error))
+    <ul>
+        @foreach($import->detail_error as $err)
+            <li>
+                Row {{ $err['row'] ?? '-' }} |
+                NIK: {{ $err['employee_id'] ?? '-' }} |
+                {{ $err['message'] ?? 'Unknown error' }}
+            </li>
+        @endforeach
+    </ul>
+@else
+    <span>-</span>
+@endif
                                                 @endif
                                             @else
-                                                {{ $import->detail_error }}
+                                                                                            @if(is_array($import->detail_error))
+                                                <ul>
+                                                    @foreach($import->detail_error as $err)
+                                                        <li>
+                                                            Row {{ $err['row'] ?? '-' }} |
+                                                            NIK: {{ $err['employee_id'] ?? '-' }} |
+                                                            {{ $err['message'] ?? 'Unknown error' }}
+                                                        </li>
+                                                    @endforeach
+                                                </ul>
+                                            @else
+                                                <span>-</span>
+                                            @endif
                                             @endif
                                         </div>
                                       <div class="modal-footer">
