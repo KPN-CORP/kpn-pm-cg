@@ -166,6 +166,7 @@ class KpiCompanyImport implements ToCollection, WithHeadingRow, WithValidation
                             ]);
                         } else {
                             ApprovalSnapshots::create([
+                                'id'          => (string) Str::uuid(),
                                 'form_id'     => $appraisal->id,
                                 'created_by'  => $user->id,
                                 'employee_id' => $row['employee_id'],
