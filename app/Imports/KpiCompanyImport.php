@@ -35,6 +35,7 @@ class KpiCompanyImport implements ToCollection, WithHeadingRow, WithValidation
 
     public function collection(Collection $collection)
     {
+        // dd($collection);
         foreach ($collection as $index => $row) {
             try {
                 // Skip completely empty rows
@@ -83,6 +84,7 @@ class KpiCompanyImport implements ToCollection, WithHeadingRow, WithValidation
                         ]);
                     } else {
                         $newKpiCompany = new KpiCompany();
+                        $newKpiCompany->id = (string) Str::uuid();
                         $newKpiCompany->employee_id = $employeeId;
                         $newKpiCompany->period = $this->period;
                         $newKpiCompany->form_data = json_encode($kpis);
@@ -104,7 +106,7 @@ class KpiCompanyImport implements ToCollection, WithHeadingRow, WithValidation
                     $raw = $appraisal->form_data;
                     $wasEncrypted = false;
                     $decoded = json_decode($raw, true);
-
+                    
                     if (!is_array($decoded)) {
                         // try decrypt then decode
                         try {
@@ -130,25 +132,22 @@ class KpiCompanyImport implements ToCollection, WithHeadingRow, WithValidation
                         if (
                             !isset($decoded['formData'][0]) ||
                             $decoded['formData'][0]['formName'] !== 'KPI'
-                        ) {
-                            throw new \Exception('KPI form structure not found in appraisal.form_data');
+                            ) {
+                                throw new \Exception('KPI form structure not found in appraisal.form_data');
                         }
-
+                        // dd($decoded['formData'][ 0]);
+                        
                         // cari index KPI berikutnya yang achievement-nya null
                         foreach ($decoded['formData'][0] as $key => $item) {
+                
                             if ($key === 'formName') {
                                 continue;
                             }
 
-                            if (
-                                !isset($item['achievement']) ||
-                                $item['achievement'] === null
-                            ) {
-                                $decoded['formData'][0][$key]['achievement'] = $row['achievement'];
-                                break;
-                            }
+                            $decoded['formData'][0][$index]['achievement'] = $row['achievement'];
+                            break;
                         }
-
+                        
                         // save back, re-encrypt if it was encrypted originally
                         $newData = json_encode($decoded);
                         $appraisal->form_data = $wasEncrypted ? Crypt::encryptString($newData) : $newData;

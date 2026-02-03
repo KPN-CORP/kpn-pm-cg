@@ -96,7 +96,7 @@ class MyAppraisalController extends Controller
             }
 
             $datas = $datasQuery->get();
-            
+                        
             $formattedData = $datas->map(function($item) {
                 $item->formatted_created_at = $this->appService->formatDate($item->appraisal->created_at);
 
@@ -112,8 +112,8 @@ class MyAppraisalController extends Controller
                                                         ->value('layer');
                 }
                 return $item;
-            });            
-            
+            });
+                        
             $adjustByManager = $datas->first()->updatedBy ? 
                 ApprovalLayerAppraisal::where('approver_id', $datas->first()->updatedBy->employee_id)
                     ->where('employee_id', $datas->first()->employee_id)
@@ -124,29 +124,27 @@ class MyAppraisalController extends Controller
             $data = [];
             foreach ($formattedData as $request) {
                 $formGroupData = $this->appService->formGroupAppraisal($user, 'Appraisal Form', $request->period);
-    
                 $cultureData = $this->getDataByName($formGroupData['data']['form_appraisals'], 'Culture') ?? [];
                 $leadershipData = $this->getDataByName($formGroupData['data']['form_appraisals'], 'Leadership') ?? [];
                 $technicalData = $this->getDataByName($formGroupData['data']['form_appraisals'], 'Technical') ?? [];
                 $sigapData = $this->getDataByName($formGroupData['data']['form_appraisals'], 'Sigap') ?? [];
-
+                
                 if ($request->appraisal->goal->form_status != 'Draft' || $request->created_by == Auth::user()->id) {
-
+                    
                     $goalData = $request ? json_decode($request->appraisal->goal->form_data, true) : [];
-            
+                    
                     $form_data = Auth::user()->id == $request->appraisal->created_by
-                        ? $request->appraisal->approvalSnapshots->form_data
-                        : $request->appraisal->form_data;
-
+                    ? $request->appraisal->approvalSnapshots->form_data
+                    : $request->appraisal->form_data;
+                    
                     $appraisalData = json_decode($form_data, true) ?? [];
-
                     
                     $groupedContributors = $request->contributor->groupBy('contributor_type');
                     
                     $employeeData = $request->employee;
-
+                    
                     $formData = $this->appService->combineFormData($appraisalData, $goalData, 'employee', $employeeData, $request->period);
-
+                    
                     if (isset($formData['totalKpiScore'])) {
                         $appraisalData['kpiScore'] = round($formData['totalKpiScore'], 2);
                         $appraisalData['cultureScore'] = round($formData['totalCultureScore'], 2);

@@ -501,13 +501,13 @@ class LayerController extends Controller
         // Define validation rules
         $validator = Validator::make($request->all(), [
             'employee_id' => 'required|string',
-            'manager' => 'nullable|string|exists:employees,employee_id',
+            'manager' => 'nullable|string|exists:kpncorp.employees,employee_id',
             'peers' => 'nullable|array',
-            'peers.*' => 'nullable|string|exists:employees,employee_id', // Validate each peer ID
+            'peers.*' => 'nullable|string|exists:kpncorp.employees,employee_id', // Validate each peer ID
             'subs' => 'nullable|array',
-            'subs.*' => 'nullable|string|exists:employees,employee_id', // Validate each subordinate ID
+            'subs.*' => 'nullable|string|exists:kpncorp.employees,employee_id', // Validate each subordinate ID
             'calibrators' => 'nullable|array',
-            'calibrators.*' => 'nullable|string|exists:employees,employee_id', // Validate each calibrator ID
+            'calibrators.*' => 'nullable|string|exists:kpncorp.employees,employee_id', // Validate each calibrator ID
         ]);
 
         // Check if the validation fails
