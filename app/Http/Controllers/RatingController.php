@@ -52,24 +52,24 @@ class RatingController extends Controller
             $filterYear = $request->input('filterYear');
 
             // Get the KPI unit and calibration percentage
-            // $kpiUnit = KpiUnits::with(['masterCalibration' => function($query) {
-            //     $query->where('period', $this->period);
-            // }])->where('employee_id', $user)->where('status_aktif', 'T')->where('periode', $this->period)->first();
+            $kpiUnit = KpiUnits::with(['masterCalibration' => function($query) {
+                $query->where('period', $this->period);
+            }])->where('employee_id', $user)->where('status_aktif', 'T')->where('periode', $this->period)->first();
 
-            // if (!$kpiUnit) {
-            //     Log::warning('KPI Unit not set for the user.', ['user' => $user]);
-            //     Session::flash('error', "Your KPI Unit not been set");
-            //     Session::flash('errorTitle', "Cannot Initiate Rating");
-            // }
+            if (!$kpiUnit) {
+                Log::warning('KPI Unit not set for the user.', ['user' => $user]);
+                Session::flash('error', "Your KPI Unit not been set");
+                Session::flash('errorTitle', "Cannot Initiate Rating");
+            }
 
-            // Log::info('Fetching KPI unit and calibration percentage.', ['user' => $user, 'period' => $period, 'kpiUnit' => $kpiUnit]);
+            Log::info('Fetching KPI unit and calibration percentage.', ['user' => $user, 'period' => $period, 'kpiUnit' => $kpiUnit]);
 
-            // $calibration = $kpiUnit->masterCalibration->percentage;
-            // $masterRating = MasterRating::select('id_rating_group', 'parameter', 'value', 'min_range', 'max_range')
-            //     ->where('id_rating_group', $kpiUnit->masterCalibration->id_rating_group)
-            //     ->get();
+            $calibration = $kpiUnit->masterCalibration->percentage;
+            $masterRating = MasterRating::select('id_rating_group', 'parameter', 'value', 'min_range', 'max_range')
+                ->where('id_rating_group', $kpiUnit->masterCalibration->id_rating_group)
+                ->get();
 
-            // Log::info('Fetched master ratings.', ['masterRatingCount' => $masterRating->count()]);
+            Log::info('Fetched master ratings.', ['masterRatingCount' => $masterRating->count()]);
 
             // Query for all ApprovalLayerAppraisal data
             $allData = ApprovalLayerAppraisal::with(['employee'])
@@ -283,7 +283,7 @@ class RatingController extends Controller
             Log::info('Processed all rating data.', ['ratingDatasCount' => $ratingDatas->count()]);
 
             // Get calibration results
-            $calibrations = $datas->map(function ($group) use ($user) {
+            $calibrations = $datas->map(function ($group) use ($calibration, $user) {
                 Log::info('Processing calibration results for group.', ['groupSize' => $group['with_requests']->count() + $group['without_requests']->count()]);
 
                 // $onCalibratorPending = $group['with_requests']->where('approver_id', $user)->where('status', 'Pending')->count();
@@ -296,74 +296,74 @@ class RatingController extends Controller
 
                 $ratingResults = [];
                 $percentageResults = [];
-                // $calibration = json_decode($calibration, true);
+                $calibration = json_decode($calibration, true);
 
                 // Step 1: Calculate initial rating results and percentage results
-                // foreach ($calibration as $key => $weight) {
-                //     $ratingResults[$key] = round($count * $weight);
-                //     $percentageResults[$key] = round(100 * $weight);
-                // }
+                foreach ($calibration as $key => $weight) {
+                    $ratingResults[$key] = round($count * $weight);
+                    $percentageResults[$key] = round(100 * $weight);
+                }
 
                 // Step 2: Check if the sum of $ratingResults matches $count
                 $totalRatingResults = array_sum($ratingResults);
                 $difference = abs($count - $totalRatingResults);
 
-                // if ($difference !== 0) {
-                //     if ($totalRatingResults < $count) {
-                //         // Normalize the calibration weights to redistribute the difference
-                //         $totalWeight = array_sum($calibration);
-                //         $normalizedWeights = array_map(fn($w) => $w / $totalWeight, $calibration);
+                if ($difference !== 0) {
+                    if ($totalRatingResults < $count) {
+                        // Normalize the calibration weights to redistribute the difference
+                        $totalWeight = array_sum($calibration);
+                        $normalizedWeights = array_map(fn($w) => $w / $totalWeight, $calibration);
 
-                //         // Redistribute the difference proportionally based on normalized weights
-                //         foreach ($normalizedWeights as $key => $normalizedWeight) {
-                //             $adjustment = floor($difference * $normalizedWeight);
-                //             $ratingResults[$key] += $adjustment;
-                //         }
+                        // Redistribute the difference proportionally based on normalized weights
+                        foreach ($normalizedWeights as $key => $normalizedWeight) {
+                            $adjustment = floor($difference * $normalizedWeight);
+                            $ratingResults[$key] += $adjustment;
+                        }
 
-                //         // Recalculate the total after redistribution to ensure it matches $count
-                //         $newTotal = array_sum($ratingResults);
-                //         if ($newTotal !== $count) {
-                //             // If there's still a small mismatch due to rounding, adjust the largest value
-                //             $maxWeightKey = array_keys($calibration, max($calibration))[0];
-                //             $ratingResults[$maxWeightKey] += ($count - $newTotal);
-                //         }
-                //     } elseif ($totalRatingResults > $count) {
-                //         // Allocate the $difference to the lowest $percentageResults that have $ratingResults value >= 1
-                //         while ($difference > 0) {
-                //             $lowestKey = collect($percentageResults)
-                //                 ->filter(fn($percentage, $key) => $ratingResults[$key] >= 1)
-                //                 ->sort()
-                //                 ->keys()
-                //                 ->first();
+                        // Recalculate the total after redistribution to ensure it matches $count
+                        $newTotal = array_sum($ratingResults);
+                        if ($newTotal !== $count) {
+                            // If there's still a small mismatch due to rounding, adjust the largest value
+                            $maxWeightKey = array_keys($calibration, max($calibration))[0];
+                            $ratingResults[$maxWeightKey] += ($count - $newTotal);
+                        }
+                    } elseif ($totalRatingResults > $count) {
+                        // Allocate the $difference to the lowest $percentageResults that have $ratingResults value >= 1
+                        while ($difference > 0) {
+                            $lowestKey = collect($percentageResults)
+                                ->filter(fn($percentage, $key) => $ratingResults[$key] >= 1)
+                                ->sort()
+                                ->keys()
+                                ->first();
 
-                //             if ($lowestKey !== null) {
-                //                 $ratingResults[$lowestKey] -= 1;
-                //                 $difference -= 1;
-                //             } else {
-                //                 break; // Exit if no valid key is found
-                //             }
-                //         }
-                //     }
-                // }
+                            if ($lowestKey !== null) {
+                                $ratingResults[$lowestKey] -= 1;
+                                $difference -= 1;
+                            } else {
+                                break; // Exit if no valid key is found
+                            }
+                        }
+                    }
+                }
 
                 // Step 3: Process suggested ratings and combine results
                 $suggestedRatingCounts = $group['with_requests']->pluck('suggested_rating')->countBy();
                 $totalSuggestedRatings = $suggestedRatingCounts->sum();
 
                 $combinedResults = [];
-                // foreach ($calibration as $key => $weight) {
-                //     $ratingCount = $suggestedRatingCounts->get($key, 0);
-                //     $ratingPercentage = $totalSuggestedRatings > 0
-                //         ? round(($ratingCount / $totalSuggestedRatings) * 100, 2)
-                //         : 0;
+                foreach ($calibration as $key => $weight) {
+                    $ratingCount = $suggestedRatingCounts->get($key, 0);
+                    $ratingPercentage = $totalSuggestedRatings > 0
+                        ? round(($ratingCount / $totalSuggestedRatings) * 100, 2)
+                        : 0;
 
-                //     $combinedResults[$key] = [
-                //         'percentage' => $percentageResults[$key] . '%',
-                //         'rating_count' => $ratingResults[$key],
-                //         'suggested_rating_count' => $ratingCount,
-                //         'suggested_rating_percentage' => $ratingPercentage . '%',
-                //     ];
-                // }
+                    $combinedResults[$key] = [
+                        'percentage' => $percentageResults[$key] . '%',
+                        'rating_count' => $ratingResults[$key],
+                        'suggested_rating_count' => $ratingCount,
+                        'suggested_rating_percentage' => $ratingPercentage . '%',
+                    ];
+                }
 
                 Log::info('Processed calibration results.', ['combinedResults' => $combinedResults]);
 
@@ -389,10 +389,9 @@ class RatingController extends Controller
 
             $parentLink = 'Calibration';
             $link = 'Rating';
-            // $id_calibration_group = $kpiUnit->masterCalibration->id_calibration_group;
-            $id_calibration_group = '';
+            $id_calibration_group = $kpiUnit->masterCalibration->id_calibration_group;
 
-            // Log::info('Returning view with data.', ['activeLevel' => $activeLevel, 'id_calibration_group' => $id_calibration_group]);
+            Log::info('Returning view with data.', ['activeLevel' => $activeLevel, 'id_calibration_group' => $id_calibration_group]);
 
             // dd($ratingDatas);
 
