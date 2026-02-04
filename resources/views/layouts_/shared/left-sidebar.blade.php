@@ -87,7 +87,7 @@
                         </ul>
                     </div>
                 </li>
-                @if($isCalibrator(Auth::user()->employee_id) && $userRatingAccess())
+                @if($isCalibrator(Auth::user()->employee_id))
                 <li class="side-nav-item">
                     <a href="{{ route('rating') }}" onclick="showLoader()" class="side-nav-link">
                         <i class="ri-star-line"></i>
