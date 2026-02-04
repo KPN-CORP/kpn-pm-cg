@@ -56,11 +56,11 @@ class RatingController extends Controller
                 $query->where('period', $this->period);
             }])->where('employee_id', $user)->where('status_aktif', 'T')->where('periode', $this->period)->first();
 
-            if (!$kpiUnit) {
-                Log::warning('KPI Unit not set for the user.', ['user' => $user]);
-                Session::flash('error', "Your KPI Unit not been set");
-                Session::flash('errorTitle', "Cannot Initiate Rating");
-            }
+            // if (!$kpiUnit) {
+            //     Log::warning('KPI Unit not set for the user.', ['user' => $user]);
+            //     Session::flash('error', "Your KPI Unit not been set");
+            //     Session::flash('errorTitle', "Cannot Initiate Rating");
+            // }
 
             Log::info('Fetching KPI unit and calibration percentage.', ['user' => $user, 'period' => $period, 'kpiUnit' => $kpiUnit]);
 
