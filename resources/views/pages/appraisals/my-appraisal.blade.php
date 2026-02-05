@@ -69,7 +69,7 @@
                     <div class="card">
                         <div class="card-header bg-white py-3 d-flex align-items-center justify-content-between">
                             <h4 class="m-0 font-weight-bold text-primary">Appraisal {{ $row->request->appraisal->period }}</h4>
-                            @if ($row->request->status == 'Pending' && count($row->request->approval) == 0 || $row->request->sendback_to == $row->request->employee_id)
+                            @if (($row->request->status == 'Pending' && count($row->request->approval) == 0 || $row->request->sendback_to == $row->request->employee_id) && $row->request->created_by == Auth::user()->id)
                                 <a class="btn btn-outline-warning fw-semibold rounded-pill"
                                     href="{{ route('edit.appraisal', $row->request->appraisal->id) }}">{{ __('Edit') }}</a>
                             @endif
