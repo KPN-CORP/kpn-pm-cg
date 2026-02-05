@@ -138,12 +138,27 @@ class KpiCompanyImport implements ToCollection, WithHeadingRow, WithValidation
                         // dd($decoded['formData'][ 0]);
                         
                         // cari index KPI berikutnya yang achievement-nya null
+                        // Prefer update by matching employee_id; otherwise fill first empty achievement
+                        $updated = false;
                         foreach ($decoded['formData'][0] as $key => $item) {
-                
-                            if (!is_numeric($key)) continue;
 
-                            $decoded['formData'][0][$index]['achievement'] = $row['achievement'];
-                            break;
+                            if ($key === 'formName') {
+                                continue;
+                            }
+
+                            // If the KPI item contains an employee_id and it matches, update it
+                            if (is_array($item) && isset($item['employee_id']) && (string)$item['employee_id'] === (string)$row['employee_id']) {
+                                $decoded['formData'][0][$key]['achievement'] = $row['achievement'];
+                                $updated = true;
+                                break;
+                            }
+
+                            // Otherwise, use the first KPI entry that has an empty/null achievement
+                            if (is_array($item) && (!isset($item['achievement']) || $item['achievement'] === null || $item['achievement'] === '')) {
+                                $decoded['formData'][0][$key]['achievement'] = $row['achievement'];
+                                $updated = true;
+                                break;
+                            }
                         }
                         
                         // save back, re-encrypt if it was encrypted originally
