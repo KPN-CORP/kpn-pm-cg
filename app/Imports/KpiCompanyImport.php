@@ -140,14 +140,10 @@ class KpiCompanyImport implements ToCollection, WithHeadingRow, WithValidation
                         // cari index KPI berikutnya yang achievement-nya null
                         foreach ($decoded['formData'][0] as $key => $item) {
                 
-                            if ($key === 'formName') {
-                                continue;
-                            }
+                            if (!is_numeric($key)) continue;
 
-                            $decoded['formData'][0][$key]['achievement'] = $row['achievement'];
+                            $decoded['formData'][0][$index]['achievement'] = $row['achievement'];
                             break;
-                            // if (!array_key_exists('achievement', $item)) {
-                            // }
                         }
                         
                         // save back, re-encrypt if it was encrypted originally
