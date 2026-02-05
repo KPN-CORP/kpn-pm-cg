@@ -33,6 +33,14 @@ class KpiCompanyImport implements ToCollection, WithHeadingRow, WithValidation
 
     private $kpiBuffer = [];
 
+    /**
+     * Normalize string for comparison (lowercase, remove non-alnum)
+     */
+    private function normalizeString($s)
+    {
+        return preg_replace('/[^a-z0-9]/', '', strtolower(trim((string) $s)));
+    }
+
     public function collection(Collection $collection)
     {
         // dd($collection);
@@ -136,17 +144,72 @@ class KpiCompanyImport implements ToCollection, WithHeadingRow, WithValidation
                             throw new \Exception('KPI form structure not found in appraisal.form_data');
                         }
 
-                        // cari index KPI berikutnya yang achievement-nya null
-                        foreach ($decoded['formData'][0] as $key => $item) {
-                            if ($key === 'formName') {
-                                continue;
-                            }
+                        // sanitize achievement value (comma -> dot, remove non-numeric chars)
+                        $achievementRaw = $row['achievement'];
+                        if (is_string($achievementRaw)) {
+                            $clean = preg_replace('/[^\d\.\-]/', '', str_replace(',', '.', $achievementRaw));
+                        } else {
+                            $clean = $achievementRaw;
+                        }
+                        $achievementVal = is_numeric($clean) ? (strpos((string)$clean, '.') !== false ? (float)$clean : (int)$clean) : $achievementRaw;
 
-                            if (
-                                !isset($item['achievement']) ||
-                                $item['achievement'] === null
-                            ) {
-                                $decoded['formData'][0][$key]['achievement'] = $row['achievement'];
+                        // ensure we track which keys we've updated for this employee
+                        $empId = $row['employee_id'];
+                        if (!isset($this->appraisalPointers[$empId])) {
+                            $this->appraisalPointers[$empId] = [];
+                        }
+
+                        // Try to match KPI by name first (normalized). If not found,
+                        // fill the first null achievement. As last resort overwrite the first KPI.
+                        $matched = false;
+                        $kpiName = isset($row['kpi']) ? trim($row['kpi']) : null;
+                        if ($kpiName) {
+                            $normTarget = $this->normalizeString($kpiName);
+                            foreach ($decoded['formData'][0] as $key => $item) {
+                                if ($key === 'formName') {
+                                    continue;
+                                }
+                                if (in_array($key, $this->appraisalPointers[$empId], true)) {
+                                    continue;
+                                }
+                                $itemKpi = $item['kpi'] ?? null;
+                                if ($itemKpi && $this->normalizeString($itemKpi) === $normTarget) {
+                                    $decoded['formData'][0][$key]['achievement'] = $achievementVal;
+                                    $this->appraisalPointers[$empId][] = $key;
+                                    $matched = true;
+                                    break;
+                                }
+                            }
+                        }
+
+                        if (!$matched) {
+                            foreach ($decoded['formData'][0] as $key => $item) {
+                                if ($key === 'formName') {
+                                    continue;
+                                }
+                                if (in_array($key, $this->appraisalPointers[$empId], true)) {
+                                    continue;
+                                }
+
+                                if (!isset($item['achievement']) || $item['achievement'] === null) {
+                                    $decoded['formData'][0][$key]['achievement'] = $achievementVal;
+                                    $this->appraisalPointers[$empId][] = $key;
+                                    $matched = true;
+                                    break;
+                                }
+                            }
+                        }
+
+                        if (!$matched) {
+                            foreach ($decoded['formData'][0] as $key => $item) {
+                                if ($key === 'formName') {
+                                    continue;
+                                }
+                                if (in_array($key, $this->appraisalPointers[$empId], true)) {
+                                    continue;
+                                }
+                                $decoded['formData'][0][$key]['achievement'] = $achievementVal;
+                                $this->appraisalPointers[$empId][] = $key;
                                 break;
                             }
                         }
@@ -156,10 +219,11 @@ class KpiCompanyImport implements ToCollection, WithHeadingRow, WithValidation
                         $appraisal->form_data = $wasEncrypted ? Crypt::encryptString($newData) : $newData;
                         $appraisal->save();
 
-                        $snapshot = ApprovalSnapshots::where('form_id', $appraisal->id)
-                            ->where('created_by', $user->id)
-                            ->orderBy('id', 'asc')
-                            ->first();
+                        $snapshotQuery = ApprovalSnapshots::where('form_id', $appraisal->id);
+                        if ($user) {
+                            $snapshotQuery->where('created_by', $user->id);
+                        }
+                        $snapshot = $snapshotQuery->orderBy('id', 'asc')->first();
 
                         if ($snapshot) {
                             $snapshot->update([
@@ -169,7 +233,7 @@ class KpiCompanyImport implements ToCollection, WithHeadingRow, WithValidation
                         } else {
                             ApprovalSnapshots::create([
                                 'form_id'     => $appraisal->id,
-                                'created_by'  => $user->id,
+                                'created_by'  => $user ? $user->id : null,
                                 'employee_id' => $row['employee_id'],
                                 'form_data'   => $appraisal->form_data,
                             ]);
