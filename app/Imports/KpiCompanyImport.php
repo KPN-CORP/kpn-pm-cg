@@ -106,7 +106,7 @@ class KpiCompanyImport implements ToCollection, WithHeadingRow, WithValidation
                     $raw = $appraisal->form_data;
                     $wasEncrypted = false;
                     $decoded = json_decode($raw, true);
-                    
+
                     if (!is_array($decoded)) {
                         // try decrypt then decode
                         try {
@@ -132,60 +132,25 @@ class KpiCompanyImport implements ToCollection, WithHeadingRow, WithValidation
                         if (
                             !isset($decoded['formData'][0]) ||
                             $decoded['formData'][0]['formName'] !== 'KPI'
+                        ) {
+                            throw new \Exception('KPI form structure not found in appraisal.form_data');
+                        }
+
+                        // cari index KPI berikutnya yang achievement-nya null
+                        foreach ($decoded['formData'][0] as $key => $item) {
+                            if ($key === 'formName') {
+                                continue;
+                            }
+
+                            if (
+                                !isset($item['achievement']) ||
+                                $item['achievement'] === null
                             ) {
-                                throw new \Exception('KPI form structure not found in appraisal.form_data');
-                        }
-                        // dd($decoded['formData'][ 0]);
-                        
-                        // isi achievement menggunakan pointer per employee_id
-                        $empId = (string)$row['employee_id'];
-                        if (!isset($this->appraisalPointers[$empId])) {
-                            $this->appraisalPointers[$empId] = 0;
-                        }
-
-                        // ambil hanya keys numerik (0,1,2,..) dan urutkan
-                        $itemKeys = array_keys($decoded['formData'][0]);
-                        $numericKeys = array_values(array_filter($itemKeys, function ($k) {
-                            return is_numeric($k);
-                        }));
-                        sort($numericKeys, SORT_NUMERIC);
-
-                        $found = false;
-                        $start = (int)$this->appraisalPointers[$empId];
-
-                        // coba mulai dari pointer saat ini
-                        for ($i = $start; $i < count($numericKeys); $i++) {
-                            $k = $numericKeys[$i];
-                            $val = $decoded['formData'][0][$k] ?? null;
-                            if (!is_array($val) || !isset($val['achievement']) || $val['achievement'] === null || $val['achievement'] === '') {
-                                $decoded['formData'][0][$k]['achievement'] = $row['achievement'];
-                                $this->appraisalPointers[$empId] = $i + 1;
-                                $found = true;
+                                $decoded['formData'][0][$key]['achievement'] = $row['achievement'];
                                 break;
                             }
                         }
 
-                        // jika tidak ditemukan, coba dari awal sampai sebelum pointer
-                        if (!$found) {
-                            for ($i = 0; $i < $start; $i++) {
-                                $k = $numericKeys[$i];
-                                $val = $decoded['formData'][0][$k] ?? null;
-                                if (!is_array($val) || !isset($val['achievement']) || $val['achievement'] === null || $val['achievement'] === '') {
-                                    $decoded['formData'][0][$k]['achievement'] = $row['achievement'];
-                                    $this->appraisalPointers[$empId] = $i + 1;
-                                    $found = true;
-                                    break;
-                                }
-                            }
-                        }
-
-                        // fallback: jika semua sudah terisi, timpa posisi terakhir
-                        if (!$found && count($numericKeys) > 0) {
-                            $k = $numericKeys[count($numericKeys) - 1];
-                            $decoded['formData'][0][$k]['achievement'] = $row['achievement'];
-                            $this->appraisalPointers[$empId] = count($numericKeys);
-                        }
-                        
                         // save back, re-encrypt if it was encrypted originally
                         $newData = json_encode($decoded);
                         $appraisal->form_data = $wasEncrypted ? Crypt::encryptString($newData) : $newData;
@@ -203,7 +168,6 @@ class KpiCompanyImport implements ToCollection, WithHeadingRow, WithValidation
                             ]);
                         } else {
                             ApprovalSnapshots::create([
-                                'id'          => (string) Str::uuid(),
                                 'form_id'     => $appraisal->id,
                                 'created_by'  => $user->id,
                                 'employee_id' => $row['employee_id'],
