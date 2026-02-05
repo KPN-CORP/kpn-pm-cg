@@ -137,28 +137,53 @@ class KpiCompanyImport implements ToCollection, WithHeadingRow, WithValidation
                         }
                         // dd($decoded['formData'][ 0]);
                         
-                        // cari index KPI berikutnya yang achievement-nya null
-                        // Prefer update by matching employee_id; otherwise fill first empty achievement
-                        $updated = false;
-                        foreach ($decoded['formData'][0] as $key => $item) {
+                        // isi achievement menggunakan pointer per employee_id
+                        $empId = (string)$row['employee_id'];
+                        if (!isset($this->appraisalPointers[$empId])) {
+                            $this->appraisalPointers[$empId] = 0;
+                        }
 
-                            if ($key === 'formName') {
-                                continue;
-                            }
+                        // ambil hanya keys numerik (0,1,2,..) dan urutkan
+                        $itemKeys = array_keys($decoded['formData'][0]);
+                        $numericKeys = array_values(array_filter($itemKeys, function ($k) {
+                            return is_numeric($k);
+                        }));
+                        sort($numericKeys, SORT_NUMERIC);
 
-                            // If the KPI item contains an employee_id and it matches, update it
-                            if (is_array($item) && isset($item['employee_id']) && (string)$item['employee_id'] === (string)$row['employee_id']) {
-                                $decoded['formData'][0][$key]['achievement'] = $row['achievement'];
-                                $updated = true;
+                        $found = false;
+                        $start = (int)$this->appraisalPointers[$empId];
+
+                        // coba mulai dari pointer saat ini
+                        for ($i = $start; $i < count($numericKeys); $i++) {
+                            $k = $numericKeys[$i];
+                            $val = $decoded['formData'][0][$k] ?? null;
+                            if (!is_array($val) || !isset($val['achievement']) || $val['achievement'] === null || $val['achievement'] === '') {
+                                $decoded['formData'][0][$k]['achievement'] = $row['achievement'];
+                                $this->appraisalPointers[$empId] = $i + 1;
+                                $found = true;
                                 break;
                             }
+                        }
 
-                            // Otherwise, use the first KPI entry that has an empty/null achievement
-                            if (is_array($item) && (!isset($item['achievement']) || $item['achievement'] === null || $item['achievement'] === '')) {
-                                $decoded['formData'][0][$key]['achievement'] = $row['achievement'];
-                                $updated = true;
-                                break;
+                        // jika tidak ditemukan, coba dari awal sampai sebelum pointer
+                        if (!$found) {
+                            for ($i = 0; $i < $start; $i++) {
+                                $k = $numericKeys[$i];
+                                $val = $decoded['formData'][0][$k] ?? null;
+                                if (!is_array($val) || !isset($val['achievement']) || $val['achievement'] === null || $val['achievement'] === '') {
+                                    $decoded['formData'][0][$k]['achievement'] = $row['achievement'];
+                                    $this->appraisalPointers[$empId] = $i + 1;
+                                    $found = true;
+                                    break;
+                                }
                             }
+                        }
+
+                        // fallback: jika semua sudah terisi, timpa posisi terakhir
+                        if (!$found && count($numericKeys) > 0) {
+                            $k = $numericKeys[count($numericKeys) - 1];
+                            $decoded['formData'][0][$k]['achievement'] = $row['achievement'];
+                            $this->appraisalPointers[$empId] = count($numericKeys);
                         }
                         
                         // save back, re-encrypt if it was encrypted originally
