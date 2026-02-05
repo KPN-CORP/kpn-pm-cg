@@ -142,7 +142,7 @@ class KpiCompanyImport implements ToCollection, WithHeadingRow, WithValidation
                 
                             if (!is_numeric($key)) continue;
 
-                            if (!array_key_exists('achievement', $item) || $item['achievement'] === null) {
+                            if (!array_key_exists('achievement', $item)) {
                                 $decoded['formData'][0][$key]['achievement'] = $row['achievement'];
                                 break;
                             }
