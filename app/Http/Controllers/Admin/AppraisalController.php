@@ -495,7 +495,7 @@ private function getDistinctCompany($column, $criteria, $period)
                 $appraisalDataCollection = [];
                 $goalDataCollection = [];
 
-                $formGroupContent = $this->appService->formGroupAppraisal($datas->first()->employee_id, 'Appraisal Form', $datas->first()->period);
+                $formGroupContent = $this->appService->formGroupAppraisal($datas->first()->employee_id, 'Appraisal Form', $period);
                 
                 if (!$formGroupContent) {
                     $appraisalForm = ['data' => ['formData' => []]];
@@ -676,7 +676,7 @@ private function getDistinctCompany($column, $criteria, $period)
     
                 // Setelah data digabungkan, gunakan combineFormData untuk setiap jenis kontributor
 
-                $formGroupContent = $this->appService->formGroupAppraisal($datas->first()->employee_id, 'Appraisal Form', $datas->first()->period);
+                $formGroupContent = $this->appService->formGroupAppraisal($datas->first()->employee_id, 'Appraisal Form', $period);
             
                 if (!$formGroupContent) {
                     $appraisalForm = ['data' => ['formData' => []]];
@@ -698,13 +698,13 @@ private function getDistinctCompany($column, $criteria, $period)
 
                 // $formData = $this->appService->combineFormData($result['calculated_data'][0], $goalData, 'employee', $employeeData, $datas->first()->period);
                 $formData = $this->appService->combineFormData($appraisalData[0], $goalData, 'employee', $employeeData, $datas->first()->period);
+                
                 if (isset($formData['kpiScore'])) {
                     $appraisalData['kpiScore'] = round($formData['kpiScore'], 2);
                     $appraisalData['cultureScore'] = round($formData['cultureScore'], 2);
                     $appraisalData['leadershipScore'] = round($formData['leadershipScore'], 2);
                     $appraisalData['sigapScore'] = round($formData['sigapScore'], 2);
                 }
-
                 
                 foreach ($formData['formData'] as &$form) {
                     if ($form['formName'] === 'Leadership') {
@@ -733,6 +733,7 @@ private function getDistinctCompany($column, $criteria, $period)
                             $form[$index]['title'] = $cultureItem['title'];
                         }
                     }
+
                     if ($form['formName'] === 'Sigap') {
                         foreach ($sigapData as $index => $sigapItem) {
                             foreach ($sigapItem['items'] as $itemIndex => $item) {
@@ -791,6 +792,8 @@ private function getDistinctCompany($column, $criteria, $period)
     
                 $goalData = $datas->isNotEmpty() ? json_decode($datas->first()->appraisal->goal->form_data, true) : [];
                 $appraisalData = $datas->isNotEmpty() ? json_decode($datas->first()->form_data, true) : [];
+
+                
                 
                 $appraisalData['contributor_type'] = $datas->first()->contributor_type;
                 
@@ -800,7 +803,7 @@ private function getDistinctCompany($column, $criteria, $period)
                 
                 // Setelah data digabungkan, gunakan combineFormData untuk setiap jenis kontributor
                 
-                $formGroupContent = $this->appService->formGroupAppraisal($datas->first()->employee_id, 'Appraisal Form', $datas->first()->period);
+                $formGroupContent = $this->appService->formGroupAppraisal($datas->first()->employee_id, 'Appraisal Form', $period);
                 
                 if (!$formGroupContent) {
                     $appraisalForm = ['data' => ['formData' => []]];
@@ -820,7 +823,6 @@ private function getDistinctCompany($column, $criteria, $period)
                 
                 $result = $this->appService->appraisalSummary($weightageContent, $appraisalData, $employeeData->employee_id, $jobLevel);
 
-                
                 $formData = $this->appService->combineFormData($appraisalData[0], $goalData, $datas->first()->contributor_type, $employeeData, $datas->first()->period);
                 
                 if (isset($formData['totalKpiScore'])) {
