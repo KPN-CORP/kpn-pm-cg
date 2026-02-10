@@ -1799,39 +1799,57 @@ class AppService
                                     $weightage360 = 0;
     
                                     if (isset($competency['weightage360'])) {
-                                        // Extract weightages for each type
+                                        // Normalize weightage360 into a Collection of key => value
                                         $weightageValues = collect($competency['weightage360'])->flatMap(function ($weightage) {
-                                            return $weightage;
+                                            if (is_array($weightage)) return $weightage;
+                                            if ($weightage instanceof \stdClass) return (array) $weightage;
+                                            return [];
                                         });
-    
-                                        $weightage360 = $weightageValues[$contributorType] ?? 0;
-    
-                                        if($contributorType == 'manager'){
-                                            if ($subordinateCount > 0) {
-                                                $weightage360 ?? 0;
-                                            }
-                                            // Adjust weightages
+
+                                        // Use Collection::get to avoid array-offset-on-string errors
+                                        $weightage360 = $weightageValues->get($contributorType, 0);
+
+                                        if ($contributorType == 'manager') {
+                                            // Adjust weightages when peers/subordinates missing
                                             if ($subordinateCount == 0) {
-                                                $weightage360 += $weightageValues['subordinate'] ?? 0;
+                                                $weightage360 += $weightageValues->get('subordinate', 0);
                                             }
                                             if ($peersCount == 0) {
-                                                $weightage360 += $weightageValues['peers'] ?? 0;
+                                                $weightage360 += $weightageValues->get('peers', 0);
                                             }
-                                            // if ($subordinateCount == 0 && $peersCount == 0) {
-                                            //     $weightage360 += ($weightageValues['subordinate'] ?? 0) + ($weightageValues['peers'] ?? 0);
-                                            // }
                                         }
-
                                     }
     
-                                    // Calculate weighted scores
+                                    // Calculate weighted scores (defensive: handle scalar scores)
                                     foreach ($form as $key => $scores) {
                                         if (is_numeric($key)) {
                                             $calculatedForm[$key] = [];
-                                            foreach ($scores as $scoreData) {
-                                                $score = $scoreData['score'];
-                                                $weightedScore = $score;
-                                                $calculatedForm[$key][] = ["score" => $weightedScore];
+                                            if (is_array($scores)) {
+                                                foreach ($scores as $scoreData) {
+                                                    if (is_array($scoreData) && isset($scoreData['score'])) {
+                                                        $score = floatval($scoreData['score']);
+                                                    } elseif (is_numeric($scoreData)) {
+                                                        $score = floatval($scoreData);
+                                                    } else {
+                                                        $score = 0;
+                                                    }
+                                                    $weightedScore = $score;
+                                                    $calculatedForm[$key][] = ["score" => $weightedScore];
+                                                }
+                                            } else {
+                                                // scalar value (e.g., a direct achievement/score)
+                                                if (is_numeric($scores)) {
+                                                    $score = floatval($scores);
+                                                } else {
+                                                    $score = 0;
+                                                }
+                                                $calculatedForm[$key][] = ["score" => $score];
+                                                Log::warning('AppService::appraisalSummaryWithout360Calculation scalar scores encountered', [
+                                                    'employeeId' => $employeeID ?? null,
+                                                    'formGroup' => $formGroupName ?? null,
+                                                    'key' => $key,
+                                                    'scores_type' => gettype($scores)
+                                                ]);
                                             }
                                         }
                                     }
@@ -1870,7 +1888,15 @@ class AppService
                             if (is_numeric($key)) {
                                 // Initialize if not already set
                                 if (!isset($summedScores[$formName][$key])) {
-                                    $summedScores[$formName][$key] = ["achievement" => $value['achievement']];
+                                    $achievement = null;
+                                    if (is_array($value) && isset($value['achievement'])) {
+                                        $achievement = $value['achievement'];
+                                    } elseif (is_numeric($value)) {
+                                        $achievement = $value;
+                                    } else {
+                                        $achievement = $value ?? 0;
+                                    }
+                                    $summedScores[$formName][$key] = ["achievement" => $achievement];
                                 }
                             }
                         }
@@ -1892,8 +1918,15 @@ class AppService
                                 if (!isset($summedScores[$formName][$key][$index])) {
                                     $summedScores[$formName][$key][$index] = ["score" => 0];
                                 }
-                                // Accumulate the score
-                                $summedScores[$formName][$key][$index]['score'] += $scoreData['score'];
+                                // Accumulate the score defensively
+                                if (is_array($scoreData) && isset($scoreData['score'])) {
+                                    $val = is_numeric($scoreData['score']) ? (float) $scoreData['score'] : 0;
+                                } elseif (is_numeric($scoreData)) {
+                                    $val = (float) $scoreData;
+                                } else {
+                                    $val = 0;
+                                }
+                                $summedScores[$formName][$key][$index]['score'] += $val;
                             }
                             
                         }
@@ -1954,7 +1987,7 @@ class AppService
         }
 
         // Add Culture and Leadership
-        foreach (['Culture', 'Leadership', 'Technical'] as $formName) {
+        foreach (['Culture', 'Leadership', 'Technical', 'Sigap'] as $formName) {
             if (isset($summedScores[$formName])) {
                 $form = [
                     "formName" => $formName

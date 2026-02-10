@@ -10,7 +10,6 @@ class ApprovalSnapshots extends Model
     use HasFactory;
 
     protected $fillable = [
-        'id',
         'form_id',
         'form_data',
         'employee_id',

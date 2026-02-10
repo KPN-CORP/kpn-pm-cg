@@ -4,6 +4,7 @@ namespace App\Jobs;
 
 use App\Exports\AppraisalDetailExport;
 use App\Services\AppService;
+use App\Models\User;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
@@ -20,24 +21,22 @@ class ExportAppraisalDetails implements ShouldQueue
 
     protected array $data;
     protected array $headers;
-    protected AppService $appService;
+    protected ?AppService $appService = null;
     protected int $userId;
     protected int $batchSize;
     protected string $jobTrackingId;
-    protected $user;
+    protected $user = null;
     protected $period;
 
     public $timeout = 3600;
 
-    public function __construct(AppService $appService, array $data, array $headers, int $userId, int $batchSize = 100, $user, $period)
+    public function __construct(array $data, array $headers, int $userId, int $batchSize = 100, $period = null)
     {
         $this->data = $data;
         $this->headers = $headers;
-        $this->appService = $appService;
         $this->userId = $userId;
         $this->batchSize = $batchSize;
         $this->jobTrackingId = 'export_appraisal_reports_' . $userId;
-        $this->user = $user;
         $this->period = $period;
     }
 
@@ -45,6 +44,13 @@ class ExportAppraisalDetails implements ShouldQueue
     {
         try {
             ini_set('memory_limit', '1G');
+            // Resolve service and user inside the job to avoid serializing them
+            if (!$this->appService) {
+                $this->appService = app(AppService::class);
+            }
+            if (!$this->user) {
+                $this->user = User::find($this->userId);
+            }
         // Job logic here
             $directory = 'exports';
             $temporary = 'temp';

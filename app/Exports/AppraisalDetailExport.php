@@ -142,20 +142,20 @@ class AppraisalDetailExport implements FromCollection, WithHeadings, WithMapping
                     // Log::info('Preprocessing data to temp table', [
                     //     'data_preview' => $index, // Log only the first 10 rows
                     // ]);
-                    if (is_array($itemGroup)) {
-                        if ($formName === 'Culture' || $formName === 'Leadership') {
-                            $this->processFormGroup($formName, $itemGroup, $contributorRow);
-                        } elseif ($formName === 'KPI') {
-                            $this->processKPI($formName, $itemGroup, $contributorRow, $index);
-                        }
+                            if (is_array($itemGroup)) {
+                                if ($formName === 'Culture' || $formName === 'Leadership' || $formName === 'Sigap') {
+                                    $this->processFormGroup($formName, $itemGroup, $contributorRow);
+                                } elseif ($formName === 'KPI') {
+                                    $this->processKPI($formName, $itemGroup, $contributorRow, $index);
+                                }
                     }
                 }
             }
-
-            $contributorRow['KPI Score'] = ['dataId' => round($formData['totalKpiScore'], 2) ?? '-'];
-            $contributorRow['Culture Score'] = ['dataId' => round($formData['totalCultureScore'], 2) ?? '-'];
-            $contributorRow['Leadership Score'] = ['dataId' => round($formData['totalLeadershipScore'], 2) ?? '-'];
-            $contributorRow['Total Score'] = ['dataId' => round($formData['totalScore'], 2) ?? '-'];
+                    $contributorRow['KPI Score'] = ['dataId' => round($formData['totalKpiScore'], 2) ?? '-'];
+                    $contributorRow['Culture Score'] = ['dataId' => round($formData['totalCultureScore'], 2) ?? '-'];
+                    $contributorRow['Leadership Score'] = ['dataId' => round($formData['totalLeadershipScore'], 2) ?? '-'];
+                    $contributorRow['Sigap Score'] = ['dataId' => round($formData['totalSigapScore'] ?? 0, 2) ?? '-'];
+                    $contributorRow['Total Score'] = ['dataId' => round($formData['totalScore'], 2) ?? '-'];
         }
     }
 
@@ -248,6 +248,7 @@ class AppraisalDetailExport implements FromCollection, WithHeadings, WithMapping
         // culture & leadership BI items
         $cultureData = $this->appService->getDataByName($appraisalForm['data']['form_appraisals'], 'Culture') ?? [];
         $leadershipData = $this->appService->getDataByName($appraisalForm['data']['form_appraisals'], 'Leadership') ?? [];
+        $sigapData = $this->appService->getDataByName($appraisalForm['data']['form_appraisals'], 'Sigap') ?? [];
 
         $jobLevel = $employeeData->job_level;
 
@@ -282,6 +283,19 @@ class AppraisalDetailExport implements FromCollection, WithHeadings, WithMapping
                     $form[$index]['title'] = $cultureItem['title'];
                 }
             }
+            if ($form['formName'] === 'Sigap') {
+                foreach ($sigapData as $index => $sigapItem) {
+                    foreach ($sigapItem['items'] as $itemIndex => $item) {
+                        if (isset($form[$index][$itemIndex])) {
+                            $form[$index][$itemIndex] = [
+                                'formItem' => $item,
+                                'score' => $form[$index][$itemIndex]['score']
+                            ];
+                        }
+                    }
+                    $form[$index]['title'] = $sigapItem['title'];
+                }
+            }
             if ($form['formName'] === 'Leadership') {
                 foreach ($leadershipData as $index => $leadershipItem) {
                     foreach ($leadershipItem['items'] as $itemIndex => $item) {
@@ -293,6 +307,20 @@ class AppraisalDetailExport implements FromCollection, WithHeadings, WithMapping
                         }
                     }
                     $form[$index]['title'] = $leadershipItem['title'];
+                }
+            }
+
+            if ($form['formName'] === 'Sigap') {
+                foreach ($sigapData as $index => $sigapItem) {
+                    foreach ($sigapItem['items'] as $itemIndex => $item) {
+                        if (isset($form[$index][$itemIndex])) {
+                            $form[$index][$itemIndex] = [
+                                'formItem' => $item,
+                                'score' => $form[$index][$itemIndex]['score']
+                            ];
+                        }
+                    }
+                    $form[$index]['title'] = $sigapItem['title'];
                 }
             }
         }
@@ -337,6 +365,7 @@ class AppraisalDetailExport implements FromCollection, WithHeadings, WithMapping
 
         $cultureData = $this->appService->getDataByName($appraisalForm['data']['form_appraisals'], 'Culture') ?? [];
         $leadershipData = $this->appService->getDataByName($appraisalForm['data']['form_appraisals'], 'Leadership') ?? [];
+        $sigapData = $this->appService->getDataByName($appraisalForm['data']['form_appraisals'], 'Sigap') ?? [];
 
         $jobLevel = $employeeData->job_level;
 
@@ -380,6 +409,20 @@ class AppraisalDetailExport implements FromCollection, WithHeadings, WithMapping
                     $form[$index]['title'] = $leadershipItem['title'];
                 }
             }
+            if ($form['formName'] === 'Sigap') {
+                foreach ($sigapData as $index => $sigapItem) {
+                    foreach ($sigapItem['items'] as $itemIndex => $item) {
+                        if (isset($form[$index][$itemIndex])) {
+                            $form[$index][$itemIndex] = [
+                                'formItem' => $item,
+                                'score' => $form[$index][$itemIndex]['score']
+                            ];
+                        }
+                    }
+                    $form[$index]['title'] = $sigapItem['title'];
+                    $form[$index]['items'] = $sigapItem['items'];
+                }
+            }
         }
 
         return $formData;
@@ -417,6 +460,7 @@ class AppraisalDetailExport implements FromCollection, WithHeadings, WithMapping
 
         $cultureData = $this->appService->getDataByName($appraisalForm['data']['form_appraisals'], 'Culture') ?? [];
         $leadershipData = $this->appService->getDataByName($appraisalForm['data']['form_appraisals'], 'Leadership') ?? [];
+        $sigapData = $this->appService->getDataByName($appraisalForm['data']['form_appraisals'], 'Sigap') ?? [];
 
 
         if ($employeeForm) {
@@ -522,6 +566,20 @@ class AppraisalDetailExport implements FromCollection, WithHeadings, WithMapping
                     $form[$index]['title'] = $leadershipItem['title'];
                 }
             }
+            if ($form['formName'] === 'Sigap') {
+                foreach ($sigapData as $index => $sigapItem) {
+                    foreach ($sigapItem['items'] as $itemIndex => $item) {
+                        if (isset($form[$index][$itemIndex])) {
+                            $form[$index][$itemIndex] = [
+                                'formItem' => $item,
+                                'score' => $form[$index][$itemIndex]['score']
+                            ];
+                        }
+                    }
+                    $form[$index]['title'] = $sigapItem['title'];
+                    $form[$index]['items'] = $sigapItem['items'];
+                }
+            }
         }
 
         return $formData;
@@ -534,6 +592,7 @@ class AppraisalDetailExport implements FromCollection, WithHeadings, WithMapping
         $row['KPI Score'] = ['dataId' => '-'];
         $row['Culture Score'] = ['dataId' => '-'];
         $row['Leadership Score'] = ['dataId' => '-'];
+        $row['Sigap Score'] = ['dataId' => '-'];
         $row['Total Score'] = ['dataId' => '-'];
         return $row;
     }
@@ -554,7 +613,7 @@ class AppraisalDetailExport implements FromCollection, WithHeadings, WithMapping
 
         $extendedHeaders = $this->headers;
 
-        foreach (['Contributor ID', 'Contributor Type', 'KPI Score', 'Culture Score', 'Leadership Score', 'Total Score'] as $header) {
+        foreach (['Contributor ID', 'Contributor Type', 'KPI Score', 'Culture Score', 'Leadership Score', 'Sigap Score', 'Total Score'] as $header) {
             if (!in_array($header, $extendedHeaders)) {
                 $extendedHeaders[] = $header;
             }
@@ -564,6 +623,7 @@ class AppraisalDetailExport implements FromCollection, WithHeadings, WithMapping
         $kpiHeaders = [];
         $cultureHeaders = [];
         $leadershipHeaders = [];
+        $sigapHeaders = [];
 
         foreach ($this->dynamicHeaders as $header) {
             if (strpos($header, 'kpi_') === 0) {
@@ -572,6 +632,8 @@ class AppraisalDetailExport implements FromCollection, WithHeadings, WithMapping
                 $cultureHeaders[] = $header;
             } elseif (strpos($header, 'leadership_') === 0) {
                 $leadershipHeaders[] = $header;
+            } elseif (strpos($header, 'sigap_') === 0) {
+                $sigapHeaders[] = $header;
             }
         }
 
@@ -586,12 +648,13 @@ class AppraisalDetailExport implements FromCollection, WithHeadings, WithMapping
             return $aIndex <=> $bIndex;
         });
 
-        // Sort Culture and Leadership headers alphabetically
+        // Sort Culture, Leadership and Sigap headers alphabetically
         sort($cultureHeaders);
         sort($leadershipHeaders);
+        sort($sigapHeaders);
 
         // Merge all sorted headers back in the desired order
-        $sortedDynamicHeaders = array_merge($kpiHeaders, $cultureHeaders, $leadershipHeaders);
+        $sortedDynamicHeaders = array_merge($kpiHeaders, $cultureHeaders, $leadershipHeaders, $sigapHeaders);
 
         // Add sorted dynamic headers to the extended headers
         foreach ($sortedDynamicHeaders as $header) {

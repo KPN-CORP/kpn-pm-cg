@@ -52,7 +52,7 @@ $(document).ready(function () {
                 className:
                     "btn btn-sm btn-outline-success mb-1 report-detail-btn me-1",
                 available: function() {
-                    return $('#permission-reportpadetail').data('report-pa-detail') === true;
+                    return $('#permission-reportpadetail').attr('data-report-pa-detail') === 'true';
                 },
                 action: function (e, dt, node, config) {
                     let headers = dt
@@ -185,7 +185,7 @@ $(document).ready(function () {
                 className:
                     "btn btn-sm btn-light mb-1 download-detail-btn disabled",
                 available: function() {
-                    return $('#permission-reportpadetail').data('report-pa-detail') === true;
+                    return $('#permission-reportpadetail').attr('data-report-pa-detail') === 'true';
                 },
                 action: function (e, dt, node, config) {
                     let headers = dt
@@ -323,7 +323,7 @@ let intervalId; // Store the interval ID globally
 
 function intervalCheckFile(status) {
     if (window.jobs){
-        if ((jobs && jobs.length > 0) || status) {
+        if ((window.jobs && window.jobs.length > 0) || status) {
             intervalId = setInterval(() => {
                 checkFileAvailability(status);
             }, 60000); // Execute every 60 seconds
@@ -335,7 +335,7 @@ function intervalCheckFile(status) {
 
 function checkFileAvailability(status) {
     if(window.jobs){
-        if ((jobs && jobs.length > 0) || status) {
+        if ((window.jobs && window.jobs.length > 0) || status) {
             console.log(`Checking reports.`);
             const baseFileName = `appraisal_details_${userId}`;
             fetch("/check-file", {
