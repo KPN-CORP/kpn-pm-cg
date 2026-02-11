@@ -289,15 +289,18 @@ class AppService
                 } elseif ($form['formName'] === "Culture") {
                     // Calculate average score for Culture form
                     $cultureAverageScore = $this->averageScore($form);
+                    Log::info('Form setelah normalisasi | Culture:', $form);
                 } elseif ($form['formName'] === "Leadership") {
                     // Calculate average score for Leadership form
                     $leadershipAverageScore = $this->averageScore($form);
+                    Log::info('Form setelah normalisasi | Leadership:', $form);
                 } elseif ($form['formName'] === "Technical") {
                     // Calculate average score for Technical form
                     $technicalAverageScore = $this->averageScore($form);
                 } elseif ($form['formName'] === "Sigap") {
                     // Calculate average score for Sigap form
                     $sigapAverageScore = $this->averageScoreSigap($form);
+                    Log::info('Form setelah normalisasi | Sigap:', $form);
                 }
                 
             }
