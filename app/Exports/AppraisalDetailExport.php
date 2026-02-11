@@ -227,6 +227,17 @@ class AppraisalDetailExport implements FromCollection, WithHeadings, WithMapping
     {
         $appraisal = Appraisal::with(['goal'])->where('id', $contributor->appraisal_id)->first();
 
+        // If the underlying appraisal is still a Draft, skip heavy calculations
+        if ($appraisal && (($appraisal->form_status ?? null) === 'Draft' || ($contributor->status ?? null) === 'Draft')) {
+            return [
+                'formData' => [],
+                'totalKpiScore' => null,
+                'totalCultureScore' => null,
+                'totalLeadershipScore' => null,
+                'totalScore' => null,
+            ];
+        }
+
         // Prepare the goal and appraisal data
         $goalData = json_decode($appraisal->goal->form_data ?? '[]', true);
 
