@@ -186,17 +186,18 @@ class AppraisalDetailExport implements FromCollection, WithHeadings, WithMapping
         $maxKpi = 10;
         $index = min($index, $maxKpi - 1); // Ensure index stays within 0-9
 
-        $itemGroup = [
-            "kpi" => $itemGroup["kpi"],
-            "target" => $itemGroup["target"],
-            "achievement" => $itemGroup["achievement"],
-            "uom" => $itemGroup["uom"],
-            "weightage" => $itemGroup["weightage"],
-            "type" => $itemGroup["type"],
-            "custom_uom" => $itemGroup["custom_uom"],
-            "percentage" => $itemGroup["percentage"],
-            "conversion" => $itemGroup["conversion"],
-            "final_score" => $itemGroup["final_score"],
+        // Normalize / safeguard keys to avoid "Undefined array key" errors
+        $itemGroupSafe = [
+            'kpi' => $itemGroup['kpi'] ?? null,
+            'target' => $itemGroup['target'] ?? null,
+            'achievement' => $itemGroup['achievement'] ?? null,
+            'uom' => $itemGroup['uom'] ?? null,
+            'weightage' => $itemGroup['weightage'] ?? null,
+            'type' => $itemGroup['type'] ?? null,
+            'custom_uom' => $itemGroup['custom_uom'] ?? null,
+            'percentage' => $itemGroup['percentage'] ?? null,
+            'conversion' => $itemGroup['conversion'] ?? null,
+            'final_score' => $itemGroup['final_score'] ?? null,
         ];
 
         // Generate headers for ALL 10 KPI positions (1-10)
