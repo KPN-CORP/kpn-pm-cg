@@ -615,7 +615,7 @@ class RatingController extends Controller
                     $calibrationData = $calibration[$employeeId][$formId] ?? collect();
 
                     $previousRating = $calibrationData->whereNotNull('rating')->first();
-                    $suggestedRating = $suggestedRatings[$employeeId][$formId];
+                    $suggestedRating = round($suggestedRatings[$employeeId][$formId] ?? 0, 2);
 
                     $data->suggested_rating = $calibrationData->where('approver_id', $user)->first()
                         ? $this->appService->convertRating(
@@ -822,7 +822,7 @@ class RatingController extends Controller
                     $calibrationData = $calibration[$employeeId][$formId] ?? collect();
 
                     $previousRating = $calibrationData->whereNotNull('rating')->first();
-                    $suggestedRating = $suggestedRatings[$employeeId][$formId];
+                    $suggestedRating = round($suggestedRatings[$employeeId][$formId] ?? 0, 2);
 
                     $data->suggested_rating = $calibrationData->where('approver_id', $user)->first()
                         ? $this->appService->convertRating(
