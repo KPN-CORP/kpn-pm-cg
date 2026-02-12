@@ -1088,7 +1088,7 @@ class AppService
         
         $condition = null;
         
-        $roundedValue = (int) round($value);
+        $roundedValue = (int) round($value, 2);
 
         if ($value == 0) {
             // If value is 0, get the record with the smallest value

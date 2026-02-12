@@ -196,7 +196,7 @@ class RatingController extends Controller
                         ->first();
 
                     // Calculate suggested rating
-                    $suggestedRating = $suggestedRatings[$employeeId][$formId];
+                    $suggestedRating = round($suggestedRatings[$employeeId][$formId] ?? 0, 2);
 
                     $data->suggested_rating = $calibrationData->where('approver_id', $user)->first()
                         ? $this->appService->convertRating(
@@ -204,6 +204,9 @@ class RatingController extends Controller
                             $calibrationData->where('approver_id', $user)->first()->id_calibration_group
                         )
                         : null;
+
+                    $data->suggested_request = $suggestedRating;
+                    $data->id_calibration_group = $calibrationData->where('approver_id', $user)->first()->id_calibration_group;
 
                     // Set previous rating details
                     $data->previous_rating = $previousRating
@@ -259,6 +262,7 @@ class RatingController extends Controller
                     Log::info('Processing withoutRequests item.', ['itemId' => $data->id]);
 
                     $data->suggested_rating = null;
+                    $data->suggested_request = 'withoutRequests';
 
                     $isCalibrator = Calibration::where('approver_id', $user)
                         ->where('employee_id', $data->employee->employee_id)
