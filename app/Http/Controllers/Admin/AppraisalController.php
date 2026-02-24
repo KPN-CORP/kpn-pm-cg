@@ -486,6 +486,7 @@ private function getDistinctCompany($column, $criteria, $period)
                     $query = $checkSnapshot;
                 }else{
                     $query = ApprovalSnapshots::where('form_id', $formId)
+                    ->where('form_data->formGroupName', '!=', 'Appraisal Form 360')
                     ->orderBy('created_at', 'asc');
                 }
                 
@@ -642,9 +643,10 @@ private function getDistinctCompany($column, $criteria, $period)
             }elseif($id == 'employee'){
 
                 $datas = Appraisal::with([
-                    'employee', 
+                    'employee',
                     'approvalSnapshots' => function ($query) {
-                        $query->orderBy('created_at', 'desc');
+                        $query->latest()
+                            ->where('form_data->formGroupName', '!=', 'Appraisal Form 360');
                     }
                 ])->where('id', $formId)->get();
 

@@ -345,7 +345,8 @@ class AppraisalDetailExport implements FromCollection, WithHeadings, WithMapping
         $datas = Appraisal::with([
             'employee',
             'approvalSnapshots' => function ($query) {
-                $query->orderBy('created_at', 'desc');
+                $query->latest()
+                    ->where('form_data->formGroupName', '!=', 'Appraisal Form 360');
             }
         ])->where('id', $contributor->id)->get();
 
