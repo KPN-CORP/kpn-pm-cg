@@ -164,7 +164,11 @@ class AppraisalDetailExport implements FromCollection, WithHeadings, WithMapping
      */
     private function processFormGroup(string $formName, array $itemGroup, array &$contributorRow): void
     {
-        $this->processCultureOrLeadership($formName, $itemGroup, $contributorRow);
+        if (strtolower($formName) === 'sigap') {
+            $this->processSigap($formName, $itemGroup, $contributorRow);
+        } else {
+            $this->processCultureOrLeadership($formName, $itemGroup, $contributorRow);
+        }
     }
 
     private function processCultureOrLeadership(string $formName, array $itemGroup, array &$contributorRow): void
@@ -176,7 +180,25 @@ class AppraisalDetailExport implements FromCollection, WithHeadings, WithMapping
                 $subNumber = $subIndex + 1;
                 $header = strtolower(trim("{$formName}_{$title}_{$subNumber}"));
                 $this->captureDynamicHeader($header);
-                $contributorRow[$header] = ['dataId' => strip_tags($item['formItem']) . "|" . $item['score']];
+                $contributorRow[$header] = ['dataId' => strip_tags((string)$item['formItem']) . "|" . $item['score']];
+            }
+        }
+    }
+
+    private function processSigap(string $formName, array $itemGroup, array &$contributorRow): void
+    {
+        $title = $itemGroup['title'] ?? 'Unknown Title';
+        $items = $itemGroup['items'] ?? $itemGroup;
+
+        foreach ($items as $subIndex => $item) {
+            if (is_array($item)) {
+                // Support both structures: ['formItem','score'] or ['formItem'=>..., 'score'=>...]
+                $formItem = $item['formItem'] ?? ($item[0] ?? null) ?? '';
+                $score = $item['score'] ?? ($item[1] ?? '');
+                $subNumber = $subIndex + 1;
+                $header = strtolower(trim("{$formName}_{$title}_{$subNumber}"));
+                $this->captureDynamicHeader($header);
+                $contributorRow[$header] = ['dataId' => strip_tags((string)$formItem) . "|" . $score];
             }
         }
     }
@@ -235,6 +257,7 @@ class AppraisalDetailExport implements FromCollection, WithHeadings, WithMapping
                 'totalKpiScore' => null,
                 'totalCultureScore' => null,
                 'totalLeadershipScore' => null,
+                'totalSigapScore' => null,
                 'totalScore' => null,
             ];
         }
