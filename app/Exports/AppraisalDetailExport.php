@@ -187,19 +187,45 @@ class AppraisalDetailExport implements FromCollection, WithHeadings, WithMapping
 
     private function processSigap(string $formName, array $itemGroup, array &$contributorRow): void
     {
-        Log::info('Processing Sigap form group', [
-            'formName' => $formName,
-            'itemGroup' => $itemGroup, // Log the entire item group for debugging
-        ]);
+        // title and items definitions
         $title = $itemGroup['title'] ?? 'Unknown Title';
-        $items = $itemGroup['items'] ?? $itemGroup;
+        $items = is_array($itemGroup['items'] ?? null) ? $itemGroup['items'] : [];
 
-        // Support both structures: ['formItem','score'] or ['formItem'=>..., 'score'=>...]
-                $formItem = $items['formItem'] ?? ($items[0] ?? null) ?? '';
-                $score = $items['score'] ?? ($items[1] ?? '');
-                $header = strtolower(trim("{$formName}_{$title}"));
-                $this->captureDynamicHeader($header);
-                $contributorRow[$header] = ['dataId' => strip_tags((string)$formItem) . "|" . $score];
+        // extract score from possible locations
+        $score = null;
+        if (isset($itemGroup[0]['score'])) {
+            $score = $itemGroup[0]['score'];
+        } elseif (isset($itemGroup['score'])) {
+            $score = $itemGroup['score'];
+        } elseif (isset($itemGroup['value'])) {
+            $score = $itemGroup['value'];
+        }
+
+        // determine the descriptive text for the selected score
+        $formItemText = '';
+        if ($score !== null) {
+            $scoreIndex = (string)(int)$score; // normalize index
+            if (isset($items[$scoreIndex])) {
+                $itemDesc = $items[$scoreIndex];
+                if (is_array($itemDesc)) {
+                    $formItemText = $itemDesc['desc_eng'] ?? $itemDesc['desc_idn'] ?? json_encode($itemDesc);
+                } else {
+                    $formItemText = (string)$itemDesc;
+                }
+            }
+        }
+
+        // fallback: if items not present but itemGroup contains direct formItem
+        if ($formItemText === '' && isset($itemGroup[0]['formItem'])) {
+            $formItemText = (string)$itemGroup[0]['formItem'];
+        } elseif ($formItemText === '' && isset($itemGroup['formItem'])) {
+            $formItemText = (string)$itemGroup['formItem'];
+        }
+
+        $header = strtolower(trim("{$formName}_{$title}"));
+        $this->captureDynamicHeader($header);
+        $contributorRow[$header] = ['dataId' => strip_tags($formItemText) . "|" . ($score ?? '')];
+    }
 
         // foreach ($items as $subIndex => $item) {
         //     if (is_array($item)) {
@@ -212,7 +238,7 @@ class AppraisalDetailExport implements FromCollection, WithHeadings, WithMapping
         //         $contributorRow[$header] = ['dataId' => strip_tags((string)$formItem) . "|" . $score];
         //     }
         // }
-    }
+    // }
 
     private function processKPI(string $formName, array $itemGroup, array &$contributorRow, int $index): void
     {
