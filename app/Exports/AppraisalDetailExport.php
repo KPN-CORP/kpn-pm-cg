@@ -373,6 +373,8 @@ class AppraisalDetailExport implements FromCollection, WithHeadings, WithMapping
                         }
                     }
                     $form[$index]['title'] = $sigapItem['title'];
+                    $form[$index]['items'] = $sigapItem['items'];
+
                 }
             }
         }
