@@ -348,19 +348,6 @@ class AppraisalDetailExport implements FromCollection, WithHeadings, WithMapping
                     $form[$index]['title'] = $cultureItem['title'];
                 }
             }
-            if ($form['formName'] === 'Sigap') {
-                foreach ($sigapData as $index => $sigapItem) {
-                    foreach ($sigapItem['items'] as $itemIndex => $item) {
-                        if (isset($form[$index][$itemIndex])) {
-                            $form[$index][$itemIndex] = [
-                                'formItem' => $item,
-                                'score' => $form[$index][$itemIndex]['score']
-                            ];
-                        }
-                    }
-                    $form[$index]['title'] = $sigapItem['title'];
-                }
-            }
             if ($form['formName'] === 'Leadership') {
                 foreach ($leadershipData as $index => $leadershipItem) {
                     foreach ($leadershipItem['items'] as $itemIndex => $item) {
