@@ -130,6 +130,10 @@ class AppraisalDetailExport implements FromCollection, WithHeadings, WithMapping
             $contributorRow['Contributor ID'] = ['dataId' => $contributor->contributor_id];
             $contributorRow['Contributor Type'] = ['dataId' => $contributor->contributor_type];
             $this->addFormDataToRow($contributorRow, $formData);
+            Log::info('Adding contributor row to export', [
+                'contributorData' => $contributorRow,
+                'formData' => $formData,
+            ]);
             $expandedData->push($contributorRow);
         }
     }
