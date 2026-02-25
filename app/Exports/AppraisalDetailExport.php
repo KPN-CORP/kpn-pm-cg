@@ -194,17 +194,24 @@ class AppraisalDetailExport implements FromCollection, WithHeadings, WithMapping
         $title = $itemGroup['title'] ?? 'Unknown Title';
         $items = $itemGroup['items'] ?? $itemGroup;
 
-        foreach ($items as $subIndex => $item) {
-            if (is_array($item)) {
-                // Support both structures: ['formItem','score'] or ['formItem'=>..., 'score'=>...]
-                $formItem = $item['formItem'] ?? ($item[0] ?? null) ?? '';
-                $score = $item['score'] ?? ($item[1] ?? '');
-                $subNumber = $subIndex + 1;
-                $header = strtolower(trim("{$formName}_{$title}_{$subNumber}"));
+        // Support both structures: ['formItem','score'] or ['formItem'=>..., 'score'=>...]
+                $formItem = $items['formItem'] ?? ($items[0] ?? null) ?? '';
+                $score = $items['score'] ?? ($items[1] ?? '');
+                $header = strtolower(trim("{$formName}_{$title}"));
                 $this->captureDynamicHeader($header);
                 $contributorRow[$header] = ['dataId' => strip_tags((string)$formItem) . "|" . $score];
-            }
-        }
+
+        // foreach ($items as $subIndex => $item) {
+        //     if (is_array($item)) {
+        //         // Support both structures: ['formItem','score'] or ['formItem'=>..., 'score'=>...]
+        //         $formItem = $item['formItem'] ?? ($item[0] ?? null) ?? '';
+        //         $score = $item['score'] ?? ($item[1] ?? '');
+        //         $subNumber = $subIndex + 1;
+        //         $header = strtolower(trim("{$formName}_{$title}_{$subNumber}"));
+        //         $this->captureDynamicHeader($header);
+        //         $contributorRow[$header] = ['dataId' => strip_tags((string)$formItem) . "|" . $score];
+        //     }
+        // }
     }
 
     private function processKPI(string $formName, array $itemGroup, array &$contributorRow, int $index): void
