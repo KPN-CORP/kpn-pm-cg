@@ -194,7 +194,11 @@ class AppraisalDetailExport implements FromCollection, WithHeadings, WithMapping
             
         ]);
         // title and items definitions
-        $title = $itemGroup['title'] ?? '';
+        if (empty($itemGroup['title'])) {
+            // Skip processing when there's no title
+            return;
+        }
+        $title = $itemGroup['title'];
         $items = is_array($itemGroup['items'] ?? null) ? $itemGroup['items'] : [];
 
         // extract score from possible locations
