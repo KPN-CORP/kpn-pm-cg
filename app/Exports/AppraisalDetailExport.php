@@ -187,6 +187,10 @@ class AppraisalDetailExport implements FromCollection, WithHeadings, WithMapping
 
     private function processSigap(string $formName, array $itemGroup, array &$contributorRow): void
     {
+        Log::info('Processing Sigap form group', [
+            'formName' => $formName,
+            'itemGroup' => $itemGroup, // Log the entire item group for debugging
+        ]);
         $title = $itemGroup['title'] ?? 'Unknown Title';
         $items = $itemGroup['items'] ?? $itemGroup;
 
