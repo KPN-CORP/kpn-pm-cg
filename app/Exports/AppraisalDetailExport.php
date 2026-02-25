@@ -187,6 +187,12 @@ class AppraisalDetailExport implements FromCollection, WithHeadings, WithMapping
 
     private function processSigap(string $formName, array $itemGroup, array &$contributorRow): void
     {
+        Log::info('Processing Sigap form group', [
+            'formName' => $formName,
+            'itemGroup' => $itemGroup, // Log the entire item group for debugging
+            'contributorRow' => $contributorRow, // Log the current state of contributorRow for debugging
+            
+        ]);
         // title and items definitions
         $title = $itemGroup['title'] ?? 'Unknown Title';
         $items = is_array($itemGroup['items'] ?? null) ? $itemGroup['items'] : [];
@@ -226,19 +232,6 @@ class AppraisalDetailExport implements FromCollection, WithHeadings, WithMapping
         $this->captureDynamicHeader($header);
         $contributorRow[$header] = ['dataId' => strip_tags($formItemText) . "|" . ($score ?? '')];
     }
-
-        // foreach ($items as $subIndex => $item) {
-        //     if (is_array($item)) {
-        //         // Support both structures: ['formItem','score'] or ['formItem'=>..., 'score'=>...]
-        //         $formItem = $item['formItem'] ?? ($item[0] ?? null) ?? '';
-        //         $score = $item['score'] ?? ($item[1] ?? '');
-        //         $subNumber = $subIndex + 1;
-        //         $header = strtolower(trim("{$formName}_{$title}_{$subNumber}"));
-        //         $this->captureDynamicHeader($header);
-        //         $contributorRow[$header] = ['dataId' => strip_tags((string)$formItem) . "|" . $score];
-        //     }
-        // }
-    // }
 
     private function processKPI(string $formName, array $itemGroup, array &$contributorRow, int $index): void
     {
