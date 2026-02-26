@@ -339,11 +339,7 @@ class AppraisalDetailExport implements FromCollection, WithHeadings, WithMapping
         Log::info('Calculated appraisal summary for contributor', [
             'employee_id' => $employeeData->employee_id,
             'contributor_type' => $contributor->contributor_type,
-            'totalKpiScore' => $result['totalKpiScore'] ?? null,
-            'totalCultureScore' => $result['totalCultureScore'] ?? null,
-            'totalLeadershipScore' => $result['totalLeadershipScore'] ?? null,
-            'totalSigapScore' => $result['totalSigapScore'] ?? null,
-            'totalScore' => $result['totalScore'] ?? null,
+            'Result' => $result,
         ]);
 
         $formData = $this->appService->combineFormData($result['calculated_data'][0], $goalData, $contributor->contributor_type, $employeeData, $contributor->period);
