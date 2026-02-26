@@ -127,9 +127,9 @@ class AppraisalDetailExport implements FromCollection, WithHeadings, WithMapping
         foreach ($contributors as $contributor) {
             $contributorRow = $row;
             $formData = $this->getFormDataForContributor($contributor);
-            Log::info('Adding contributor row to export', [
-                'formData' => $formData,
-            ]);
+            // Log::info('Adding contributor row to export', [
+            //     'formData' => $formData,
+            // ]);
             $contributorRow['Contributor ID'] = ['dataId' => $contributor->contributor_id];
             $contributorRow['Contributor Type'] = ['dataId' => $contributor->contributor_type];
             $this->addFormDataToRow($contributorRow, $formData);
@@ -191,12 +191,12 @@ class AppraisalDetailExport implements FromCollection, WithHeadings, WithMapping
 
     private function processSigap(string $formName, array $itemGroup, array &$contributorRow): void
     {
-        Log::info('Processing Sigap form group', [
-            'formName' => $formName,
-            'itemGroup' => $itemGroup, // Log the entire item group for debugging
-            'contributorRow' => $contributorRow, // Log the current state of contributorRow for debugging
+        // Log::info('Processing Sigap form group', [
+        //     'formName' => $formName,
+        //     'itemGroup' => $itemGroup, // Log the entire item group for debugging
+        //     'contributorRow' => $contributorRow, // Log the current state of contributorRow for debugging
             
-        ]);
+        // ]);
         // title and items definitions
         if (empty($itemGroup['title'])) {
             // Skip processing when there's no title
@@ -335,6 +335,16 @@ class AppraisalDetailExport implements FromCollection, WithHeadings, WithMapping
         } else {
             $result = $this->appService->appraisalSummary($weightageContent, $appraisalData, $employeeData->employee_id, $jobLevel);
         }
+
+        Log::info('Calculated appraisal summary for contributor', [
+            'employee_id' => $employeeData->employee_id,
+            'contributor_type' => $contributor->contributor_type,
+            'totalKpiScore' => $result['totalKpiScore'] ?? null,
+            'totalCultureScore' => $result['totalCultureScore'] ?? null,
+            'totalLeadershipScore' => $result['totalLeadershipScore'] ?? null,
+            'totalSigapScore' => $result['totalSigapScore'] ?? null,
+            'totalScore' => $result['totalScore'] ?? null,
+        ]);
 
         $formData = $this->appService->combineFormData($result['calculated_data'][0], $goalData, $contributor->contributor_type, $employeeData, $contributor->period);
 
