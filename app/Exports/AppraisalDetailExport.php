@@ -329,12 +329,12 @@ class AppraisalDetailExport implements FromCollection, WithHeadings, WithMapping
 
         $weightageContent = json_decode($weightageData->form_data, true);
 
-        if ($this->user->hasRole('superadmin')) {
-            // for non percentage by 360 data BI items
-            $result = $this->appService->appraisalSummaryWithout360Calculation($weightageContent, $appraisalData, $employeeData->employee_id, $jobLevel);
-        } else {
+        // if ($this->user->hasRole('superadmin')) {
+        //     // for non percentage by 360 data BI items
+        //     $result = $this->appService->appraisalSummaryWithout360Calculation($weightageContent, $appraisalData, $employeeData->employee_id, $jobLevel);
+        // } else {
             $result = $this->appService->appraisalSummary($weightageContent, $appraisalData, $employeeData->employee_id, $jobLevel);
-        }
+        // }
 
         Log::info('Calculated appraisal summary for contributor', [
             'employee_id' => $employeeData->employee_id,
