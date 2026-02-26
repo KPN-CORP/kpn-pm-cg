@@ -1750,6 +1750,10 @@ class AppService
                 $summary['formData'][] = $form; // Add Culture or Leadership to the summary
             }
         }
+        Log::info('AppService::calculatedFormData', [
+            'calculatedFormData' => $calculatedFormData,
+            'summary' => $summary
+        ]);
         
         // Return both calculated data and summary
         return [

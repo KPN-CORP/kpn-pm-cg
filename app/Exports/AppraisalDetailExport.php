@@ -336,11 +336,11 @@ class AppraisalDetailExport implements FromCollection, WithHeadings, WithMapping
             $result = $this->appService->appraisalSummary($weightageContent, $appraisalData, $employeeData->employee_id, $jobLevel);
         // }
 
-        Log::info('Calculated appraisal summary for contributor', [
-            'employee_id' => $employeeData->employee_id,
-            'contributor_type' => $contributor->contributor_type,
-            'Result' => $result,
-        ]);
+        // Log::info('Calculated appraisal summary for contributor', [
+        //     'employee_id' => $employeeData->employee_id,
+        //     'contributor_type' => $contributor->contributor_type,
+        //     'Result' => $result,
+        // ]);
 
         $formData = $this->appService->combineFormData($result['calculated_data'][0], $goalData, $contributor->contributor_type, $employeeData, $contributor->period);
 
