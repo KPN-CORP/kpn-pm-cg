@@ -139,28 +139,27 @@ class AppraisalDetailExport implements FromCollection, WithHeadings, WithMapping
     }
     private function addFormDataToRow(array &$contributorRow, array $formData): void
     {
-        if (isset($formData['formData'])) {
+        if (!empty($formData['formData']) && is_array($formData['formData'])) {
             foreach ($formData['formData'] as $formGroup) {
                 $formName = $formGroup['formName'] ?? 'Unknown';
                 foreach ($formGroup as $index => $itemGroup) {
-                    // Log::info('Preprocessing data to temp table', [
-                    //     'data_preview' => $index, // Log only the first 10 rows
-                    // ]);
-                            if (is_array($itemGroup)) {
-                                if ($formName === 'Culture' || $formName === 'Leadership' || $formName === 'Sigap') {
-                                    $this->processFormGroup($formName, $itemGroup, $contributorRow);
-                                } elseif ($formName === 'KPI') {
-                                    $this->processKPI($formName, $itemGroup, $contributorRow, $index);
-                                }
+                    if (is_array($itemGroup)) {
+                        if ($formName === 'Culture' || $formName === 'Leadership' || $formName === 'Sigap') {
+                            $this->processFormGroup($formName, $itemGroup, $contributorRow);
+                        } elseif ($formName === 'KPI') {
+                            $this->processKPI($formName, $itemGroup, $contributorRow, $index);
+                        }
                     }
                 }
             }
-                    $contributorRow['KPI Score'] = ['dataId' => round($formData['totalKpiScore'], 2) ?? '-'];
-                    $contributorRow['Culture Score'] = ['dataId' => round($formData['totalCultureScore'], 2) ?? '-'];
-                    $contributorRow['Leadership Score'] = ['dataId' => round($formData['totalLeadershipScore'], 2) ?? '-'];
-                    $contributorRow['Sigap Score'] = ['dataId' => round($formData['totalSigapScore'] ?? 0, 2) ?? '-'];
-                    $contributorRow['Total Score'] = ['dataId' => round($formData['totalScore'], 2) ?? '-'];
         }
+
+        // Ensure score columns always exist with safe fallbacks so Sigap and other scores appear
+        $contributorRow['KPI Score'] = ['dataId' => (isset($formData['totalKpiScore']) && $formData['totalKpiScore'] !== null) ? round($formData['totalKpiScore'], 2) : '-'];
+        $contributorRow['Culture Score'] = ['dataId' => (isset($formData['totalCultureScore']) && $formData['totalCultureScore'] !== null) ? round($formData['totalCultureScore'], 2) : '-'];
+        $contributorRow['Leadership Score'] = ['dataId' => (isset($formData['totalLeadershipScore']) && $formData['totalLeadershipScore'] !== null) ? round($formData['totalLeadershipScore'], 2) : '-'];
+        $contributorRow['Sigap Score'] = ['dataId' => (isset($formData['totalSigapScore']) && $formData['totalSigapScore'] !== null) ? round($formData['totalSigapScore'], 2) : '-'];
+        $contributorRow['Total Score'] = ['dataId' => (isset($formData['totalScore']) && $formData['totalScore'] !== null) ? round($formData['totalScore'], 2) : '-'];
     }
 
     /**
