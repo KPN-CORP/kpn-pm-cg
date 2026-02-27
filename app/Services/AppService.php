@@ -308,7 +308,6 @@ class AppService
                                     'achievement' => $entry['achievement'],
                                     'target' => $entry['target'],
                                     'type' => $entry['type'],
-                                    'percentage' => $entry['percentage'],
                                 ]);
                                 // Ensure achievement/target are numeric (strip non-numeric chars)
                                 $rawAchievement = $entry['achievement'] ?? 0;
