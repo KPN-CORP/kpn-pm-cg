@@ -113,6 +113,9 @@ class AppraisalDetailExport implements FromCollection, WithHeadings, WithMapping
         if ($contributor) {
             $contributorRow = $row;
             $formData = $this->getFormDataSelf($contributor);
+            // Log::info('Adding self row to export', [
+            //     // 'formData' => $formData,
+            // ]);
             $contributorRow['Contributor ID'] = ['dataId' => $contributor->employee_id];
             $contributorRow['Contributor Type'] = ['dataId' => 'self'];
             $this->addFormDataToRow($contributorRow, $formData);
@@ -139,6 +142,11 @@ class AppraisalDetailExport implements FromCollection, WithHeadings, WithMapping
     }
     private function addFormDataToRow(array &$contributorRow, array $formData): void
     {
+        // Log::info('Starting addFormDataToRow', [
+        // 'formData' => $formData,
+        // 'contributorRow' => $contributorRow, // Log the current state of contributorRow for debugging
+        // ]);
+
         if (!empty($formData['formData']) && is_array($formData['formData'])) {
             foreach ($formData['formData'] as $formGroup) {
                 $formName = $formGroup['formName'] ?? 'Unknown';
@@ -158,7 +166,7 @@ class AppraisalDetailExport implements FromCollection, WithHeadings, WithMapping
         $contributorRow['KPI Score'] = ['dataId' => (isset($formData['totalKpiScore']) && $formData['totalKpiScore'] !== null) ? round($formData['totalKpiScore'], 2) : '-'];
         $contributorRow['Culture Score'] = ['dataId' => (isset($formData['totalCultureScore']) && $formData['totalCultureScore'] !== null) ? round($formData['totalCultureScore'], 2) : '-'];
         $contributorRow['Leadership Score'] = ['dataId' => (isset($formData['totalLeadershipScore']) && $formData['totalLeadershipScore'] !== null) ? round($formData['totalLeadershipScore'], 2) : '-'];
-        $contributorRow['Sigap Score'] = ['dataId' => (isset($formData['totalSigapScore']) && $formData['totalSigapScore'] !== null) ? round($formData['totalSigapScore'], 2) : '-'];
+        $contributorRow['Sigap Score'] = ['dataId' => (isset($formData['sigapScore']) && $formData['sigapScore'] !== null) ? round($formData['sigapScore'], 2) : '-'];
         $contributorRow['Total Score'] = ['dataId' => (isset($formData['totalScore']) && $formData['totalScore'] !== null) ? round($formData['totalScore'], 2) : '-'];
     }
 
@@ -294,7 +302,7 @@ class AppraisalDetailExport implements FromCollection, WithHeadings, WithMapping
                 'totalKpiScore' => null,
                 'totalCultureScore' => null,
                 'totalLeadershipScore' => null,
-                'totalSigapScore' => null,
+                'sigapScore' => null,
                 'totalScore' => null,
             ];
         }
@@ -441,14 +449,14 @@ class AppraisalDetailExport implements FromCollection, WithHeadings, WithMapping
 
         $weightageContent = json_decode($weightageData->form_data, true);
 
-        if ($this->user->hasRole('superadmin')) {
-            // for non percentage by 360 data BI items
-            $result = $this->appService->appraisalSummaryWithout360Calculation($weightageContent, $appraisalData, $employeeData->employee_id, $jobLevel);
-        } else {
-            $result = $this->appService->appraisalSummary($weightageContent, $appraisalData, $employeeData->employee_id, $jobLevel);
-        }
+        // Use the standard appraisalSummary to avoid the without-360 code path causing string-offset errors
+        $result = $this->appService->appraisalSummary($weightageContent, $appraisalData, $employeeData->employee_id, $jobLevel);
 
         $formData = $this->appService->combineFormData($result['calculated_data'][0], $goalData, 'employee', $employeeData, $datas->first()->period);
+
+        // Log::info('Calculated appraisal summary for self', [
+        //     'formData' => $formData,
+        // ]);
 
         foreach ($formData['formData'] as &$form) {
             if ($form['formName'] === 'Culture') {

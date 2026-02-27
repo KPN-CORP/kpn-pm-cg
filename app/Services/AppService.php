@@ -140,9 +140,34 @@ class AppService
                 continue;
             }
 
-            if (array_key_exists('score', $section) && is_numeric($section['score'])) {
-                $totalScore += (int) $section['score'];
+            // Case: direct ['score' => x]
+            if (isset($section['score']) && is_numeric($section['score'])) {
+                $totalScore += (float) $section['score'];
                 $totalCount++;
+                continue;
+            }
+
+            // Case: numeric-indexed array of items like [ ['score'=>x], ... ]
+            $values = array_values($section);
+            if ($values === $section) {
+                foreach ($section as $item) {
+                    if (is_array($item) && isset($item['score']) && is_numeric($item['score'])) {
+                        $totalScore += (float) $item['score'];
+                        $totalCount++;
+                    }
+                }
+            } else {
+                // Nested associative (e.g., ['0' => [ ['score'=>x] ] ])
+                foreach ($section as $nested) {
+                    if (is_array($nested)) {
+                        foreach ($nested as $item) {
+                            if (is_array($item) && isset($item['score']) && is_numeric($item['score'])) {
+                                $totalScore += (float) $item['score'];
+                                $totalCount++;
+                            }
+                        }
+                    }
+                }
             }
         }
 
@@ -379,6 +404,10 @@ class AppService
                 break; // Exit after processing the relevant job level
             }
         }
+
+        // Log::info('Weightage Sigap setelah normalisasi:', [
+        //     'sigapAverageScore' => $sigapAverageScore,
+        // ]);
 
         // Safely divide by 100 with validation
         $appraisalDatas['kpiWeightage360'] = $kpiWeightage360 ?? 0; // get KPI 360 weightage
@@ -1659,7 +1688,7 @@ class AppService
                     }
 
                     // If single score structure (associative with 'score')
-                    if (isset($values['score']) && !is_array($values[0] ?? null)) {
+                    if (is_array($values) && isset($values['score']) && !is_array($values[0] ?? null)) {
                         $score = is_numeric($values['score']) ? (float) $values['score'] : 0;
                         $weightedScore = $score * ($roleWeight / 100);
 
@@ -1678,10 +1707,14 @@ class AppService
                         continue;
                     }
 
-                    // Multi-score case: $values is an array of ['score' => x]
+                    // Multi-score case: ensure $values is an array of ['score' => x]
+                    if (!is_array($values)) {
+                        continue;
+                    }
+
                     foreach ($values as $index => $scoreData) {
 
-                        if (!isset($scoreData['score'])) {
+                        if (!is_array($scoreData) || !isset($scoreData['score'])) {
                             continue;
                         }
 
@@ -1736,10 +1769,6 @@ class AppService
                 $summary['formData'][] = $form; // Add to the summary
             }
         }
-        Log::info('AppService::calculatedFormData', [
-            'calculatedFormData' => $calculatedFormData,
-            'summary' => $summary
-        ]);
 
         // Return both calculated data and summary
         return [
@@ -1750,13 +1779,14 @@ class AppService
 
     function appraisalSummaryWithout360Calculation($weightages, $formData, $employeeID, $jobLevel) {
 
-        $calculatedFormData = [];
+        try {
+            $calculatedFormData = [];
 
-        $checkLayer = ApprovalLayerAppraisal::where('employee_id', $employeeID)
-        ->where('layer_type', '!=', 'calibrator')
-        ->selectRaw('layer_type, COUNT(*) as count')
-        ->groupBy('layer_type')
-        ->get();
+            $checkLayer = ApprovalLayerAppraisal::where('employee_id', $employeeID)
+            ->where('layer_type', '!=', 'calibrator')
+            ->selectRaw('layer_type, COUNT(*) as count')
+            ->groupBy('layer_type')
+            ->get();
 
         $layerCounts = $checkLayer->pluck('count', 'layer_type')->toArray();
 
@@ -1785,9 +1815,26 @@ class AppService
                 } else {
                     // Process other forms
                     foreach ($weightages as $item) {
-                        if(in_array($jobLevel, $item['jobLevel'])){
-                            foreach ($item['competencies'] as $competency) {
-                                if ($competency['competency'] == $formName) {
+                        $itemJobLevels = [];
+                        if (isset($item['jobLevel'])) {
+                            if (is_array($item['jobLevel'])) {
+                                $itemJobLevels = $item['jobLevel'];
+                            } elseif (is_string($item['jobLevel'])) {
+                                $itemJobLevels = [$item['jobLevel']];
+                            }
+                        }
+
+                        if (in_array($jobLevel, $itemJobLevels)) {
+                            $competencies = $item['competencies'] ?? [];
+                            foreach ($competencies as $competency) {
+                                if ($competency instanceof \stdClass) {
+                                    $competency = (array) $competency;
+                                }
+                                if (!is_array($competency)) {
+                                    continue;
+                                }
+
+                                if (($competency['competency'] ?? null) == $formName) {
                                     // Handle weightage360
                                     $weightage360 = 0;
     
@@ -1992,11 +2039,21 @@ class AppService
             }
         }
         
-        // Return both calculated data and summary
-        return [
-            'calculated_data' => $calculatedFormData,
-            'summary' => $summary
-        ];
+            // Return both calculated data and summary
+            return [
+                'calculated_data' => $calculatedFormData,
+                'summary' => $summary
+            ];
+        } catch (\Throwable $e) {
+            Log::error('appraisalSummaryWithout360Calculation failed, falling back to appraisalSummary', [
+                'message' => $e->getMessage(),
+                'file' => $e->getFile(),
+                'line' => $e->getLine(),
+                'formData_sample' => array_slice($formData, 0, 3)
+            ]);
+
+            return $this->appraisalSummary($weightages, $formData, $employeeID, $jobLevel);
+        }
     }
 
     public function getClusterKPIs($employee_id)
