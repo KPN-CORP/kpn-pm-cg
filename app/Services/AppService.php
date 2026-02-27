@@ -310,7 +310,12 @@ class AppService
                                     'type' => $entry['type'],
                                     'percentage' => $entry['percentage'],
                                 ]);
-                                $entry['percentage'] = $this->evaluate($entry['achievement'], $entry['target'], $entry['type']);
+                                // Ensure achievement/target are numeric (strip non-numeric chars)
+                                $rawAchievement = $entry['achievement'] ?? 0;
+                                $rawTarget = $entry['target'] ?? 0;
+                                $parsedAchievement = is_numeric($rawAchievement) ? (float)$rawAchievement : (float)preg_replace('/[^0-9\.\-]/', '', (string)$rawAchievement) ?: 0;
+                                $parsedTarget = is_numeric($rawTarget) ? (float)$rawTarget : (float)preg_replace('/[^0-9\.\-]/', '', (string)$rawTarget) ?: 0;
+                                $entry['percentage'] = $this->evaluate($parsedAchievement, $parsedTarget, $entry['type']);
                                 $entry['conversion'] = $this->conversion($entry['percentage']);
                                 $entry['final_score'] = $entry['conversion'] * $entry['weightage'] / 100;
         
