@@ -303,6 +303,14 @@ class AppService
                             // Adding "percentage" key
                             if (isset($entry['achievement'], $entry['target'], $entry['type'])) {
                                 $entry['percentage'] = $this->evaluate($entry['achievement'], $entry['target'], $entry['type']);
+                                Log::info('Proses employee KPI evaluation:', [
+                                    'employee_id' => $employeeData->employee_id,
+                                    'kpi' => $key,
+                                    'achievement' => $entry['achievement'],
+                                    'target' => $entry['target'],
+                                    'type' => $entry['type'],
+                                    'percentage' => $entry['percentage'],
+                                ]);
                                 $entry['conversion'] = $this->conversion($entry['percentage']);
                                 $entry['final_score'] = $entry['conversion'] * $entry['weightage'] / 100;
         
