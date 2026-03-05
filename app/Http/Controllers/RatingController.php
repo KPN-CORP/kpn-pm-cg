@@ -52,21 +52,21 @@ class RatingController extends Controller
             $filterYear = $request->input('filterYear');
 
             // Get the KPI unit and calibration percentage
-            $kpiUnit = KpiUnits::with(['masterCalibration' => function($query) {
-                $query->where('period', $this->period);
-            }])->where('employee_id', $user)->where('status_aktif', 'T')->where('periode', $this->period)->first();
+            // $kpiUnit = KpiUnits::with(['masterCalibration' => function($query) {
+            //     $query->where('period', $this->period);
+            // }])->where('employee_id', $user)->where('status_aktif', 'T')->where('periode', $this->period)->first();
 
-            if (!$kpiUnit) {
-                Log::warning('KPI Unit not set for the user.', ['user' => $user]);
-                Session::flash('error', "Your KPI Unit not been set");
-                Session::flash('errorTitle', "Cannot Initiate Rating");
-            }
+            // if (!$kpiUnit) {
+            //     Log::warning('KPI Unit not set for the user.', ['user' => $user]);
+            //     Session::flash('error', "Your KPI Unit not been set");
+            //     Session::flash('errorTitle', "Cannot Initiate Rating");
+            // }
 
-            Log::info('Fetching KPI unit and calibration percentage.', ['user' => $user, 'period' => $period, 'kpiUnit' => $kpiUnit]);
+            // Log::info('Fetching KPI unit and calibration percentage.', ['user' => $user, 'period' => $period, 'kpiUnit' => $kpiUnit]);
 
-            $calibration = $kpiUnit->masterCalibration->percentage;
+            $calibration = '{"Exceptional":0.1,"Exceed Expectation":0.2,"Meet Expectation":0.4,"Need Improvement":0.2,"Poor":0.1}';
             $masterRating = MasterRating::select('id_rating_group', 'parameter', 'value', 'min_range', 'max_range')
-                ->where('id_rating_group', $kpiUnit->masterCalibration->id_rating_group)
+                ->where('id_rating_group', '30e4e9eb-476f-4914-a123-807958a95260')
                 ->get();
 
             Log::info('Fetched master ratings.', ['masterRatingCount' => $masterRating->count()]);
@@ -206,7 +206,7 @@ class RatingController extends Controller
                         : null;
 
                     $data->suggested_request = $suggestedRating;
-                    $data->id_calibration_group = $calibrationData->where('approver_id', $user)->first()->id_calibration_group;
+                    $data->id_calibration_group = $calibrationData->where('approver_id', $user)->first()?->id_calibration_group;
 
                     // Set previous rating details
                     $data->previous_rating = $previousRating
@@ -393,7 +393,7 @@ class RatingController extends Controller
 
             $parentLink = 'Calibration';
             $link = 'Rating';
-            $id_calibration_group = $kpiUnit->masterCalibration->id_calibration_group;
+            $id_calibration_group = 'c7b602c2-1791-4552-81e4-87525f8b0d83';
 
             Log::info('Returning view with data.', ['activeLevel' => $activeLevel, 'id_calibration_group' => $id_calibration_group]);
 
@@ -497,19 +497,19 @@ class RatingController extends Controller
             $period = $this->appService->appraisalPeriod();
 
             // Get the KPI unit and calibration percentage
-            $kpiUnit = KpiUnits::with(['masterCalibration'])
-                ->where('employee_id', $user)
-                ->where('status_aktif', 'T')
-                ->where('periode', $this->period)
-                ->first();
+            // $kpiUnit = KpiUnits::with(['masterCalibration'])
+            //     ->where('employee_id', $user)
+            //     ->where('status_aktif', 'T')
+            //     ->where('periode', $this->period)
+            //     ->first();
 
-            if (!$kpiUnit) {
-                Session::flash('error', "Your KPI unit data not found");
-                return redirect()->back();
-            }
+            // if (!$kpiUnit) {
+            //     Session::flash('error', "Your KPI unit data not found");
+            //     return redirect()->back();
+            // }
 
             $masterRating = MasterRating::select('id_rating_group', 'parameter', 'value', 'min_range', 'max_range')
-                ->where('id_rating_group', $kpiUnit->masterCalibration->id_rating_group)
+                ->where('id_rating_group', '30e4e9eb-476f-4914-a123-807958a95260')
                 ->get();
 
             // Query for ApprovalLayerAppraisal data
@@ -705,19 +705,19 @@ class RatingController extends Controller
             $period = $this->appService->appraisalPeriod();
 
             // Get the KPI unit and calibration percentage
-            $kpiUnit = KpiUnits::with(['masterCalibration'])
-                ->where('employee_id', $user)
-                ->where('status_aktif', 'T')
-                ->where('periode', $this->period)
-                ->first();
+            // $kpiUnit = KpiUnits::with(['masterCalibration'])
+            //     ->where('employee_id', $user)
+            //     ->where('status_aktif', 'T')
+            //     ->where('periode', $this->period)
+            //     ->first();
 
-            if (!$kpiUnit) {
-                Session::flash('error', "Your KPI unit data not found");
-                return redirect()->back();
-            }
+            // if (!$kpiUnit) {
+            //     Session::flash('error', "Your KPI unit data not found");
+            //     return redirect()->back();
+            // }
 
             $masterRating = MasterRating::select('id_rating_group', 'parameter', 'value', 'min_range', 'max_range')
-                ->where('id_rating_group', $kpiUnit->masterCalibration->id_rating_group)
+                ->where('id_rating_group', '30e4e9eb-476f-4914-a123-807958a95260')
                 ->get();
 
             // Query for ApprovalLayerAppraisal data
@@ -928,10 +928,10 @@ class RatingController extends Controller
         try {
 
             // Get the KPI unit and calibration percentage
-            $kpiUnit = KpiUnits::with(['masterCalibration'])->where('employee_id', $this->user)->where('status_aktif', 'T')->where('periode', $this->period)->first();
+            // $kpiUnit = KpiUnits::with(['masterCalibration'])->where('employee_id', $this->user)->where('status_aktif', 'T')->where('periode', $this->period)->first();
 
             $masterRating = MasterRating::select('id_rating_group', 'parameter', 'value', 'min_range', 'max_range')
-                ->where('id_rating_group', $kpiUnit->masterCalibration->id_rating_group)
+                ->where('id_rating_group', '30e4e9eb-476f-4914-a123-807958a95260')
                 ->get();
 
             $allowedRating = $masterRating->pluck('parameter')->toArray();

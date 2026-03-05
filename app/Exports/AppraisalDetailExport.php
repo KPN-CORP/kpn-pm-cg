@@ -250,7 +250,7 @@ class AppraisalDetailExport implements FromCollection, WithHeadings, WithMapping
 
     private function processKPI(string $formName, array $itemGroup, array &$contributorRow, int $index): void
     {
-        $maxKpi = 10;
+        $maxKpi = 30;
         $index = min($index, $maxKpi - 1); // Ensure index stays within 0-9
 
         // Normalize / safeguard keys to avoid "Undefined array key" errors

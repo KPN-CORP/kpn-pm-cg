@@ -959,7 +959,7 @@ class AppService
                 $appraisalDataCollection = [];
                 $goalDataCollection = [];
 
-                $formGroupContent = $this->formGroupAppraisal($datas->first()->employee_id, 'Appraisal Form', $period);
+                $formGroupContent = $this->formGroupAppraisal($datas->first()->employee_id, 'Appraisal Form Review', $period);
                 
                 if (!$formGroupContent) {
                     $appraisalForm = ['data' => ['formData' => []]];

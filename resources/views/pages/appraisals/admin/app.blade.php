@@ -172,7 +172,7 @@
                                         @if($calibratorLayer['status'])
                                             <i class="ri-check-line text-success fs-20 fw-medium"></i>
                                         @else
-                                            <i class="ri-error-warning-line text-warning fs-20 fw-medium"></i>{{ $calibratorLayer['status'] }}
+                                            <i class="ri-error-warning-line text-warning fs-20 fw-medium"></i>
                                         @endif
                                     @endif
                                 </td>

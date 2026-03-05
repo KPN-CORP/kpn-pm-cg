@@ -242,7 +242,7 @@ class AppraisalController extends Controller
 }
 
 
-    private function buildApprovalStatus($employee, $ratingGroups)
+private function buildApprovalStatus($employee, $ratingGroups)
 {
     $status = [];
 
@@ -256,11 +256,21 @@ class AppraisalController extends Controller
             $rated = '|' . ($ratingGroups[$groupId][$availability['rating']] ?? '-');
         }
 
+        // 🔥 FIX KHUSUS CALIBRATOR
+        $finalStatus = $availability['exists'];
+
+        if ($layer->layer_type === 'calibrator') {
+            $calibration = $employee->calibration
+                ->firstWhere('approver_id', $layer->approver_id);
+
+            $finalStatus = $calibration && $calibration->status === 'Approved';
+        }
+
         $status[$layer->layer_type][] = [
             'approver_id' => $layer->approver_id,
             'layer' => $layer->layer,
             'rating' => $rated,
-            'status' => $availability['exists'],
+            'status' => $finalStatus,
             'approver_name' => $layer->approver->fullname ?? 'N/A',
         ];
     }
