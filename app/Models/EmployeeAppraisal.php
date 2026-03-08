@@ -67,7 +67,7 @@ class EmployeeAppraisal extends Model
     }
     public function isApproverAppraisal()
     {
-        return $this->hasMany(ApprovalLayerAppraisal::class, 'employee_id', 'approver_id');
+        return $this->hasMany(ApprovalLayerAppraisal::class, 'approver_id', 'employee_id');
     }
     public function appraisalpa()
     {

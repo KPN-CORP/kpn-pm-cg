@@ -523,6 +523,12 @@ class RatingController extends Controller
                 })
                 ->where('layer_type', 'calibrator')
                 ->get();
+                
+            if ($allData->isEmpty()) {
+                Session::flash('error', "Schedule has been closed");
+                Session::flash('errorTitle', "Cannot Initiate Rating");
+                return back();
+            }
 
             // Query for ApprovalLayerAppraisal data with approval requests
             $dataWithRequests = ApprovalLayerAppraisal::join('approval_requests', 'approval_requests.employee_id', '=', 'approval_layer_appraisals.employee_id')

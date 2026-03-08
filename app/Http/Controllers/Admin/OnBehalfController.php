@@ -794,10 +794,10 @@ class OnBehalfController extends Controller
             Log::info('Fetched master ratings.', ['masterRatingCount' => $masterRating->count()]);
 
             // Query for all ApprovalLayerAppraisal data
+
             $allData = ApprovalLayerAppraisal::with(['employee'])
                 ->where('approver_id', $id)
                 ->whereHas('employee', function ($query) {
-                    // Ensure the employee's access_menu has accesspa = 1
                     $query->where(function($q) {
                         $q->whereRaw('json_valid(access_menu)')
                         ->whereJsonContains('access_menu', ['createpa' => 1]);
@@ -805,7 +805,14 @@ class OnBehalfController extends Controller
                 })
                 ->where('layer_type', 'calibrator')
                 ->get();
-
+        
+            if ($allData->isEmpty()) {
+                Session::flash('error', "Cannot On Behalfs Rating PA Schedule has been closed");
+                Session::flash('errorTitle', "Cannot Initiate Rating");
+                return back();
+            }
+            
+          
             Log::info('Fetched all ApprovalLayerAppraisal data.', ['allDataCount' => $allData->count()]);
 
             // Query for ApprovalLayerAppraisal data with approval requests
@@ -870,7 +877,7 @@ class OnBehalfController extends Controller
             })->sortKeys();
 
             Log::info('Grouped and processed data.', ['groupedDataCount' => $datas->count()]);
-
+            
             // Process rating data
             $ratingDatas = $datas->map(function ($group) use ($id, $period, $user) {
                 Log::info('Processing rating data for group.', ['groupSize' => $group['with_requests']->count() + $group['without_requests']->count()]);
@@ -1114,8 +1121,6 @@ class OnBehalfController extends Controller
             $id_calibration_group = 'c7b602c2-1791-4552-81e4-87525f8b0d83';
 
             Log::info('Returning view with data.', ['activeLevel' => $activeLevel, 'id_calibration_group' => $id_calibration_group]);
-
-            // dd($ratingDatas);
 
             return view('pages.rating.app', compact('ratingDatas', 'calibrations', 'masterRating', 'link', 'parentLink', 'activeLevel', 'id_calibration_group'));
         } catch (Exception $e) {

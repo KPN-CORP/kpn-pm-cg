@@ -10,6 +10,12 @@
 @endsection
 
 @section('content')
+<div class="mandatory-field">
+            <div id="alertField" class="alert alert-danger alert-dismissible {{ Session::has('error') ? '':'fade' }}" role="alert" {{ Session::has('error') ? '':'hidden' }}>
+                <strong>{!! Session::get('error') !!}{!! Session::get('errorMessage') !!}</strong>
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        </div>
 <meta name="csrf-token" content="{{ csrf_token() }}">
     <!-- Begin Page Content -->
     <div class="container-fluid">
