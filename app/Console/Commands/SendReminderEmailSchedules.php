@@ -3,7 +3,7 @@
 namespace App\Console\Commands;
 
 use Illuminate\Console\Command;
-use App\Http\Controllers\ScheduleController;
+use App\Http\Controllers\ScheduleCronController;
 
 class SendReminderEmailSchedules extends Command
 {
@@ -12,14 +12,14 @@ class SendReminderEmailSchedules extends Command
      *
      * @var string
      */
-    protected $signature = 'app:reminderSchedules';
+    protected $signature = "app:reminderSchedules";
 
     /**
      * The console command description.
      *
      * @var string
      */
-    protected $description = 'Command description';
+    protected $description = "Command description";
 
     /**
      * Execute the console command.
@@ -31,8 +31,8 @@ class SendReminderEmailSchedules extends Command
 
     public function handle()
     {
-        $controller = new ScheduleController();
+        $controller = new ScheduleCronController();
         $controller->reminderDailySchedules();
-        $this->info('Email reminder sent successfully.');
+        $this->info("Email reminder sent successfully.");
     }
 }
