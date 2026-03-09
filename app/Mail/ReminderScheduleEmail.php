@@ -34,12 +34,9 @@ class ReminderScheduleEmail extends Mailable
         //     subject: 'Reminder Schedule Email',
         // );
         return new Envelope(
-            subject: 'Reminder Goals Setting',
-            replyTo:[
-                new Address('eriton.dewa@kpn-corp.com', 'Eriton')
-            ]
+            subject: "Reminder Goals Setting",
+            replyTo: [new Address("alfian.azis@kpn-corp.com", "Alfian")],
         );
-        
     }
 
     /**
@@ -51,11 +48,11 @@ class ReminderScheduleEmail extends Mailable
         //     view: 'view.name',
         // );
         return new Content(
-            view: 'email.reminderschedule', // forgot.blade.php yg ada di folder email
-            with:[
-                'messages'=>$this->messages,
-                'name'=>$this->name,
-            ]
+            view: "email.reminderschedule", // forgot.blade.php yg ada di folder email
+            with: [
+                "messages" => $this->messages,
+                "name" => $this->name,
+            ],
         );
     }
 
