@@ -118,7 +118,7 @@ class AppService
                     ? (float) $subSection['score']
                     : 0;
 
-                // 🎯 APPLY 360 WEIGHTAGE
+                // ðŸŽ¯ APPLY 360 WEIGHTAGE
                 $weightedScore = $score * ($roleWeight / 100);
 
                 $totalScore += $weightedScore;
@@ -178,10 +178,36 @@ class AppService
 
     public function evaluate($achievement, $target, $type) {
         // Ensure inputs are numeric
-        if (!is_numeric($achievement) || !is_numeric($target)) {
-            throw new Exception('Achievement and target must be numeric');
+        // Debug log
+        Log::debug('Evaluate KPI', [
+            'achievement' => $achievement,
+            'target' => $target,
+            'type' => $type,
+            'achievement_type' => gettype($achievement),
+            'target_type' => gettype($target)
+        ]);
+    
+        // Skip jika achievement null
+        if (is_null($achievement)) {
+            Log::debug('Skip KPI evaluation because achievement is null', [
+                'target' => $target,
+                'type' => $type
+            ]);
+            return null; // atau return 0 tergantung kebutuhan scoring
         }
     
+        // Ensure inputs are numeric
+        if (!is_numeric($achievement) || !is_numeric($target)) {
+    
+            Log::error('Invalid KPI values', [
+                'achievement' => $achievement,
+                'target' => $target,
+                'type' => $type
+            ]);
+    
+            throw new Exception('Achievement and target must be numeric');
+        }
+        
         // Convert to floats for consistent handling
         $achievement = floatval($achievement);
         $target = floatval($target);
