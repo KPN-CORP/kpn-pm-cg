@@ -178,33 +178,32 @@ class AppService
 
     public function evaluate($achievement, $target, $type) {
         // Ensure inputs are numeric
-        // Debug log
-        Log::debug('Evaluate KPI', [
-            'achievement' => $achievement,
-            'target' => $target,
-            'type' => $type,
-            'achievement_type' => gettype($achievement),
-            'target_type' => gettype($target)
-        ]);
-    
-        // Skip jika achievement null
-        if (is_null($achievement)) {
-            Log::debug('Skip KPI evaluation because achievement is null', [
+        // Jika achievement berbentuk array/object
+        if (is_array($achievement)) {
+            $achievement = $achievement['achievement'] ?? null;
+        }
+        
+        // Skip jika null / kosong
+        if ($achievement === null) {
+        
+            Log::debug('Skip KPI evaluation because achievement empty', [
+                'achievement' => $achievement,
                 'target' => $target,
                 'type' => $type
             ]);
-            return null; // atau return 0 tergantung kebutuhan scoring
+        
+            return 0;
         }
-    
-        // Ensure inputs are numeric
+        
+        // Ensure numeric
         if (!is_numeric($achievement) || !is_numeric($target)) {
-    
+        
             Log::error('Invalid KPI values', [
                 'achievement' => $achievement,
                 'target' => $target,
                 'type' => $type
             ]);
-    
+        
             throw new Exception('Achievement and target must be numeric');
         }
         

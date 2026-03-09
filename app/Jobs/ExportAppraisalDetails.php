@@ -178,5 +178,5 @@ class ExportAppraisalDetails implements ShouldQueue
         return ['user:' . $this->userId, 'job:' . $this->jobTrackingId];
     }
 
-    public $tries = 3;
+    public $tries = 1;
 }
