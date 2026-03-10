@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Exports\UserExport;
 use App\Http\Controllers\Controller;
 use App\Models\Approval;
+use App\Models\AppraisalContributor;
 use App\Models\ApprovalLayer;
 use App\Models\ApprovalLayerAppraisal;
 use App\Models\ApprovalRequest;
@@ -17,6 +18,7 @@ use App\Models\FormGroupAppraisal;
 use App\Models\Goal;
 use App\Models\KpiUnits;
 use App\Models\Location;
+use App\Models\MasterCalibration;
 use App\Models\MasterRating;
 use App\Models\User;
 use App\Services\AppService;
@@ -46,19 +48,19 @@ class OnBehalfController extends Controller
     protected $category;
     protected $appService;
     protected $user;
-    
+
     public function __construct(AppService $appService)
     {
         $this->category = 'Goals';
         $this->appService = $appService;
         $this->roles = Auth::user()->roles;
         $this->user = Auth::user();
-        
+
         $restrictionData = [];
-        if(!is_null($this->roles)){
+        if (!is_null($this->roles)) {
             $restrictionData = json_decode($this->roles->first()->restriction, true);
         }
-        
+
         $this->permissionGroupCompanies = $restrictionData['group_company'] ?? [];
         $this->permissionCompanies = $restrictionData['contribution_level_code'] ?? [];
         $this->permissionLocations = $restrictionData['work_area_code'] ?? [];
@@ -93,8 +95,9 @@ class OnBehalfController extends Controller
             })
             ->orderBy('contribution_level_code')->get();
     }
-    
-    function index() {
+
+    function index()
+    {
 
         $parentLink = 'Admin';
         $link = 'On Behalf';
@@ -104,7 +107,7 @@ class OnBehalfController extends Controller
         $groupCompanies = $this->groupCompanies;
 
         return view('pages.onbehalfs.app', compact('link', 'parentLink', 'locations', 'companies', 'groupCompanies'));
-       
+
     }
 
     public function getOnBehalfContent(Request $request)
@@ -131,16 +134,22 @@ class OnBehalfController extends Controller
         $data = [];
 
         ini_set('memory_limit', '512M');
-        
+
         if ($filterCategory == 'Goals') {
 
             $period = $this->appService->goalPeriod();
 
             // Mengambil data pengajuan berdasarkan employee_id atau manager_id
-            $datas = ApprovalRequest::with(['employee', 'goal', 'updatedBy', 'initiated', 'approval' => function ($query) {
-                $query->with('approverName'); // Load nested relationship
-            }])->where('category', $filterCategory)->where('period', $period)->whereHas('employee')->whereHas('goal');
-            
+            $datas = ApprovalRequest::with([
+                'employee',
+                'goal',
+                'updatedBy',
+                'initiated',
+                'approval' => function ($query) {
+                    $query->with('approverName'); // Load nested relationship
+                }
+            ])->where('category', $filterCategory)->where('period', $period)->whereHas('employee')->whereHas('goal');
+
             $criteria = [
                 'work_area_code' => $permissionLocations,
                 'group_company' => $permissionGroupCompanies,
@@ -156,7 +165,7 @@ class OnBehalfController extends Controller
                     }
                 }
             });
-            
+
             // Apply filters based on request parameters
             if (!empty($group_company)) {
                 $datas->whereHas('employee', function ($datas) use ($group_company) {
@@ -168,26 +177,26 @@ class OnBehalfController extends Controller
                     $datas->whereIn('work_area_code', $location);
                 });
             }
-    
+
             if (!empty($company)) {
                 $datas->whereHas('employee', function ($datas) use ($company) {
                     $datas->whereIn('contribution_level_code', $company);
                 });
             }
-            
+
             $datas = $datas->get();
-            
-            $datas->map(function($item) {
+
+            $datas->map(function ($item) {
 
                 // Format created_at
                 $createdDate = Carbon::parse($item->created_at);
 
-                    $item->formatted_created_at = $createdDate->format('d M Y');
-    
+                $item->formatted_created_at = $createdDate->format('d M Y');
+
                 // Format updated_at
                 $updatedDate = Carbon::parse($item->updated_at);
 
-                    $item->formatted_updated_at = $updatedDate->format('d M Y');
+                $item->formatted_updated_at = $updatedDate->format('d M Y');
 
                 // Determine name and approval layer
                 if ($item->sendback_to == $item->employee->employee_id) {
@@ -196,8 +205,8 @@ class OnBehalfController extends Controller
                 } else {
                     $item->name = $item->manager ? $item->manager->fullname . ' (' . $item->manager->employee_id . ')' : '';
                     $item->approvalLayer = ApprovalLayer::where('employee_id', $item->employee_id)
-                                                        ->where('approver_id', $item->current_approval_id)
-                                                        ->value('layer');
+                        ->where('approver_id', $item->current_approval_id)
+                        ->value('layer');
                 }
 
                 $access_menu = json_decode($item->employee->access_menu, true);
@@ -207,8 +216,8 @@ class OnBehalfController extends Controller
 
                 return $item;
 
-                });
-            
+            });
+
             foreach ($datas as $request) {
                 // Memeriksa status form dan pembuatnya
                 if ($request->goal->form_status != 'Draft' || $request->created_by == Auth::user()->id) {
@@ -216,15 +225,15 @@ class OnBehalfController extends Controller
                     if ($request->approval->first()) {
                         $approverName = $request->approval->first();
                         $dataApprover = $approverName->approverName->fullname;
-                    }else{
+                    } else {
                         $dataApprover = '';
                     }
                     // Buat objek untuk menyimpan data request dan approver fullname
                     $dataItem = new stdClass();
-                    $dataItem = $request;              
+                    $dataItem = $request;
                     // Tambahkan objek $dataItem ke dalam array $data
                     $data[] = $dataItem;
-                    
+
                 }
             }
             Log::info('OnBehalf - Goals Data:', [
@@ -233,7 +242,7 @@ class OnBehalfController extends Controller
                 'count' => count($data),
                 'data' => collect($data)->take(5), // hanya tampilkan 5 pertama untuk menghindari log berlebihan
             ]);
-        }      
+        }
 
         if ($filterCategory == 'Appraisal') {
 
@@ -251,10 +260,10 @@ class OnBehalfController extends Controller
                     $query->with('approverName');
                 }
             ])
-            ->where('category', $filterCategory)
-            ->where('period', $period)
-            ->whereHas('employee')
-            ->whereHas('manager');
+                ->where('category', $filterCategory)
+                ->where('period', $period)
+                ->whereHas('employee')
+                ->whereHas('manager');
 
             // Apply permission-based filters
             $criteria = [
@@ -297,7 +306,8 @@ class OnBehalfController extends Controller
             foreach ($datas as $request) {
                 $appraisal = $request->appraisal;
 
-                if (!$appraisal) continue; // Skip jika appraisal null
+                if (!$appraisal)
+                    continue; // Skip jika appraisal null
 
                 // Cek form_status atau created_by
                 if (($appraisal->goal->form_status ?? null) !== 'Draft' || $request->created_by == Auth::user()->id) {
@@ -323,7 +333,7 @@ class OnBehalfController extends Controller
                         $formGroup = FormGroupAppraisal::with('rating')->find($formGroupId);
                         if ($formGroup && $formGroup->rating) {
                             foreach ($formGroup->rating as $rating) {
-                                if ((int)$rating->value === (int)$appraisal->rating) {
+                                if ((int) $rating->value === (int) $appraisal->rating) {
                                     $finalRating = $rating->parameter;
                                     break;
                                 }
@@ -401,7 +411,7 @@ class OnBehalfController extends Controller
             }
 
             $data = $datas->get();
-            
+
             Log::info('OnBehalf - Rating Data:', [
                 'category' => $category,
                 'filter_category' => $filterCategory,
@@ -409,12 +419,12 @@ class OnBehalfController extends Controller
                 'data' => collect($data)->take(5), // limit preview in log
             ]);
         }
-    
-        
+
+
         $locations = $this->locations;
         $companies = $this->companies;
         $groupCompanies = $this->groupCompanies;
-        
+
         if ($filterCategory == 'Goals') {
             return view('pages.onbehalfs.goal', compact('data', 'link', 'parentLink', 'locations', 'companies', 'groupCompanies'));
         } elseif ($filterCategory == 'Appraisal') {
@@ -426,15 +436,21 @@ class OnBehalfController extends Controller
         }
     }
 
-    function create($id) {
+    function create($id)
+    {
 
         // Mengambil data pengajuan berdasarkan employee_id atau manager_id
-        $datas = ApprovalRequest::with(['employee', 'goal', 'manager', 'approval' => function ($query) {
-            $query->with('approverName'); // Load nested relationship
-        }])->where('form_id', $id)->get();
+        $datas = ApprovalRequest::with([
+            'employee',
+            'goal',
+            'manager',
+            'approval' => function ($query) {
+                $query->with('approverName'); // Load nested relationship
+            }
+        ])->where('form_id', $id)->get();
 
         $data = [];
-        
+
         foreach ($datas as $request) {
             // Memeriksa status form dan pembuatnya
             if ($request->goal->form_status != 'Draft' || $request->created_by == Auth::user()->id) {
@@ -442,25 +458,25 @@ class OnBehalfController extends Controller
                 if ($request->approval->first()) {
                     $approverName = $request->approval->first();
                     $dataApprover = $approverName->approverName->fullname;
-                }else{
+                } else {
                     $dataApprover = '';
                 }
-        
+
                 // Buat objek untuk menyimpan data request dan approver fullname
                 $dataItem = new stdClass();
 
                 $dataItem->request = $request;
                 $dataItem->approver_name = $dataApprover;
-              
+
 
                 // Tambahkan objek $dataItem ke dalam array $data
                 $data[] = $dataItem;
-                
+
             }
         }
-        
+
         $formData = [];
-        if($datas->isNotEmpty()){
+        if ($datas->isNotEmpty()) {
             $formData = json_decode($datas->first()->goal->form_data, true);
         }
 
@@ -484,14 +500,13 @@ class OnBehalfController extends Controller
         return view('pages.onbehalfs.approval', compact('data', 'link', 'parentLink', 'formData', 'uomOption', 'typeOption'));
 
     }
-    
-    public function store(Request $request): RedirectResponse
 
+    public function store(Request $request): RedirectResponse
     {
         // Inisialisasi array untuk menyimpan pesan validasi kustom
 
         $nextLayer = ApprovalLayer::where('approver_id', $request->current_approver_id)
-                                    ->where('employee_id', $request->employee_id)->max('layer');
+            ->where('employee_id', $request->employee_id)->max('layer');
 
         // Cari approver_id pada layer selanjutnya
         $nextApprover = ApprovalLayer::where('layer', $nextLayer + 1)->where('employee_id', $request->employee_id)->value('approver_id');
@@ -500,7 +515,7 @@ class OnBehalfController extends Controller
             $approver = $request->current_approver_id;
             $statusRequest = 'Approved';
             $statusForm = 'Approved';
-        }else{
+        } else {
             $approver = $nextApprover;
             $statusRequest = 'Pending';
             $statusForm = 'Submitted';
@@ -537,7 +552,7 @@ class OnBehalfController extends Controller
         // Membuat Validator instance
         if ($request->submit_type === 'submit_form') {
             $validator = Validator::make($request->all(), $rules, $customMessages);
-    
+
             // Jika validasi gagal
             if ($validator->fails()) {
                 return back()->withErrors($validator)->withInput();
@@ -545,7 +560,7 @@ class OnBehalfController extends Controller
         }
 
         // Inisialisasi array untuk menyimpan data KPI
-        
+
         $kpiData = [];
         // Reset nomor indeks untuk penggunaan berikutnya
         $index = 1;
@@ -555,12 +570,12 @@ class OnBehalfController extends Controller
             // Memastikan ada nilai untuk semua input terkait
             if (isset($targets[$index], $uoms[$index], $weightages[$index], $types[$index])) {
                 // Simpan data KPI ke dalam array dengan nomor indeks sebagai kunci
-                if($custom_uoms[$index]){
+                if ($custom_uoms[$index]) {
                     $customuom = $custom_uoms[$index];
-                }else{
+                } else {
                     $customuom = null;
                 }
-                
+
                 $kpiData[$index] = [
                     'kpi' => $kpi,
                     'target' => $targets[$index],
@@ -598,7 +613,7 @@ class OnBehalfController extends Controller
         $model = Goal::find($request->id);
         $model->form_data = $jsonData;
         $model->form_status = $statusForm;
-        
+
         $model->save();
 
         $approvalRequest = ApprovalRequest::where('form_id', $request->id)->first();
@@ -626,7 +641,7 @@ class OnBehalfController extends Controller
             // Set other attributes as needed
         }
         $approval->save();
-            
+
         return redirect()->route('onbehalf');
     }
 
@@ -724,8 +739,8 @@ class OnBehalfController extends Controller
         // Fetch the data based on the constructed query
         $data = $query->get();
         // Determine the report type and return the appropriate view
-            return view('pages.onbehalfs.goal', compact('data', 'uomOption', 'typeOption'));
-        
+        return view('pages.onbehalfs.goal', compact('data', 'uomOption', 'typeOption'));
+
     }
 
     public function goalsRevoke(Request $request)
@@ -736,8 +751,8 @@ class OnBehalfController extends Controller
         $approvalRequest = ApprovalRequest::where('form_id', $goalId)->first();
         $goals = Goal::where('id', $goalId)->first();
         $firstApprover = ApprovalLayer::where('employee_id', $approvalRequest->employee_id)->orderBy('layer', 'asc')
-        ->value('approver_id');
-        
+            ->value('approver_id');
+
         if (!$approvalRequest || !$goals) {
             return response()->json(['success' => false, 'message' => 'Goals not found.']);
         }
@@ -762,330 +777,396 @@ class OnBehalfController extends Controller
         }
     }
 
-    public function rating($id) {
-        $period = $this->appService->appraisalPeriod();
+    public function rating($id)
+    {
         $category = 'Appraisal';
         try {
             Log::info('Starting the rating on behalfs method.', ['user' => $this->user]);
 
-            $amountOfTime = 100;
-            ini_set('max_execution_time', $amountOfTime);
+            ini_set('max_execution_time', 300);
+            ini_set('memory_limit', '512M');
+
             $user = $id;
             $period = $this->appService->appraisalPeriod();
 
-            // Get the KPI unit and calibration percentage
-            // $kpiUnit = KpiUnits::with(['masterCalibration' => function($query) use ($period) {
-            //     $query->where('period', $period);
-            // }])->where('employee_id', $id)->where('status_aktif', 'T')->where('periode', $period)->first();
+            $calibrationDistribution = '{"Exceptional":0.1,"Exceed Expectation":0.2,"Meet Expectation":0.4,"Need Improvement":0.2,"Poor":0.1}';
 
-            // if (!$kpiUnit) {
-            //     Log::warning('KPI Unit not set for the user.', ['user' => $id]);
-            //     Session::flash('error', "Your KPI Unit not been set");
-            //     Session::flash('errorTitle', "Cannot Initiate Rating");
-            // }
-
-            // Log::info('Fetching KPI unit and calibration percentage.', ['user' => $id, 'period' => $period, 'kpiUnit' => $kpiUnit]);
-
-            $calibration = '{"Exceptional":0.1,"Exceed Expectation":0.2,"Meet Expectation":0.4,"Need Improvement":0.2,"Poor":0.1}';
+            // ─── 1. MASTER RATING (sekali, untuk semua) ───────────────────────────
             $masterRating = MasterRating::select('id_rating_group', 'parameter', 'value', 'min_range', 'max_range')
                 ->where('id_rating_group', '30e4e9eb-476f-4914-a123-807958a95260')
                 ->get();
 
             Log::info('Fetched master ratings.', ['masterRatingCount' => $masterRating->count()]);
 
-            // Query for all ApprovalLayerAppraisal data
+            // ─── 2. Preload semua MasterCalibration & MasterRating untuk convertRating in-memory ───
+            $allMasterCalibrations = MasterCalibration::all()->keyBy('id_calibration_group');
+            $allMasterRatings = MasterRating::all();
+            $masterRatingLowest = $allMasterRatings->sortBy('value')->first();
 
+            // Helper closure: pengganti appService->convertRating() tanpa query DB
+            $convertRatingLocal = function (float $value, $formID) use ($allMasterCalibrations, $allMasterRatings, $masterRatingLowest): ?string {
+                $formGroup = $allMasterCalibrations->get($formID);
+                if (!$formGroup)
+                    return null;
+
+                if ($value == 0) {
+                    return $masterRatingLowest ? $masterRatingLowest->parameter : null;
+                }
+
+                $roundedValue = (int) round($value, 2);
+                $idRatingGroup = $formGroup->id_rating_group;
+
+                $condition = $allMasterRatings
+                    ->where('id_rating_group', $idRatingGroup)
+                    ->first(function ($r) use ($value, $roundedValue) {
+                        $rangeMatch = $r->min_range <= $value && $r->max_range >= $value;
+                        $exactMatch = $r->min_range == 0 && $r->max_range == 0 && (int) $r->value === $roundedValue;
+                        return $rangeMatch || $exactMatch;
+                    });
+
+                return $condition ? $condition->parameter : null;
+            };
+
+            // ─── 3. Semua ApprovalLayerAppraisal milik calibrator ini ─────────────
             $allData = ApprovalLayerAppraisal::with(['employee'])
                 ->where('approver_id', $id)
                 ->whereHas('employee', function ($query) {
-                    $query->where(function($q) {
+                    $query->where(function ($q) {
                         $q->whereRaw('json_valid(access_menu)')
-                        ->whereJsonContains('access_menu', ['createpa' => 1]);
+                            ->whereJsonContains('access_menu', ['createpa' => 1]);
                     });
                 })
                 ->where('layer_type', 'calibrator')
                 ->get();
-        
+
             if ($allData->isEmpty()) {
-                Session::flash('error', "Cannot On Behalfs Rating PA Schedule has been closed");
-                Session::flash('errorTitle', "Cannot Initiate Rating");
+                Session::flash('error', 'Cannot On Behalfs Rating PA Schedule has been closed');
+                Session::flash('errorTitle', 'Cannot Initiate Rating');
                 return back();
             }
-            
-          
+
             Log::info('Fetched all ApprovalLayerAppraisal data.', ['allDataCount' => $allData->count()]);
 
-            // Query for ApprovalLayerAppraisal data with approval requests
-            $dataWithRequests = ApprovalLayerAppraisal::join('approval_requests', 'approval_requests.employee_id', '=', 'approval_layer_appraisals.employee_id')
+            // ─── 4. Query existence check: ALA ids yang punya approval_request ──
+            // Pakai pluck agar tidak ada konflik kolom id
+            $alaIdsWithRequests = ApprovalLayerAppraisal::join(
+                'approval_requests',
+                'approval_requests.employee_id',
+                '=',
+                'approval_layer_appraisals.employee_id'
+            )
                 ->where('approval_layer_appraisals.approver_id', $id)
                 ->where('approval_layer_appraisals.layer_type', 'calibrator')
                 ->where('approval_requests.category', $category)
-                ->where('approval_requests.period', $period) // Apply $period to the relation
+                ->where('approval_requests.period', $period)
                 ->whereNull('approval_requests.deleted_at')
-                ->select('approval_layer_appraisals.*')
+                ->pluck('approval_layer_appraisals.id') // hanya ALA.id, tidak ada konflik
+                ->flip();  // O(1) has() lookup
+
+            // ─── 5. JOIN query lengkap: selectRaw agar ALA.id TIDAK tertimpa AR.id ─
+            // Urutan: approval_layer_appraisals.* dulu, lalu approval_requests.*,
+            // lalu approval_layer_appraisals.id as id (eksplisit override di akhir).
+            $withRequestsRaw = ApprovalLayerAppraisal::join(
+                'approval_requests',
+                'approval_requests.employee_id',
+                '=',
+                'approval_layer_appraisals.employee_id'
+            )
+                ->where('approval_layer_appraisals.approver_id', $id)
+                ->where('approval_layer_appraisals.layer_type', 'calibrator')
+                ->where('approval_requests.category', $category)
+                ->where('approval_requests.period', $period)
+                ->whereNull('approval_requests.deleted_at')
+                ->selectRaw('
+                    approval_layer_appraisals.*,
+                    approval_requests.*,
+                    approval_layer_appraisals.id as id
+                ')  // id di akhir = ALA.id (menimpa AR.id)
                 ->get()
-                ->keyBy('id');  // This will create a collection indexed by the 'id'
-
-            Log::info('Fetched ApprovalLayerAppraisal data with requests.', ['dataWithRequestsCount' => $dataWithRequests->count()]);
-
-            // Group the data based on job levels
-            $datas = $allData->groupBy(function ($data) {
-                $jobLevel = $data->employee->job_level;
-                // if (in_array($jobLevel, ['2A', '2B', '2C', '2D', '3A', '3B'])) {
-                //     return 'Level23';
-                // } elseif (in_array($jobLevel, ['4A', '4B', '5A', '5B'])) {
-                //     return 'Level45';
-                // } elseif (in_array($jobLevel, ['6A', '6B', '7A', '7B'])) {
-                //     return 'Level67';
-                // } elseif (in_array($jobLevel, ['8A', '8B', '9A', '9B'])) {
-                //     return 'Level89';
-                // }
-                return 'AllLevels';
-            })->map(function ($group) use ($dataWithRequests, $id, $period, $category) {
-                Log::info('Processing group.', ['groupSize' => $group->count()]);
-
-                // Fetch `withRequests` based on the user's criteria
-                $withRequests = ApprovalLayerAppraisal::join('approval_requests', 'approval_requests.employee_id', '=', 'approval_layer_appraisals.employee_id')
-                    ->where('approval_layer_appraisals.approver_id', $id)
-                    ->where('approval_layer_appraisals.layer_type', 'calibrator')
-                    ->where('approval_requests.category', $category)
-                    ->where('approval_requests.period', $period) // Apply $period to the relation
-                    ->whereNull('approval_requests.deleted_at')
-                    ->whereIn('approval_layer_appraisals.id', $group->pluck('id'))
-                    ->select('approval_layer_appraisals.*', 'approval_requests.*')
-                    ->get()
-                    ->groupBy('id')
-                    ->map(function ($subgroup) {
-                        $appraisal = $subgroup->first();
-                        $appraisal->approval_requests = $subgroup->first();
-                        return $appraisal;
-                    });
-
-                Log::info('Processed withRequests.', ['withRequestsCount' => $withRequests->count()]);
-
-                // Filter out items without requests
-                $withoutRequests = $group->filter(function ($item) use ($dataWithRequests) {
-                    return !$dataWithRequests->has($item->id);
+                ->groupBy('id')   // groupBy ALA.id yang sudah benar
+                ->map(function ($subgroup) {
+                    $appraisal = $subgroup->first();
+                    $appraisal->approval_requests = $subgroup->first();
+                    return $appraisal;
                 });
 
-                Log::info('Processed withoutRequests.', ['withoutRequestsCount' => $withoutRequests->count()]);
+            // keyBy ALA.id (sudah benar karena selectRaw override di atas)
+            $dataWithRequestsById = $withRequestsRaw->keyBy('id');
+
+            Log::info('Fetched withRequests data.', ['count' => $withRequestsRaw->count()]);
+
+            // ─── 6. Kumpulkan employeeId & formId untuk preload ───────────────────
+            $allEmployeeIds = $allData->pluck('employee.employee_id')->unique()->values()->toArray();
+
+            // form_id langsung dari JOIN (approval_requests.form_id ada di model via SELECT *)
+            // Tidak perlu lazy-load approvalRequest relation
+            $allFormIds = $withRequestsRaw->pluck('form_id')->filter()->unique()->values()->toArray();
+
+            // ─── 7. Preload Calibration untuk semua employee+form sekaligus ────────
+            $allCalibrations = Calibration::with(['approver'])
+                ->where('period', $period)
+                ->whereIn('employee_id', $allEmployeeIds)
+                ->whereIn('status', ['Pending', 'Approved'])
+                ->orderBy('id', 'desc')
+                ->get()
+                ->groupBy(['employee_id', 'appraisal_id']);
+
+            // ─── 8. Preload ratingValue (Calibration Approved) untuk semua employee ─
+            $allRatingValues = Calibration::select('employee_id', 'approver_id', 'rating', 'status', 'period', 'appraisal_id')
+                ->whereIn('employee_id', $allEmployeeIds)
+                ->where('approver_id', $user)
+                ->where('status', 'Approved')
+                ->where('period', $period)
+                ->get()
+                ->keyBy('employee_id');
+
+            // ─── 9. Preload ratingAllowedCheck untuk semua employee sekaligus ──────
+            // Ambil semua ApprovalLayerAppraisal selain calibrator untuk seluruh employee
+            $allApprovalLayers = ApprovalLayerAppraisal::with(['approver', 'employee'])
+                ->whereIn('employee_id', $allEmployeeIds)
+                ->where('layer_type', '!=', 'calibrator')
+                ->get()
+                ->groupBy('employee_id');
+
+            // Preload AppraisalContributor untuk semua kombinasi yg mungkin
+            $allAppraisalContributors = AppraisalContributor::where('period', $period)
+                ->whereIn('employee_id', $allEmployeeIds)
+                ->get()
+                ->groupBy(function ($item) {
+                    return $item->employee_id . '|' . $item->contributor_id;
+                });
+
+            // Helper closure: pengganti appService->ratingAllowedCheck() tanpa query DB
+            $ratingAllowedCheckLocal = function (string $employeeId) use ($allApprovalLayers, $allAppraisalContributors): array {
+                $layers = $allApprovalLayers->get($employeeId, collect());
+                $notFoundData = [];
+
+                foreach ($layers as $approvalLayer) {
+                    $review360 = json_decode($approvalLayer->employee->access_menu ?? '{}', true);
+                    $key = $approvalLayer->employee_id . '|' . $approvalLayer->approver_id;
+                    $exists = $allAppraisalContributors->has($key);
+
+                    if (!$exists && isset($review360['review360']) && $review360['review360'] == 0) {
+                        $notFoundData[] = [
+                            'employee_id' => $approvalLayer->employee_id,
+                            'approver_id' => $approvalLayer->approver_id,
+                            'approver_name' => $approvalLayer->approver->fullname ?? '',
+                            'layer_type' => $approvalLayer->layer_type,
+                        ];
+                    }
+                }
+
+                if (!empty($notFoundData)) {
+                    return [
+                        'status' => false,
+                        'message' => '360 Review incomplete process',
+                        'data' => $notFoundData,
+                    ];
+                }
+
+                $review360Val = json_decode(
+                    optional($layers->first())->employee->access_menu ?? '{}',
+                    true
+                )['review360'] ?? null;
 
                 return [
-                    'with_requests' => $withRequests->values(),
-                    'without_requests' => $withoutRequests->values(),
+                    'status' => true,
+                    'message' => '360 Review completed',
+                    'data' => $review360Val,
+                ];
+            };
+
+            // ─── 10. Preload suggestedRating untuk semua formId ───────────────────
+            // form_id sudah ada langsung di item (dari JOIN), tidak perlu lazy-load relation
+            $cachedSuggestedRatings = [];
+            foreach ($allFormIds as $formId) {
+                // Cari item dengan form_id yang cocok langsung dari atribut JOIN
+                $itemForForm = $withRequestsRaw->first(fn($item) => (string) $item->form_id === (string) $formId);
+                if ($itemForForm) {
+                    $empId = $itemForForm->employee->employee_id;
+                    if (!isset($cachedSuggestedRatings[$empId][$formId])) {
+                        $cachedSuggestedRatings[$empId][$formId] = $this->appService->suggestedRating($empId, $formId, $period);
+                    }
+                }
+            }
+
+            // ─── 11. Preload Calibration untuk withoutRequests (hanya cek exists) ──
+            $calibrationExistsByEmployee = Calibration::where('approver_id', $id)
+                ->whereIn('employee_id', $allEmployeeIds)
+                ->where('status', 'Pending')
+                ->pluck('employee_id')
+                ->flip(); // jadi Collection key => true untuk O(1) lookup
+
+            // ─── 12. Group & map (tidak ada query di dalam loop) ──────────────────
+            $datas = $allData->groupBy(function ($data) {
+                return 'AllLevels';
+            })->map(function ($group) use ($alaIdsWithRequests, $withRequestsRaw, $id) {
+                // withRequests: filter $withRequestsRaw berdasarkan ALA.id yang ada di group
+                $groupIds = $group->pluck('id')->flip(); // ALA.id dari $allData
+                $withRequests = $withRequestsRaw
+                    ->filter(fn($item) => $groupIds->has($item->id)) // item->id = ALA.id (fixed via selectRaw)
+                    ->values();
+
+                // withoutRequests: ALA item yang TIDAK punya approval_request
+                // Gunakan $alaIdsWithRequests (pluck tanpa konflik id)
+                $withoutRequests = $group
+                    ->filter(fn($item) => !$alaIdsWithRequests->has($item->id))
+                    ->values();
+
+                return [
+                    'with_requests' => $withRequests,
+                    'without_requests' => $withoutRequests,
                 ];
             })->sortKeys();
 
             Log::info('Grouped and processed data.', ['groupedDataCount' => $datas->count()]);
-            
-            // Process rating data
-            $ratingDatas = $datas->map(function ($group) use ($id, $period, $user) {
-                Log::info('Processing rating data for group.', ['groupSize' => $group['with_requests']->count() + $group['without_requests']->count()]);
 
-                // Preload all calibration data in bulk
-                $calibration = Calibration::with(['approver'])->where('period', $period)
-                ->whereIn('employee_id', $group['with_requests']->pluck('employee_id'))
-                ->whereIn('appraisal_id', $group['with_requests']->pluck('approvalRequest')->flatten()->pluck('form_id'))
-                ->whereIn('status', ['Pending', 'Approved'])
-                ->orderBy('id', 'desc')
-                ->get()
-                ->groupBy(['employee_id', 'appraisal_id']); // Group by employee_id and appraisal_id for easy access
-
-                // Preload suggested ratings and rating values in bulk
-                $suggestedRatings = [];
-                $ratingValues = [];
-                foreach ($group['with_requests'] as $data) {
-                $employeeId = $data->employee->employee_id;
-                $formId = $formId = $data->approvalRequest->where('category', 'Appraisal')->where('period', $period)->first()->form_id;
-
-                // Cache suggested ratings
-                if (!isset($suggestedRatings[$employeeId][$formId])) {
-                    $suggestedRatings[$employeeId][$formId] = $this->appService->suggestedRating($employeeId, $formId, $period);
-                }
-
-                // Cache rating values
-                if (!isset($ratingValues[$employeeId])) {
-                    $ratingValues[$employeeId] = $this->appService->ratingValue($employeeId, $user, $period);
-                }
-                }
-
-                // Process withRequests using preloaded data
-                $withRequests = $group['with_requests']->map(function ($data) use ($id, $calibration, $suggestedRatings, $ratingValues, $period) {
-                    Log::info('Processing withRequests item.', ['itemId' => $data->id]);
-
+            // ─── 13. Process ratingDatas (semua data sudah dipreload, tidak ada query di loop) ──
+            $ratingDatas = $datas->map(function ($group) use ($id, $period, $allCalibrations, $allRatingValues, $cachedSuggestedRatings, $convertRatingLocal, $ratingAllowedCheckLocal, $calibrationExistsByEmployee) {
+                $withRequests = collect($group['with_requests'])->map(function ($data) use ($id, $period, $allCalibrations, $allRatingValues, $cachedSuggestedRatings, $convertRatingLocal, $ratingAllowedCheckLocal) {
                     $employeeId = $data->employee->employee_id;
-                    $formId = $data->approvalRequest->where('category', 'Appraisal')->where('period', $period)->first()->form_id;
+                    // form_id langsung dari atribut JOIN, tidak perlu lazy-load approvalRequest relation
+                    $formId = $data->form_id;
 
-                    // Fetch calibration data for the current employee and appraisal
-                    $calibrationData = $calibration[$employeeId][$formId] ?? collect();
+                    // Calibration data dari preload
+                    $calibrationData = collect();
+                    if ($formId && isset($allCalibrations[$employeeId][$formId])) {
+                        $calibrationData = collect($allCalibrations[$employeeId][$formId]);
+                    }
 
-                    // Find previous rating
+                    // Previous rating
                     $previousRating = $calibrationData->whereNotNull('rating')
                         ->where('approver_id', '!=', $id)
                         ->first();
 
-                    // Calculate suggested rating
-                    $suggestedRating = $suggestedRatings[$employeeId][$formId];
-                    $data->suggested_rating = $calibrationData->where('approver_id', $id)->first()
-                        ? $this->appService->convertRating(
-                            $suggestedRating,
-                            $calibrationData->where('approver_id', $id)->first()->id_calibration_group
-                        )
+                    // Suggested rating (dari cache, tidak query DB)
+                    $suggestedRating = $cachedSuggestedRatings[$employeeId][$formId] ?? null;
+
+                    $calibratorEntry = $calibrationData->where('approver_id', $id)->first();
+                    $data->suggested_rating = $calibratorEntry
+                        ? $convertRatingLocal($suggestedRating ?? 0, $calibratorEntry->id_calibration_group)
                         : null;
 
-                    // Set previous rating details
-                    $data->previous_rating = $previousRating
-                        ? $this->appService->convertRating($previousRating->rating, $calibrationData->first()->id_calibration_group)
+                    $firstCalibration = $calibrationData->first();
+                    $data->previous_rating = $previousRating && $firstCalibration
+                        ? $convertRatingLocal($previousRating->rating, $firstCalibration->id_calibration_group)
                         : null;
                     $data->previous_rating_name = $previousRating
                         ? $previousRating->approver->fullname . ' (' . $previousRating->approver->employee_id . ')'
                         : null;
 
-                    // Set rating value
-                    $data->rating_value = $ratingValues[$employeeId];
+                    // Rating value dari preload
+                    $ratingRecord = $allRatingValues->get($employeeId);
+                    $data->rating_value = $ratingRecord ? $ratingRecord->rating : null;
 
-
-                    // Check if the user is a calibrator
-                    $isCalibrator = $calibrationData->where('approver_id', $id)
+                    // Is calibrator
+                    $data->is_calibrator = $calibrationData->where('approver_id', $id)
                         ->where('status', 'Pending')
                         ->isNotEmpty();
-                    $data->is_calibrator = $isCalibrator;
 
-                    // Check if rating is allowed
-                    $data->rating_allowed = $this->appService->ratingAllowedCheck($employeeId);
+                    // Rating allowed (in-memory, tanpa query DB)
+                    $data->rating_allowed = $ratingAllowedCheckLocal($employeeId);
 
-                    // Count incomplete ratings
+                    // Rating incomplete & calibration
                     $data->rating_incomplete = $calibrationData->whereNull('rating')->whereNull('deleted_at')->count();
                     $data->calibrationData = $calibrationData;
 
-                    // Set rating status and approved date
+                    // Rating status & approved date
                     $userCalibration = $calibrationData->first();
                     if ($userCalibration) {
-                        $data->rating_status = $calibrationData->where('approver_id', $id)->first() ? $calibrationData->where('approver_id', $id)->first()->status : null;
+                        $myCalibration = $calibrationData->where('approver_id', $id)->first();
+                        $data->rating_status = $myCalibration ? $myCalibration->status : null;
                         $data->rating_approved_date = Carbon::parse($userCalibration->updated_at)->format('d M Y');
                     }
 
                     $data->onCalibratorPending = $calibrationData->where('approver_id', $id)->where('status', 'Pending')->count();
 
-                    // Assign Pending and Approved Calibrators
                     $pendingCalibrator = $calibrationData->where('status', 'Pending')->first();
                     $approvedCalibrator = $calibrationData->where('status', 'Approved')->first();
 
                     $data->current_calibrator = $pendingCalibrator && $pendingCalibrator->approver
                         ? $pendingCalibrator->approver->fullname . ' (' . $pendingCalibrator->approver->employee_id . ')'
                         : false;
+
                     $data->approver_name = $approvedCalibrator && $approvedCalibrator->approver
                         ? $approvedCalibrator->approver->fullname . ' (' . $approvedCalibrator->approver->employee_id . ')'
-                        : ($data->status == 'Pending' ? $data->approval_requests->approver->fullname : false);
+                        : (isset($data->status) && $data->status == 'Pending' && isset($data->approval_requests)
+                            ? optional(optional($data->approval_requests)->approver)->fullname
+                            : false);
 
                     return $data;
                 });
 
-                Log::info('Processed withRequests.', ['processedCount' => $withRequests->count()]);
-
-                // Process `without_requests`
-                $withoutRequests = $group['without_requests']->map(function ($data) use ($id, $calibration) {
-                    Log::info('Processing withoutRequests item.', ['itemId' => $data->id]);
-
+                $withoutRequests = collect($group['without_requests'])->map(function ($data) use ($id, $ratingAllowedCheckLocal, $calibrationExistsByEmployee) {
                     $data->suggested_rating = null;
-
-                    $isCalibrator = Calibration::where('approver_id', $id)
-                        ->where('employee_id', $data->employee->employee_id)
-                        ->where('status', 'Pending')
-                        ->exists();
-                    $data->is_calibrator = $isCalibrator;
-
-                    $data->rating_allowed = $this->appService->ratingAllowedCheck($data->employee->employee_id);
-
+                    $data->is_calibrator = $calibrationExistsByEmployee->has($data->employee->employee_id);
+                    $data->rating_allowed = $ratingAllowedCheckLocal($data->employee->employee_id);
                     return $data;
                 });
-
-                Log::info('Processed withoutRequests.', ['processedCount' => $withoutRequests->count()]);
 
                 $combinedResults = $withRequests->merge($withoutRequests);
-
-                Log::info('Combined results.', ['combinedCount' => $combinedResults->count()]);
-
+                Log::info('Group combined.', ['count' => $combinedResults->count()]);
                 return $combinedResults;
             });
 
             Log::info('Processed all rating data.', ['ratingDatasCount' => $ratingDatas->count()]);
 
-            // Get calibration results
-            $calibrations = $datas->map(function ($group) use ($calibration, $id) {
-                Log::info('Processing calibration results for group.', ['groupSize' => $group['with_requests']->count() + $group['without_requests']->count()]);
+            // ─── 14. Calibration summary (tetap sama, hanya pakai $datas) ──────────
+            $calibrations = $datas->map(function ($group) use ($calibrationDistribution, $id) {
+                $calibratorPendingCount = collect($group['with_requests'])->where('onCalibratorPending', '>', 0)->count();
 
-                // $onCalibratorPending = $group['with_requests']->where('approver_id', $id)->where('status', 'Pending')->count();
-                $calibratorPendingCount = $group['with_requests']->where('onCalibratorPending', '>', 0)->count();
-
-                $countWithRequests = $group['with_requests']->count();
-                $countWithoutRequests = $group['without_requests']->count();
+                $countWithRequests = count($group['with_requests']);
+                $countWithoutRequests = count($group['without_requests']);
                 $count = $countWithRequests + $countWithoutRequests;
-                // $count = 12; // Test number
 
                 $ratingResults = [];
                 $percentageResults = [];
-                $calibration = json_decode($calibration, true);
+                $calibrationArray = json_decode($calibrationDistribution, true);
 
-                // Step 1: Calculate initial rating results and percentage results
-                foreach ($calibration as $key => $weight) {
+                foreach ($calibrationArray as $key => $weight) {
                     $ratingResults[$key] = round($count * $weight);
                     $percentageResults[$key] = round(100 * $weight);
                 }
 
-                // Step 2: Check if the sum of $ratingResults matches $count
                 $totalRatingResults = array_sum($ratingResults);
                 $difference = abs($count - $totalRatingResults);
 
                 if ($difference !== 0) {
                     if ($totalRatingResults < $count) {
-                        // Normalize the calibration weights to redistribute the difference
-                        $totalWeight = array_sum($calibration);
-                        $normalizedWeights = array_map(fn($w) => $w / $totalWeight, $calibration);
-
-                        // Redistribute the difference proportionally based on normalized weights
+                        $totalWeight = array_sum($calibrationArray);
+                        $normalizedWeights = array_map(fn($w) => $w / $totalWeight, $calibrationArray);
                         foreach ($normalizedWeights as $key => $normalizedWeight) {
-                            $adjustment = floor($difference * $normalizedWeight);
-                            $ratingResults[$key] += $adjustment;
+                            $ratingResults[$key] += floor($difference * $normalizedWeight);
                         }
-
-                        // Recalculate the total after redistribution to ensure it matches $count
                         $newTotal = array_sum($ratingResults);
                         if ($newTotal !== $count) {
-                            // If there's still a small mismatch due to rounding, adjust the largest value
-                            $maxWeightKey = array_keys($calibration, max($calibration))[0];
+                            $maxWeightKey = array_keys($calibrationArray, max($calibrationArray))[0];
                             $ratingResults[$maxWeightKey] += ($count - $newTotal);
                         }
                     } elseif ($totalRatingResults > $count) {
-                        // Allocate the $difference to the lowest $percentageResults that have $ratingResults value >= 1
                         while ($difference > 0) {
                             $lowestKey = collect($percentageResults)
                                 ->filter(fn($percentage, $key) => $ratingResults[$key] >= 1)
-                                ->sort()
-                                ->keys()
-                                ->first();
-
+                                ->sort()->keys()->first();
                             if ($lowestKey !== null) {
-                                $ratingResults[$lowestKey] -= 1;
-                                $difference -= 1;
+                                $ratingResults[$lowestKey]--;
+                                $difference--;
                             } else {
-                                break; // Exit if no valid key is found
+                                break;
                             }
                         }
                     }
                 }
 
-                // Step 3: Process suggested ratings and combine results
-                $suggestedRatingCounts = $group['with_requests']->pluck('suggested_rating')->countBy();
+                $suggestedRatingCounts = collect($group['with_requests'])->pluck('suggested_rating')->countBy();
                 $totalSuggestedRatings = $suggestedRatingCounts->sum();
 
                 $combinedResults = [];
-                foreach ($calibration as $key => $weight) {
+                foreach ($calibrationArray as $key => $weight) {
                     $ratingCount = $suggestedRatingCounts->get($key, 0);
                     $ratingPercentage = $totalSuggestedRatings > 0
                         ? round(($ratingCount / $totalSuggestedRatings) * 100, 2)
                         : 0;
-
                     $combinedResults[$key] = [
                         'percentage' => $percentageResults[$key] . '%',
                         'rating_count' => $ratingResults[$key],
@@ -1105,7 +1186,6 @@ class OnBehalfController extends Controller
 
             Log::info('Processed all calibration results.', ['calibrationsCount' => $calibrations->count()]);
 
-            // Determine the active level as the first non-empty level
             $activeLevel = null;
             foreach ($calibrations as $level => $data) {
                 if (!empty($data)) {
@@ -1114,17 +1194,26 @@ class OnBehalfController extends Controller
                 }
             }
 
-            Log::info('Determined active level.', ['activeLevel' => $activeLevel]);
-
             $parentLink = 'Calibration';
             $link = 'Rating';
             $id_calibration_group = 'c7b602c2-1791-4552-81e4-87525f8b0d83';
 
-            Log::info('Returning view with data.', ['activeLevel' => $activeLevel, 'id_calibration_group' => $id_calibration_group]);
+            Log::info('Returning view.', ['activeLevel' => $activeLevel]);
 
-            return view('pages.rating.app', compact('ratingDatas', 'calibrations', 'masterRating', 'link', 'parentLink', 'activeLevel', 'id_calibration_group'));
+            // dd($ratingDatas);
+
+            return view('pages.rating.app', compact(
+                'ratingDatas',
+                'calibrations',
+                'masterRating',
+                'link',
+                'parentLink',
+                'activeLevel',
+                'id_calibration_group'
+            ));
+
         } catch (Exception $e) {
-            Log::error('Error in index method: ' . $e->getMessage());
+            Log::error('Error in rating onbehalf method: ' . $e->getMessage() . ' at ' . $e->getFile() . ':' . $e->getLine());
             return redirect()->route('onbehalf');
         }
     }

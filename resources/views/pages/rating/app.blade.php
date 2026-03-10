@@ -120,19 +120,24 @@
                                             @if (request()->route('id'))
                                                 <form action="{{ route('rating.exportonbehalf') }}"
                                                     method="POST"
-                                                    class="d-inline">
+                                                    class="d-inline form-download">
                                                     @csrf
 
                                                     <input type="hidden" name="level" value="{{ $level }}">
                                                     <input type="hidden" name="user" value="{{ request()->route('id') }}">
 
-                                                    <button type="submit" class="btn btn-outline-success m-1">
-                                                        <i class="ri-user-shared-line d-md-none"></i>
-                                                        <span class="d-none d-md-block">Download Rating</span>
+                                                    <button type="submit" class="btn btn-outline-success m-1 btn-download">
+                                                        <span class="spinner-border spinner-border-sm me-1 d-none spinner-download" role="status" aria-hidden="true"></span>
+                                                        <i class="ri-user-shared-line d-md-none icon-download"></i>
+                                                        <span class="d-none d-md-inline-block">Download Rating</span>
                                                     </button>
                                                 </form>
                                             @else
-                                                <a href="{{ route('rating.export', $level) }}" class="btn btn-outline-success m-1"><i class="ri-download-cloud-2-line d-md-none "></i><span class="d-none d-md-block">Download Rating</span></a>
+                                                <a href="{{ route('rating.export', $level) }}" class="btn btn-outline-success m-1 a-download">
+                                                    <span class="spinner-border spinner-border-sm me-1 d-none spinner-download" role="status" aria-hidden="true"></span>
+                                                    <i class="ri-download-cloud-2-line d-md-none icon-download"></i>
+                                                    <span class="d-none d-md-inline-block">Download Rating</span>
+                                                </a>
                                             @endif
                                             <button class="btn btn-primary m-1 {{ $ratingDone ? '' : 'd-none' }}" data-id="{{ $level }}">Submit Rating</button>
                                         </div>
@@ -281,6 +286,16 @@
                                                     </div>
                                                 @endforelse
                                             </form>
+                                            <div id="searchEmptyState-{{ $level }}" class="row d-none mt-3">
+                                                <div class="col-md-12">
+                                                    <div class="card">
+                                                        <div class="card-body text-center">
+                                                            <h5 class="card-title">No Matching Employees Found</h5>
+                                                            <p class="card-text">Please try modifying your search term.</p>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
@@ -604,6 +619,71 @@
         
                     reader.readAsArrayBuffer(file);
                 });
+            });
+        });
+
+        // Search feature
+        document.querySelectorAll('.search-input').forEach(input => {
+            input.addEventListener('input', function() {
+                const level = this.dataset.id;
+                const searchTerm = this.value.toLowerCase();
+                const rows = document.querySelectorAll(`#employeeList-${level} .employee-row`);
+                let hasVisible = false;
+
+                rows.forEach(row => {
+                    const text = row.textContent.toLowerCase();
+                    if (text.includes(searchTerm)) {
+                        row.classList.remove('d-none');
+                        hasVisible = true;
+                    } else {
+                        row.classList.add('d-none');
+                    }
+                });
+
+                const searchEmptyState = document.getElementById(`searchEmptyState-${level}`);
+                if (searchEmptyState) {
+                    if (!hasVisible && rows.length > 0) {
+                        searchEmptyState.classList.remove('d-none');
+                    } else {
+                        searchEmptyState.classList.add('d-none');
+                    }
+                }
+            });
+        });
+
+        // Download Loader Feature
+        const handleDownloadBtnState = (btn) => {
+            const spinner = btn.querySelector('.spinner-download');
+            const icon = btn.querySelector('.icon-download');
+            
+            if (spinner) spinner.classList.remove('d-none');
+            if (icon) icon.classList.add('d-none');
+            btn.classList.add('disabled');
+            btn.style.pointerEvents = 'none';
+
+            const revertBtn = () => {
+                if (spinner) spinner.classList.add('d-none');
+                if (icon) icon.classList.remove('d-none');
+                btn.classList.remove('disabled');
+                btn.style.pointerEvents = 'auto';
+                window.removeEventListener('focus', revertBtn);
+            };
+
+            // Remove disabled class when window gets focus (download dialog resolved)
+            window.addEventListener('focus', revertBtn);
+            setTimeout(revertBtn, 10000); // 10 seconds safety fallback
+        };
+
+        document.querySelectorAll('.form-download').forEach(form => {
+            form.addEventListener('submit', function() {
+                const btn = this.querySelector('.btn-download');
+                if (btn) handleDownloadBtnState(btn);
+            });
+        });
+
+        document.querySelectorAll('.a-download').forEach(a => {
+            a.addEventListener('click', function() {
+                handleDownloadBtnState(this);
             });
         });
     </script>      
