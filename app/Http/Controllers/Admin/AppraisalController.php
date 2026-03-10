@@ -47,105 +47,105 @@ class AppraisalController extends Controller
     }
 
     public function index(Request $request)
-{
-    ini_set('max_execution_time', 500);
+    {
+        ini_set('max_execution_time', 500);
 
-    $userID = Auth::id();
+        $userID = Auth::id();
 
-    $restrictionData = $this->getRestrictionData();
-    $filterInputs = $this->getFilterInputs($request, $restrictionData);
-    $criteria = $this->buildCriteria($restrictionData);
+        $restrictionData = $this->getRestrictionData();
+        $filterInputs = $this->getFilterInputs($request, $restrictionData);
+        $criteria = $this->buildCriteria($restrictionData);
 
-    /** ================================
-     * PRELOAD MASTER RATING (1 QUERY)
-     * ================================ */
-    $ratingGroups = MasterRating::select(
+        /** ================================
+         * PRELOAD MASTER RATING (1 QUERY)
+         * ================================ */
+        $ratingGroups = MasterRating::select(
             'id_rating_group',
             'parameter',
             'value'
         )
-        ->get()
-        ->groupBy('id_rating_group')
-        ->map(fn ($items) => $items->pluck('parameter', 'value'));
+            ->get()
+            ->groupBy('id_rating_group')
+            ->map(fn($items) => $items->pluck('parameter', 'value'));
 
-    /** ================================
-     * MAIN QUERY
-     * ================================ */
-    $query = $this->buildAppraisalQuery($criteria, $filterInputs);
+        /** ================================
+         * MAIN QUERY
+         * ================================ */
+        $query = $this->buildAppraisalQuery($criteria, $filterInputs);
 
-    $employees = $query->get();
+        $employees = $query->get();
 
-    $datas = $this->transformAppraisalData(
-        $employees,
-        $filterInputs['period'],
-        $ratingGroups
-    );
+        $datas = $this->transformAppraisalData(
+            $employees,
+            $filterInputs['period'],
+            $ratingGroups
+        );
 
-    /** ================================
-     * FILTER DROPDOWN (NO OLD DATA)
-     * ================================ */
-    $groupCompanies = $this->getDistinctValues(
-        'group_company',
-        $criteria,
-        $filterInputs['period']
-    );
+        /** ================================
+         * FILTER DROPDOWN (NO OLD DATA)
+         * ================================ */
+        $groupCompanies = $this->getDistinctValues(
+            'group_company',
+            $criteria,
+            $filterInputs['period']
+        );
 
-    $companies = $this->getDistinctCompany(
-        'company_name',
-        $criteria,
-        $filterInputs['period']
-    );
+        $companies = $this->getDistinctCompany(
+            'company_name',
+            $criteria,
+            $filterInputs['period']
+        );
 
-    $locations = $this->getDistinctValues(
-        'office_area',
-        $criteria,
-        $filterInputs['period']
-    );
+        $locations = $this->getDistinctValues(
+            'office_area',
+            $criteria,
+            $filterInputs['period']
+        );
 
-    $units = $this->getDistinctValues(
-        'unit',
-        $criteria,
-        $filterInputs['period']
-    );
+        $units = $this->getDistinctValues(
+            'unit',
+            $criteria,
+            $filterInputs['period']
+        );
 
-    /** ================================
-     * HEADER LAYER
-     * ================================ */
-    $layerHeaders = $this->getLayerHeaders($datas);
+        /** ================================
+         * HEADER LAYER
+         * ================================ */
+        $layerHeaders = $this->getLayerHeaders($datas);
 
-    $maxCalibrator = $datas
-        ->pluck('approvalStatus.calibrator')
-        ->flatten()
-        ->count();
+        $maxCalibrator = $datas
+            ->pluck('approvalStatus.calibrator')
+            ->flatten()
+            ->count();
 
-    $layerBody = $maxCalibrator > 0
-        ? range(1, min($maxCalibrator, 10))
-        : [];
+        $layerBody = $maxCalibrator > 0
+            ? range(1, min($maxCalibrator, 10))
+            : [];
 
-    /** ================================
-     * EXPORT FILE & JOB
-     * ================================ */
-    $reportFiles = $this->getReportFiles($userID);
-    $jobs = $this->getExportJobs($userID);
+        /** ================================
+         * EXPORT FILE & JOB
+         * ================================ */
+        $reportFiles = $this->getReportFiles($userID);
+        $jobs = $this->getExportJobs($userID);
 
-    $parentLink = __('Reports');
-    $link = __('Appraisal');
+        $parentLink = __('Reports');
+        $link = __('Appraisal');
 
-    return view('pages.appraisals.admin.app', compact(
-        'datas',
-        'layerHeaders',
-        'layerBody',
-        'filterInputs',
-        'groupCompanies',
-        'companies',
-        'units',
-        'locations',
-        'reportFiles',
-        'jobs',
-        'parentLink',
-        'link'
-    ));
-}
+        return view('pages.appraisals.admin.app', compact(
+            'datas',
+            'layerHeaders',
+            'layerBody',
+            'filterInputs',
+            'groupCompanies',
+            'companies',
+            'units',
+            'locations',
+            'reportFiles',
+            'jobs',
+            'parentLink',
+            'link'
+        ));
+    }
 
     private function getRestrictionData()
     {
@@ -189,123 +189,124 @@ class AppraisalController extends Controller
     }
 
     private function buildAppraisalQuery(array $criteria, array $filters)
-{
-    return EmployeeAppraisal::with([
-        'appraisal' => fn ($q) => $q->where('period', $filters['period']),
-        'appraisal.formGroupAppraisal',
-        'appraisalLayer.approver',
-        'calibration' => fn ($q) => $q->where('period', $filters['period']),
-        'appraisalContributor' => fn ($q) => $q->where('period', $filters['period']),
-    ])
-    ->where(function ($query) use ($criteria) {
-        foreach ($criteria as $key => $value) {
-            if (!empty($value)) {
-                $query->whereIn($key, $value);
-            }
-        }
-    })
-    ->when($filters['group_company'], fn ($q, $v) => $q->where('group_company', $v))
-    ->when($filters['company'], fn ($q, $v) => $q->whereIn('contribution_level_code', $v))
-    ->when($filters['location'], fn ($q, $v) => $q->whereIn('office_area', $v))
-    ->when($filters['unit'], fn ($q, $v) => $q->whereIn('unit', $v));
-}
+    {
+        return EmployeeAppraisal::with([
+            'appraisal' => fn($q) => $q->where('period', $filters['period']),
+            'appraisal.formGroupAppraisal',
+            'appraisalLayer.approver',
+            'calibration' => fn($q) => $q->where('period', $filters['period']),
+            'appraisalContributor' => fn($q) => $q->where('period', $filters['period']),
+        ])
+            ->where(function ($query) use ($criteria) {
+                foreach ($criteria as $key => $value) {
+                    if (!empty($value)) {
+                        $query->whereIn($key, $value);
+                    }
+                }
+            })
+            ->when($filters['group_company'], fn($q, $v) => $q->where('group_company', $v))
+            ->when($filters['company'], fn($q, $v) => $q->whereIn('contribution_level_code', $v))
+            ->when($filters['location'], fn($q, $v) => $q->whereIn('office_area', $v))
+            ->when($filters['unit'], fn($q, $v) => $q->whereIn('unit', $v));
+    }
 
 
     private function transformAppraisalData($data, $period, $ratingGroups)
-{
-    return $data->map(function ($employee) use ($period, $ratingGroups) {
+    {
+        return $data->map(function ($employee) use ($period, $ratingGroups) {
 
-        $appraisal = $employee->appraisal->first();
-        $finalScore = '-';
+            $appraisal = $employee->appraisal->first();
+            $finalScore = '-';
 
-        if ($appraisal && $appraisal->rating) {
-            $groupId = $appraisal->formGroupAppraisal->id_rating_group;
-            $finalScore = $ratingGroups[$groupId][$appraisal->rating] ?? '-';
+            if ($appraisal && $appraisal->rating && $appraisal->formGroupAppraisal) {
+                $groupId = $appraisal->formGroupAppraisal->id_rating_group;
+                $finalScore = $ratingGroups[$groupId][$appraisal->rating] ?? '-';
+            }
+
+            $approvalStatus = $this->buildApprovalStatus(
+                $employee,
+                $ratingGroups
+            );
+
+            return [
+                'id' => $employee->employee_id,
+                'name' => $employee->fullname,
+                'groupCompany' => $employee->group_company,
+                'accessPA' => data_get(json_decode($employee->access_menu, true), 'createpa', 0),
+                'appraisalStatus' => $appraisal,
+                'finalScore' => $finalScore,
+                'approvalStatus' => $approvalStatus,
+                'popoverContent' => $this->generatePopoverContent($approvalStatus),
+            ];
+        });
+    }
+
+
+    private function buildApprovalStatus($employee, $ratingGroups)
+    {
+        $status = [];
+
+        foreach ($employee->appraisalLayer as $layer) {
+
+            $availability = $this->checkLayerAvailability($employee, $layer);
+
+            $rated = '|-';
+            $firstAppraisal = $employee->appraisal->first();
+            if ($availability['rating'] && $firstAppraisal && $firstAppraisal->formGroupAppraisal) {
+                $groupId = $firstAppraisal->formGroupAppraisal->id_rating_group;
+                $rated = '|' . ($ratingGroups[$groupId][$availability['rating']] ?? '-');
+            }
+
+            // 🔥 FIX KHUSUS CALIBRATOR
+            $finalStatus = $availability['exists'];
+
+            if ($layer->layer_type === 'calibrator') {
+                $calibration = $employee->calibration
+                    ->firstWhere('approver_id', $layer->approver_id);
+
+                $finalStatus = $calibration && $calibration->status === 'Approved';
+            }
+
+            $status[$layer->layer_type][] = [
+                'approver_id' => $layer->approver_id,
+                'layer' => $layer->layer,
+                'rating' => $rated,
+                'status' => $finalStatus,
+                'approver_name' => $layer->approver->fullname ?? 'N/A',
+            ];
         }
 
-        $approvalStatus = $this->buildApprovalStatus(
-            $employee,
-            $ratingGroups
-        );
-
-        return [
-            'id' => $employee->employee_id,
-            'name' => $employee->fullname,
-            'groupCompany' => $employee->group_company,
-            'accessPA' => data_get(json_decode($employee->access_menu, true), 'createpa', 0),
-            'appraisalStatus' => $appraisal,
-            'finalScore' => $finalScore,
-            'approvalStatus' => $approvalStatus,
-            'popoverContent' => $this->generatePopoverContent($approvalStatus),
-        ];
-    });
-}
+        return $status;
+    }
 
 
-private function buildApprovalStatus($employee, $ratingGroups)
-{
-    $status = [];
-
-    foreach ($employee->appraisalLayer as $layer) {
-
-        $availability = $this->checkLayerAvailability($employee, $layer);
-
-        $rated = '|-';
-        if ($availability['rating'] && $employee->appraisal->first()) {
-            $groupId = $employee->appraisal->first()->formGroupAppraisal->id_rating_group;
-            $rated = '|' . ($ratingGroups[$groupId][$availability['rating']] ?? '-');
-        }
-
-        // 🔥 FIX KHUSUS CALIBRATOR
-        $finalStatus = $availability['exists'];
-
+    private function checkLayerAvailability($employee, $layer)
+    {
         if ($layer->layer_type === 'calibrator') {
             $calibration = $employee->calibration
                 ->firstWhere('approver_id', $layer->approver_id);
 
-            $finalStatus = $calibration && $calibration->status === 'Approved';
+            return [
+                'exists' => (bool) $calibration,
+                'rating' => $calibration->rating ?? null,
+            ];
         }
 
-        $status[$layer->layer_type][] = [
-            'approver_id' => $layer->approver_id,
-            'layer' => $layer->layer,
-            'rating' => $rated,
-            'status' => $finalStatus,
-            'approver_name' => $layer->approver->fullname ?? 'N/A',
-        ];
-    }
-
-    return $status;
-}
-
-
-    private function checkLayerAvailability($employee, $layer)
-{
-    if ($layer->layer_type === 'calibrator') {
-        $calibration = $employee->calibration
-            ->firstWhere('approver_id', $layer->approver_id);
+        $exists = $employee->appraisalContributor
+            ->where('contributor_id', $layer->approver_id)
+            ->isNotEmpty();
 
         return [
-            'exists' => (bool) $calibration,
-            'rating' => $calibration->rating ?? null,
+            'exists' => $exists,
+            'rating' => null,
         ];
     }
-
-    $exists = $employee->appraisalContributor
-        ->where('contributor_id', $layer->approver_id)
-        ->isNotEmpty();
-
-    return [
-        'exists' => $exists,
-        'rating' => null,
-    ];
-}
 
 
     private function generatePopoverContent(array $approvalStatus)
     {
         $content = [];
-        
+
         foreach ($approvalStatus as $type => $layers) {
             // Sort layers by the "layer" key in ascending order
             usort($layers, function ($a, $b) {
@@ -324,53 +325,53 @@ private function buildApprovalStatus($employee, $ratingGroups)
     private function getLayerHeaders($datas)
     {
         $maxCalibrators = $datas->pluck('approvalStatus.calibrator')->flatten()->count();
-        return array_map(fn ($i) => 'C' . ($i + 1), range(0, min($maxCalibrators - 1, 9)));
+        return array_map(fn($i) => 'C' . ($i + 1), range(0, min($maxCalibrators - 1, 9)));
     }
 
-   private function getDistinctValues($column, $criteria, $period)
-{
-    return EmployeeAppraisal::select($column)
-        ->distinct()
-        ->whereHas('appraisal', fn ($q) => $q->where('period', $period))
-        ->where(function ($query) use ($criteria) {
-            foreach ($criteria as $key => $value) {
-                if (!empty($value)) {
-                    $query->whereIn($key, $value);
+    private function getDistinctValues($column, $criteria, $period)
+    {
+        return EmployeeAppraisal::select($column)
+            ->distinct()
+            ->whereHas('appraisal', fn($q) => $q->where('period', $period))
+            ->where(function ($query) use ($criteria) {
+                foreach ($criteria as $key => $value) {
+                    if (!empty($value)) {
+                        $query->whereIn($key, $value);
+                    }
                 }
-            }
-        })
-        ->pluck($column);
-}
+            })
+            ->pluck($column);
+    }
 
 
-private function getDistinctCompany($column, $criteria, $period)
-{
-    return EmployeeAppraisal::select('contribution_level_code', $column)
-        ->distinct()
-        ->whereHas('appraisal', fn ($q) => $q->where('period', $period))
-        ->where(function ($query) use ($criteria) {
-            foreach ($criteria as $key => $value) {
-                if (!empty($value)) {
-                    $query->whereIn($key, $value);
+    private function getDistinctCompany($column, $criteria, $period)
+    {
+        return EmployeeAppraisal::select('contribution_level_code', $column)
+            ->distinct()
+            ->whereHas('appraisal', fn($q) => $q->where('period', $period))
+            ->where(function ($query) use ($criteria) {
+                foreach ($criteria as $key => $value) {
+                    if (!empty($value)) {
+                        $query->whereIn($key, $value);
+                    }
                 }
-            }
-        })
-        ->get();
-}
+            })
+            ->get();
+    }
 
 
     private function getReportFiles($userID)
     {
         $directory = 'exports';
         $filePrefix = 'appraisal_details_' . $userID;
-    
+
         $files = collect(Storage::disk('public')->files($directory))
             ->filter(fn($file) => str_starts_with(basename($file), $filePrefix) && str_ends_with($file, '.xlsx'))
             ->map(fn($file) => [
                 'name' => basename($file),
                 'last_modified' => date('Y-m-d H:i:s', Storage::disk('public')->lastModified($file)),
             ])->toArray(); // Convert collection to array
-    
+
         // Return the first file or null if no files found
         return reset($files); // `reset()` retrieves the first value
     }
@@ -387,30 +388,33 @@ private function getDistinctCompany($column, $criteria, $period)
         $id = explode('_', decrypt($request->id))[0];
         $period = explode('_', decrypt($request->id))[1] ? explode('_', decrypt($request->id))[1] : $this->appService->appraisalPeriod();
 
-        $data = EmployeeAppraisal::with(['appraisalLayer' => function ($query) {
-            $query->where('layer_type', '!=', 'calibrator');
-        }, 'appraisal' => function ($query) use ($period) {
-            $query->where('period', $period);
-        }])->where('employee_id', $id)->get();
+        $data = EmployeeAppraisal::with([
+            'appraisalLayer' => function ($query) {
+                $query->where('layer_type', '!=', 'calibrator');
+            },
+            'appraisal' => function ($query) use ($period) {
+                $query->where('period', $period);
+            }
+        ])->where('employee_id', $id)->get();
 
 
         try {
-            
-            $data->map(function($item) use ($period) {
+
+            $data->map(function ($item) use ($period) {
 
                 $appraisal_id = $item->appraisal->first()->id;
 
-                $item->appraisalLayer->map(function($subItem) use ($appraisal_id, $period) {
-                    
-                    $contributor = AppraisalContributor::select('id','appraisal_id','contributor_type','contributor_id')->where('contributor_type', $subItem->layer_type)->where('contributor_id', $subItem->approver_id)->where('appraisal_id', $appraisal_id)->where('period', $period)->first();
-                    
+                $item->appraisalLayer->map(function ($subItem) use ($appraisal_id, $period) {
+
+                    $contributor = AppraisalContributor::select('id', 'appraisal_id', 'contributor_type', 'contributor_id')->where('contributor_type', $subItem->layer_type)->where('contributor_id', $subItem->approver_id)->where('appraisal_id', $appraisal_id)->where('period', $period)->first();
+
                     $subItem->contributor = $contributor;
-                    
+
                     return $subItem;
                 });
 
                 $item->join_date = $this->appService->formatDate($item->date_of_joining);
-                                
+
                 return $item;
             });
 
@@ -420,36 +424,36 @@ private function getDistinctCompany($column, $criteria, $period)
 
             // Convert array to collection and group by layer_type
             $groupedData = collect($datas->appraisalLayer)
-            ->concat(
-                // Tambahkan data untuk layer_type 'self' dari $datas->appraisal
-                collect($datas->appraisal)->map(function ($selfItem) {
-                    $selfItem->layer_type = 'self'; // Tambahkan layer_type 'self' ke data appraisal
-                    $selfItem->layer = null; // Atur layer jika diperlukan
-                    return $selfItem;
-                })
-            )
-            ->groupBy('layer_type')
-            ->map(function ($items, $layerType) {
-                // Further group each layer_type by 'layer'
-                return $items->groupBy('layer')->mapWithKeys(function ($layerGroup, $layer) use ($layerType) {
-                    // Handle layer type name and layer-based key
-                    if ($layerType === 'manager') {
-                        return ['Manager' => $layerGroup];
-                    } elseif ($layerType === 'peers') {
-                        return ['P' . $layer => $layerGroup];
-                    } elseif ($layerType === 'subordinate') {
-                        return ['S' . $layer => $layerGroup];
-                    } elseif ($layerType === 'self') {
-                        return ['Self' => $layerGroup];
-                    }
+                ->concat(
+                    // Tambahkan data untuk layer_type 'self' dari $datas->appraisal
+                    collect($datas->appraisal)->map(function ($selfItem) {
+                        $selfItem->layer_type = 'self'; // Tambahkan layer_type 'self' ke data appraisal
+                        $selfItem->layer = null; // Atur layer jika diperlukan
+                        return $selfItem;
+                    })
+                )
+                ->groupBy('layer_type')
+                ->map(function ($items, $layerType) {
+                    // Further group each layer_type by 'layer'
+                    return $items->groupBy('layer')->mapWithKeys(function ($layerGroup, $layer) use ($layerType) {
+                        // Handle layer type name and layer-based key
+                        if ($layerType === 'manager') {
+                            return ['Manager' => $layerGroup];
+                        } elseif ($layerType === 'peers') {
+                            return ['P' . $layer => $layerGroup];
+                        } elseif ($layerType === 'subordinate') {
+                            return ['S' . $layer => $layerGroup];
+                        } elseif ($layerType === 'self') {
+                            return ['Self' => $layerGroup];
+                        }
+                    });
                 });
-            });            
 
             $parentLink = __('Reports');
             $link = __('Appraisal');
 
             $formGroup = FormGroupAppraisal::with(['rating'])->find($datas->appraisal->first()->form_group_id);
-            
+
             $ratings = [];
 
             foreach ($formGroup->rating as $rating) {
@@ -479,7 +483,7 @@ private function getDistinctCompany($column, $criteria, $period)
             $contributorId = $request->id;
 
             $parts = explode('_', $contributorId);
-            
+
             // Access the separated parts
             $id = $parts[0];
             $formId = $parts[1];
@@ -488,18 +492,23 @@ private function getDistinctCompany($column, $criteria, $period)
                 $datasQuery = AppraisalContributor::with(['employee'])->where('appraisal_id', $formId);
                 $datas = $datasQuery->get();
 
-                $checkSnapshot = ApprovalSnapshots::where('form_id', $formId)->where('created_by', $datas->first()->employee->id)
+                if ($datas->isEmpty()) {
+                    return response()->json(['error' => 'No appraisal data found.'], 404);
+                }
+
+                $checkSnapshot = ApprovalSnapshots::where('form_id', $formId)
+                    ->where('created_by', $datas->first()->employee->id ?? 0)
                     ->orderBy('created_at', 'desc');
 
-                // Check if `datas->first()->employee->id` exists
-                if ($checkSnapshot) {
+                // Check if snapshots exist
+                if ($checkSnapshot->exists()) {
                     $query = $checkSnapshot;
-                }else{
+                } else {
                     $query = ApprovalSnapshots::where('form_id', $formId)
-                    ->where('form_data->formGroupName', '!=', 'Appraisal Form 360')
-                    ->orderBy('created_at', 'asc');
+                        ->where('form_data->formGroupName', '!=', 'Appraisal Form 360')
+                        ->orderBy('created_at', 'asc');
                 }
-                
+
                 $employeeForm = $query->first();
 
                 $data = [];
@@ -507,19 +516,19 @@ private function getDistinctCompany($column, $criteria, $period)
                 $goalDataCollection = [];
 
                 $formGroupContent = $this->appService->formGroupAppraisal($datas->first()->employee_id, 'Appraisal Form', $period);
-                
+
                 if (!$formGroupContent) {
                     $appraisalForm = ['data' => ['formData' => []]];
                 } else {
                     $appraisalForm = $formGroupContent;
                 }
-                
+
                 $cultureData = $this->appService->getDataByName($appraisalForm['data']['form_appraisals'], 'Culture') ?? [];
                 $leadershipData = $this->appService->getDataByName($appraisalForm['data']['form_appraisals'], 'Leadership') ?? [];
                 $sigapData = $this->appService->getDataByName($appraisalForm['data']['form_appraisals'], 'Sigap') ?? [];
-                
-                
-                if($employeeForm){
+
+
+                if ($employeeForm) {
 
                     // Create data item object
                     $dataItem = new stdClass();
@@ -527,30 +536,30 @@ private function getDistinctCompany($column, $criteria, $period)
                     $dataItem->name = $employeeForm->name;
                     $dataItem->goal = $employeeForm->goal;
                     $data[] = $dataItem;
-    
+
                     // Get appraisal form data for each record
                     $appraisalData = [];
-                    
+
                     if ($employeeForm->form_data) {
                         $appraisalData = json_decode($employeeForm->form_data, true);
                         $contributorType = $employeeForm->contributor_type;
                         $appraisalData['contributor_type'] = 'employee';
                     }
-    
+
                     // Get goal form data for each record
                     $goalData = [];
                     if ($employeeForm->goal && $employeeForm->goal->form_data) {
                         $goalData = json_decode($employeeForm->goal->form_data, true);
                         $goalDataCollection[] = $goalData;
                     }
-                    
+
                     // Combine the appraisal and goal data for each contributor
                     $employeeData = $employeeForm->employee; // Get employee data
-            
+
                     $formData[] = $appraisalData;
 
                 }
-                
+
                 foreach ($datas as $request) {
 
                     // Create data item object
@@ -559,7 +568,7 @@ private function getDistinctCompany($column, $criteria, $period)
                     $dataItem->name = $request->name;
                     $dataItem->goal = $request->appraisal->goal;
                     $data[] = $dataItem;
-                    
+
                     // Get appraisal form data for each record
                     $appraisalData = [];
 
@@ -575,10 +584,10 @@ private function getDistinctCompany($column, $criteria, $period)
                         $goalData = json_decode($request->appraisal->goal->form_data, true);
                         $goalDataCollection[] = $goalData;
                     }
-                    
+
                     // Combine the appraisal and goal data for each contributor
                     $employeeData = $request->employee; // Get employee data
-            
+
                     $formData[] = $appraisalData;
 
                 }
@@ -586,13 +595,13 @@ private function getDistinctCompany($column, $criteria, $period)
                 $jobLevel = $employeeData->job_level;
 
                 $weightageData = MasterWeightage::where('group_company', 'LIKE', '%' . $employeeData->group_company . '%')->where('period', $datas->first()->period)->first();
-                            
+
                 $weightageContent = json_decode($weightageData->form_data, true);
-                
+
                 $result = $this->appService->appraisalSummary($weightageContent, $formData, $employeeData->employee_id, $jobLevel);
 
                 // $formData = $this->appService->combineFormData($result['summary'], $goalData, $result['summary']['contributor_type'], $employeeData, $request->period);     
-                                
+
                 $formData = $this->appService->combineSummaryFormData($result, $goalData, $employeeData, $request->period);
 
                 if (isset($formData['kpiScore'])) {
@@ -616,7 +625,7 @@ private function getDistinctCompany($column, $criteria, $period)
                             $form[$index]['title'] = $leadershipItem['title'];
                         }
                     }
-                    
+
                     if ($form['formName'] === 'Culture') {
                         foreach ($cultureData as $index => $cultureItem) {
                             foreach ($cultureItem['items'] as $itemIndex => $item) {
@@ -645,12 +654,12 @@ private function getDistinctCompany($column, $criteria, $period)
                             $form[$index]['items'] = $sigapItem['items'];
                         }
                     }
-                
-                }       
-                
+
+                }
+
                 $appraisalData = $formData;
 
-            }elseif($id == 'employee'){
+            } elseif ($id == 'employee') {
 
                 $datas = Appraisal::with([
                     'employee',
@@ -660,14 +669,14 @@ private function getDistinctCompany($column, $criteria, $period)
                     }
                 ])->where('id', $formId)->get();
 
-                $formattedData = $datas->map(function($item) {
+                $formattedData = $datas->map(function ($item) {
                     $item->formatted_created_at = $this->appService->formatDate($item->created_at);
-    
+
                     $item->formatted_updated_at = $this->appService->formatDate($item->updated_at);
-                    
+
                     return $item;
                 });
-    
+
                 $data = [];
                 foreach ($formattedData as $request) {
                     $dataItem = new stdClass();
@@ -676,48 +685,48 @@ private function getDistinctCompany($column, $criteria, $period)
                     $dataItem->goal = $request->goal;
                     $data[] = $dataItem;
                 }
-    
+
                 $goalData = $datas->isNotEmpty() ? json_decode($datas->first()->goal->form_data, true) : [];
                 $appraisalData = $datas->isNotEmpty() ? json_decode($datas->first()->approvalSnapshots->form_data, true) : [];
 
                 $appraisalData['contributor_type'] = "employee";
 
                 $appraisalData = array($appraisalData);
-    
+
                 $employeeData = $datas->first()->employee;
-    
+
                 // Setelah data digabungkan, gunakan combineFormData untuk setiap jenis kontributor
 
                 $formGroupContent = $this->appService->formGroupAppraisal($datas->first()->employee_id, 'Appraisal Form', $period);
-            
+
                 if (!$formGroupContent) {
                     $appraisalForm = ['data' => ['formData' => []]];
                 } else {
                     $appraisalForm = $formGroupContent;
                 }
-                
+
                 $cultureData = $this->appService->getDataByName($appraisalForm['data']['form_appraisals'], 'Culture') ?? [];
                 $leadershipData = $this->appService->getDataByName($appraisalForm['data']['form_appraisals'], 'Leadership') ?? [];
                 $sigapData = $this->appService->getDataByName($appraisalForm['data']['form_appraisals'], 'Sigap') ?? [];
-    
+
                 $jobLevel = $employeeData->job_level;
 
                 $weightageData = MasterWeightage::where('group_company', 'LIKE', '%' . $employeeData->group_company . '%')->where('period', $datas->first()->period)->first();
-                            
+
                 $weightageContent = json_decode($weightageData->form_data, true);
 
                 $result = $this->appService->appraisalSummary($weightageContent, $appraisalData, $employeeData->employee_id, $jobLevel);
 
                 // $formData = $this->appService->combineFormData($result['calculated_data'][0], $goalData, 'employee', $employeeData, $datas->first()->period);
                 $formData = $this->appService->combineFormData($appraisalData[0], $goalData, 'employee', $employeeData, $datas->first()->period);
-                
+
                 if (isset($formData['kpiScore'])) {
                     $appraisalData['kpiScore'] = round($formData['kpiScore'], 2);
                     $appraisalData['cultureScore'] = round($formData['cultureScore'], 2);
                     $appraisalData['leadershipScore'] = round($formData['leadershipScore'], 2);
                     $appraisalData['sigapScore'] = round($formData['sigapScore'], 2);
                 }
-                
+
                 foreach ($formData['formData'] as &$form) {
                     if ($form['formName'] === 'Leadership') {
                         foreach ($leadershipData as $index => $leadershipItem) {
@@ -761,17 +770,17 @@ private function getDistinctCompany($column, $criteria, $period)
                         }
                     }
                 }
-    
+
                 $path = base_path('resources/goal.json');
                 if (!File::exists($path)) {
                     $options = ['UoM' => [], 'Type' => []];
                 } else {
                     $options = json_decode(File::get($path), true);
                 }
-    
+
                 $uomOption = $options['UoM'] ?? [];
                 $typeOption = $options['Type'] ?? [];
-    
+
                 $employee = EmployeeAppraisal::where('employee_id', $user)->first();
                 if (!$employee) {
                     $access_menu = ['goals' => null];
@@ -779,7 +788,7 @@ private function getDistinctCompany($column, $criteria, $period)
                     $access_menu = json_decode($employee->access_menu, true);
                 }
                 $goals = $access_menu['goals'] ?? null;
-    
+
                 $selectYear = ApprovalRequest::where('employee_id', $user)->where('category', $this->category)->select('created_at')->get();
                 $selectYear->transform(function ($req) {
                     $req->year = Carbon::parse($req->created_at)->format('Y');
@@ -788,62 +797,62 @@ private function getDistinctCompany($column, $criteria, $period)
 
                 $appraisalData = $formData;
 
-            }else{
+            } else {
 
                 $datasQuery = AppraisalContributor::with(['employee'])->where('id', $id);
 
                 $datas = $datasQuery->get();
-                
-                $formattedData = $datas->map(function($item) {
+
+                $formattedData = $datas->map(function ($item) {
                     $item->formatted_created_at = $this->appService->formatDate($item->created_at);
-    
+
                     $item->formatted_updated_at = $this->appService->formatDate($item->updated_at);
-                    
+
                     return $item;
                 });
-    
+
                 $goalData = $datas->isNotEmpty() ? json_decode($datas->first()->appraisal->goal->form_data, true) : [];
                 $appraisalData = $datas->isNotEmpty() ? json_decode($datas->first()->form_data, true) : [];
 
-                
-                
+
+
                 $appraisalData['contributor_type'] = $datas->first()->contributor_type;
-                
+
                 $appraisalData = array($appraisalData);
-                
+
                 $employeeData = $datas->first()->employee;
-                
+
                 // Setelah data digabungkan, gunakan combineFormData untuk setiap jenis kontributor
-                
+
                 $formGroupContent = $this->appService->formGroupAppraisal($datas->first()->employee_id, 'Appraisal Form', $period);
-                
+
                 if (!$formGroupContent) {
                     $appraisalForm = ['data' => ['formData' => []]];
                 } else {
                     $appraisalForm = $formGroupContent;
                 }
-                
+
                 $cultureData = $this->appService->getDataByName($appraisalForm['data']['form_appraisals'], 'Culture') ?? [];
                 $leadershipData = $this->appService->getDataByName($appraisalForm['data']['form_appraisals'], 'Leadership') ?? [];
                 $sigapData = $this->appService->getDataByName($appraisalForm['data']['form_appraisals'], 'Sigap') ?? [];
-                
+
                 $jobLevel = $employeeData->job_level;
-                
+
                 $weightageData = MasterWeightage::where('group_company', 'LIKE', '%' . $employeeData->group_company . '%')->where('period', $datas->first()->period)->first();
-                            
+
                 $weightageContent = json_decode($weightageData->form_data, true);
-                
+
                 $result = $this->appService->appraisalSummary($weightageContent, $appraisalData, $employeeData->employee_id, $jobLevel);
 
                 $formData = $this->appService->combineFormData($appraisalData[0], $goalData, $datas->first()->contributor_type, $employeeData, $datas->first()->period);
-                
+
                 if (isset($formData['totalKpiScore'])) {
                     $appraisalData['kpiScore'] = round($formData['totalKpiScore'], 2);
                     $appraisalData['cultureScore'] = round($formData['totalCultureScore'], 2);
                     $appraisalData['leadershipScore'] = round($formData['totalLeadershipScore'], 2);
                     $appraisalData['sigapScore'] = round($formData['totalSigapScore'], 2);
                 }
-                
+
                 foreach ($formData['formData'] as &$form) {
                     if ($form['formName'] === 'Leadership') {
                         foreach ($leadershipData as $index => $leadershipItem) {
@@ -886,17 +895,17 @@ private function getDistinctCompany($column, $criteria, $period)
                         }
                     }
                 }
-    
+
                 $path = base_path('resources/goal.json');
                 if (!File::exists($path)) {
                     $options = ['UoM' => [], 'Type' => []];
                 } else {
                     $options = json_decode(File::get($path), true);
                 }
-    
+
                 $uomOption = $options['UoM'] ?? [];
                 $typeOption = $options['Type'] ?? [];
-    
+
                 $employee = EmployeeAppraisal::where('employee_id', $user)->first();
                 if (!$employee) {
                     $access_menu = ['goals' => null];
@@ -904,7 +913,7 @@ private function getDistinctCompany($column, $criteria, $period)
                     $access_menu = json_decode($employee->access_menu, true);
                 }
                 $goals = $access_menu['goals'] ?? null;
-    
+
                 $selectYear = ApprovalRequest::where('employee_id', $user)->where('category', $this->category)->select('created_at')->get();
                 $selectYear->transform(function ($req) {
                     $req->year = Carbon::parse($req->created_at)->format('Y');
@@ -927,13 +936,13 @@ private function getDistinctCompany($column, $criteria, $period)
     {
         // Increase the PHP memory limit
         ini_set('memory_limit', '512M');
-    
+
         $data = $request->input('data'); // Retrieve the data sent by DataTable
         $headers = $request->input('headers'); // Dynamic headers from the request
         $batchSize = $request->input('batchSize', 100);
         $period = $request->input('period');
         $userID = Auth::user()->id;
-        
+
         $directory = 'exports';
         $temporary = 'temp';
         $filePrefix = 'appraisal_details_' . $userID;
@@ -989,22 +998,22 @@ private function getDistinctCompany($column, $criteria, $period)
 
         // Define the directory where files are stored
         $directory = 'exports';
-        
+
         // Get all files in the directory
         $files = Storage::disk('public')->files($directory);
-        
+
         // Search for a file with the given base name (ignoring extension)
         $matchingFile = collect($files)->first(function ($file) use ($fileName) {
             return pathinfo($file, PATHINFO_FILENAME) === $fileName;
         });
-        
+
         // Check if a matching file was found
         if ($matchingFile) {
             return response()->json(['exists' => true, 'filePath' => $matchingFile]);
         } else {
             return response()->json(['exists' => false, 'message' => 'File not found.']);
         }
-        
+
     }
 
     public function checkJobAvailability(Request $request)
@@ -1019,7 +1028,7 @@ private function getDistinctCompany($column, $criteria, $period)
         } else {
             return response()->json(['exists' => false, 'message' => 'Jobs not found.']);
         }
-        
+
     }
 
     /**

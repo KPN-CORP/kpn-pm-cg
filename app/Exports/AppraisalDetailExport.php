@@ -39,104 +39,111 @@ class AppraisalDetailExport implements FromCollection, WithHeadings, WithMapping
 
     public function collection(): Collection
     {
-
         $this->dynamicHeaders = []; // Reset dynamic headers for each export
-
-        $contributorsGroupedByEmployee = AppraisalContributor::with([
-            'employee' => function ($query) {
-                $query->select('employee_id', 'fullname', 'gender', 'email', 'job_level', 'group_company', 'designation_name', 'company_name', 'contribution_level_code'); // Adjust fields as needed
-            }
-        ])
-        ->where('period', $this->period)
-        ->get()
-        ->groupBy('employee_id');
-
-        $employeeAppraisalById = Appraisal::with([
-            'employee' => function ($query) {
-                $query->select('employee_id', 'fullname', 'gender', 'email', 'job_level', 'group_company', 'designation_name', 'company_name', 'contribution_level_code'); // Adjust fields as needed
-            }
-        ])
-        ->where('period', $this->period)
-        ->get()
-        ->groupBy('id');
 
         $expandedData = collect();
 
-        $this->data->chunk(100)->each(function ($chunk) use ($expandedData, $contributorsGroupedByEmployee, $employeeAppraisalById) {
+        $this->data->chunk(100)->each(function ($chunk) use ($expandedData) {
+            $employeeIds = [];
+            $formIds = [];
+            foreach ($chunk as $row) {
+                $employeeId = $row['Employee ID']['dataId'] ?? null;
+                $formId = $row['Form ID']['dataId'] ?? null;
+                if ($employeeId)
+                    $employeeIds[] = $employeeId;
+                if ($formId)
+                    $formIds[] = $formId;
+            }
+
+            $employeeIds = array_unique($employeeIds);
+            $formIds = array_unique($formIds);
+
+            $appraisals = Appraisal::with([
+                'employee',
+                'goal',
+                'approvalSnapshots' => function ($query) {
+                    $query->latest();
+                }
+            ])
+                ->whereIn('id', $formIds)
+                ->get()
+                ->keyBy('id');
+
+            $contributors = AppraisalContributor::with([
+                'employee'
+            ])
+                ->whereIn('employee_id', $employeeIds)
+                ->where('period', $this->period)
+                ->get();
+
+            $contributorsGroupedByEmployee = $contributors->groupBy('employee_id');
+
+            $allAppraisalIdsForSummary = $contributors->pluck('appraisal_id')->unique()->toArray();
+            $contributorsForSummary = AppraisalContributor::with(['employee', 'appraisal.goal'])
+                ->whereIn('appraisal_id', $allAppraisalIdsForSummary)
+                ->get()
+                ->groupBy('appraisal_id');
+
             foreach ($chunk as $row) {
                 $employeeId = $row['Employee ID']['dataId'] ?? null;
                 $formId = $row['Form ID']['dataId'] ?? null;
 
-                
                 if ($formId && $employeeId) {
-                    // Log::info('Preprocessing data export', [
-                    //     'data_preview' => $employeeAppraisalById->get($formId),
-                    // ]);
-                    $this->expandRowForSelf($expandedData, $row, $employeeAppraisalById->get($formId));
+                    $appraisal = $appraisals->get($formId);
+                    $this->expandRowForSelf($expandedData, $row, $appraisal);
 
                     if ($contributorsGroupedByEmployee->has($employeeId)) {
-                        $this->expandRowForContributors($expandedData, $row, $contributorsGroupedByEmployee->get($employeeId));
-                        $this->expandRowForSummary($expandedData, $row, $contributorsGroupedByEmployee->get($employeeId));
-    
+                        $conts = $contributorsGroupedByEmployee->get($employeeId);
+
+                        $this->expandRowForContributors($expandedData, $row, $conts, $appraisals);
+                        $this->expandRowForSummary($expandedData, $row, $conts, $contributorsForSummary, $appraisals);
                     }
                 } else {
                     $expandedData->push($this->createDefaultContributorRow($row));
                 }
-
             }
         });
 
         return $expandedData;
     }
 
-    private function expandRowForSummary(Collection $expandedData, array $row, Collection $contributors): void
+    private function expandRowForSummary(Collection $expandedData, array $row, Collection $contributors, Collection $contributorsForSummary, Collection $appraisals): void
     {
         $contributor = $contributors->first();
 
         if ($contributor) {
             $contributorRow = $row;
-            $formData = $this->getFormDataSummary($contributor);
+            $formData = $this->getFormDataSummary($contributor, $contributorsForSummary, $appraisals);
             $contributorRow['Contributor ID'] = ['dataId' => $contributor->employee_id];
             $contributorRow['Contributor Type'] = ['dataId' => 'summary'];
             $this->addFormDataToRow($contributorRow, $formData);
 
-            // Add the processed row to expandedData
             $expandedData->push($contributorRow);
         }
     }
 
-    private function expandRowForSelf(Collection $expandedData, array $row, Collection $contributors): void
+    private function expandRowForSelf(Collection $expandedData, array $row, ?Appraisal $appraisal): void
     {
-        
-        $contributor = $contributors->first();
-
-        if ($contributor) {
+        if ($appraisal) {
             $contributorRow = $row;
-            $formData = $this->getFormDataSelf($contributor);
-            // Log::info('Adding self row to export', [
-            //     // 'formData' => $formData,
-            // ]);
-            $contributorRow['Contributor ID'] = ['dataId' => $contributor->employee_id];
+            $formData = $this->getFormDataSelf($appraisal);
+            $contributorRow['Contributor ID'] = ['dataId' => $appraisal->employee_id];
             $contributorRow['Contributor Type'] = ['dataId' => 'self'];
             $this->addFormDataToRow($contributorRow, $formData);
 
-            // Add the processed row to expandedData
             $expandedData->push($contributorRow);
         }
     }
 
-    private function expandRowForContributors(Collection $expandedData, array $row, Collection $contributors): void
+    private function expandRowForContributors(Collection $expandedData, array $row, Collection $contributors, Collection $appraisals): void
     {
         foreach ($contributors as $contributor) {
             $contributorRow = $row;
-            $formData = $this->getFormDataForContributor($contributor);
-            // Log::info('Adding contributor row to export', [
-            //     'formData' => $formData,
-            // ]);
+            $formData = $this->getFormDataForContributor($contributor, $appraisals);
             $contributorRow['Contributor ID'] = ['dataId' => $contributor->contributor_id];
             $contributorRow['Contributor Type'] = ['dataId' => $contributor->contributor_type];
             $this->addFormDataToRow($contributorRow, $formData);
-            
+
             $expandedData->push($contributorRow);
         }
     }
@@ -147,7 +154,9 @@ class AppraisalDetailExport implements FromCollection, WithHeadings, WithMapping
         // 'contributorRow' => $contributorRow, // Log the current state of contributorRow for debugging
         // ]);
 
-        if (!empty($formData['formData']) && is_array($formData['formData'])) {
+        $isSummary = ($contributorRow['Contributor Type']['dataId'] ?? '') === 'summary';
+
+        if (!$isSummary && !empty($formData['formData']) && is_array($formData['formData'])) {
             foreach ($formData['formData'] as $formGroup) {
                 $formName = $formGroup['formName'] ?? 'Unknown';
                 foreach ($formGroup as $index => $itemGroup) {
@@ -191,7 +200,7 @@ class AppraisalDetailExport implements FromCollection, WithHeadings, WithMapping
                 $subNumber = $subIndex + 1;
                 $header = strtolower(trim("{$formName}_{$title}_{$subNumber}"));
                 $this->captureDynamicHeader($header);
-                $contributorRow[$header] = ['dataId' => strip_tags((string)$item['formItem']) . "|" . $item['score']];
+                $contributorRow[$header] = ['dataId' => strip_tags((string) $item['formItem']) . "|" . $item['score']];
             }
         }
     }
@@ -202,7 +211,7 @@ class AppraisalDetailExport implements FromCollection, WithHeadings, WithMapping
         //     'formName' => $formName,
         //     'itemGroup' => $itemGroup, // Log the entire item group for debugging
         //     'contributorRow' => $contributorRow, // Log the current state of contributorRow for debugging
-            
+
         // ]);
         // title and items definitions
         if (empty($itemGroup['title'])) {
@@ -225,22 +234,22 @@ class AppraisalDetailExport implements FromCollection, WithHeadings, WithMapping
         // determine the descriptive text for the selected score
         $formItemText = '';
         if ($score !== null) {
-            $scoreIndex = (string)(int)$score; // normalize index
+            $scoreIndex = (string) (int) $score; // normalize index
             if (isset($items[$scoreIndex])) {
                 $itemDesc = $items[$scoreIndex];
                 if (is_array($itemDesc)) {
                     $formItemText = $itemDesc['desc_eng'] ?? $itemDesc['desc_idn'] ?? json_encode($itemDesc);
                 } else {
-                    $formItemText = (string)$itemDesc;
+                    $formItemText = (string) $itemDesc;
                 }
             }
         }
 
         // fallback: if items not present but itemGroup contains direct formItem
         if ($formItemText === '' && isset($itemGroup[0]['formItem'])) {
-            $formItemText = (string)$itemGroup[0]['formItem'];
+            $formItemText = (string) $itemGroup[0]['formItem'];
         } elseif ($formItemText === '' && isset($itemGroup['formItem'])) {
-            $formItemText = (string)$itemGroup['formItem'];
+            $formItemText = (string) $itemGroup['formItem'];
         }
 
         $header = strtolower(trim("{$formName}_{$title}"));
@@ -291,9 +300,9 @@ class AppraisalDetailExport implements FromCollection, WithHeadings, WithMapping
         }
     }
 
-    private function getFormDataForContributor(AppraisalContributor $contributor): array
+    private function getFormDataForContributor(AppraisalContributor $contributor, Collection $appraisals): array
     {
-        $appraisal = Appraisal::with(['goal'])->where('id', $contributor->appraisal_id)->first();
+        $appraisal = $appraisals->get($contributor->appraisal_id);
 
         // If the underlying appraisal is still a Draft, skip heavy calculations
         if ($appraisal && (($appraisal->form_status ?? null) === 'Draft' || ($contributor->status ?? null) === 'Draft')) {
@@ -319,16 +328,17 @@ class AppraisalDetailExport implements FromCollection, WithHeadings, WithMapping
         $formGroupContent = $this->appService->formGroupAppraisal($contributor->employee_id, 'Appraisal Form', $contributor->period);
         $appraisalForm = $formGroupContent ?: ['data' => ['formData' => []]];
 
-        if (!$formGroupContent) {
-            $appraisalForm = ['data' => ['formData' => []]];
+        if (!$formGroupContent || !isset($formGroupContent['data'])) {
+            $appraisalForm = ['data' => ['formData' => [], 'form_appraisals' => []]];
         } else {
             $appraisalForm = $formGroupContent;
         }
 
         // culture & leadership BI items
-        $cultureData = $this->appService->getDataByName($appraisalForm['data']['form_appraisals'], 'Culture') ?? [];
-        $leadershipData = $this->appService->getDataByName($appraisalForm['data']['form_appraisals'], 'Leadership') ?? [];
-        $sigapData = $this->appService->getDataByName($appraisalForm['data']['form_appraisals'], 'Sigap') ?? [];
+        $formAppraisals = data_get($appraisalForm, 'data.form_appraisals', []);
+        $cultureData = $this->appService->getDataByName($formAppraisals, 'Culture') ?? [];
+        $leadershipData = $this->appService->getDataByName($formAppraisals, 'Leadership') ?? [];
+        $sigapData = $this->appService->getDataByName($formAppraisals, 'Sigap') ?? [];
 
         $jobLevel = $employeeData->job_level;
 
@@ -340,7 +350,7 @@ class AppraisalDetailExport implements FromCollection, WithHeadings, WithMapping
         //     // for non percentage by 360 data BI items
         //     $result = $this->appService->appraisalSummaryWithout360Calculation($weightageContent, $appraisalData, $employeeData->employee_id, $jobLevel);
         // } else {
-            $result = $this->appService->appraisalSummary($weightageContent, $appraisalData, $employeeData->employee_id, $jobLevel);
+        $result = $this->appService->appraisalSummary($weightageContent, $appraisalData, $employeeData->employee_id, $jobLevel);
         // }
 
         // Log::info('Calculated appraisal summary for contributor', [
@@ -349,53 +359,55 @@ class AppraisalDetailExport implements FromCollection, WithHeadings, WithMapping
         //     'Result' => $result,
         // ]);
 
-        $formData = $this->appService->combineFormData($result['calculated_data'][0], $goalData, $contributor->contributor_type, $employeeData, $contributor->period);
+        $formData = $this->appService->combineFormData($appraisalData[0], $goalData, $contributor->contributor_type, $employeeData, $contributor->period);
 
         // Log::info('Debug Export Data', [
         //     'data' => $this->user, // Log only the first 10 rows
         // ]);
 
-        foreach ($formData['formData'] as &$form) {
-            if ($form['formName'] === 'Culture') {
-                foreach ($cultureData as $index => $cultureItem) {
-                    foreach ($cultureItem['items'] as $itemIndex => $item) {
-                        if (isset($form[$index][$itemIndex])) {
-                            $form[$index][$itemIndex] = [
-                                'formItem' => $item,
-                                'score' => $form[$index][$itemIndex]['score']
-                            ];
+        if (isset($formData['formData']) && is_array($formData['formData'])) {
+            foreach ($formData['formData'] as &$form) {
+                if ($form['formName'] === 'Culture') {
+                    foreach ($cultureData as $index => $cultureItem) {
+                        foreach ($cultureItem['items'] as $itemIndex => $item) {
+                            if (isset($form[$index][$itemIndex])) {
+                                $form[$index][$itemIndex] = [
+                                    'formItem' => $item,
+                                    'score' => $form[$index][$itemIndex]['score']
+                                ];
+                            }
                         }
+                        $form[$index]['title'] = $cultureItem['title'];
                     }
-                    $form[$index]['title'] = $cultureItem['title'];
                 }
-            }
-            if ($form['formName'] === 'Leadership') {
-                foreach ($leadershipData as $index => $leadershipItem) {
-                    foreach ($leadershipItem['items'] as $itemIndex => $item) {
-                        if (isset($form[$index][$itemIndex])) {
-                            $form[$index][$itemIndex] = [
-                                'formItem' => $item,
-                                'score' => $form[$index][$itemIndex]['score']
-                            ];
+                if ($form['formName'] === 'Leadership') {
+                    foreach ($leadershipData as $index => $leadershipItem) {
+                        foreach ($leadershipItem['items'] as $itemIndex => $item) {
+                            if (isset($form[$index][$itemIndex])) {
+                                $form[$index][$itemIndex] = [
+                                    'formItem' => $item,
+                                    'score' => $form[$index][$itemIndex]['score']
+                                ];
+                            }
                         }
+                        $form[$index]['title'] = $leadershipItem['title'];
                     }
-                    $form[$index]['title'] = $leadershipItem['title'];
                 }
-            }
 
-            if ($form['formName'] === 'Sigap') {
-                foreach ($sigapData as $index => $sigapItem) {
-                    foreach ($sigapItem['items'] as $itemIndex => $item) {
-                        if (isset($form[$index][$itemIndex])) {
-                            $form[$index][$itemIndex] = [
-                                'formItem' => $item,
-                                'score' => $form[$index][$itemIndex]['score']
-                            ];
+                if ($form['formName'] === 'Sigap') {
+                    foreach ($sigapData as $index => $sigapItem) {
+                        foreach ($sigapItem['items'] as $itemIndex => $item) {
+                            if (isset($form[$index][$itemIndex])) {
+                                $form[$index][$itemIndex] = [
+                                    'formItem' => $item,
+                                    'score' => $form[$index][$itemIndex]['score']
+                                ];
+                            }
                         }
-                    }
-                    $form[$index]['title'] = $sigapItem['title'];
-                    $form[$index]['items'] = $sigapItem['items'];
+                        $form[$index]['title'] = $sigapItem['title'];
+                        $form[$index]['items'] = $sigapItem['items'];
 
+                    }
                 }
             }
         }
@@ -403,100 +415,107 @@ class AppraisalDetailExport implements FromCollection, WithHeadings, WithMapping
         return $formData;
     }
 
-    private function getFormDataSelf(Appraisal $contributor): array
+    private function getFormDataSelf(Appraisal $appraisal): array
     {
-        $datas = Appraisal::with([
-            'employee',
-            'approvalSnapshots' => function ($query) {
-                $query->latest()
-                    ->where('form_data->formGroupName', '!=', 'Appraisal Form 360');
-            }
-        ])->where('id', $contributor->id)->get();
+        $latestSnapshot = null;
+        if ($appraisal->relationLoaded('approvalSnapshots') && $appraisal->approvalSnapshots) {
+            $snap = $appraisal->approvalSnapshots;
+            $isValid = true;
 
-        if(!$datas->first()->approvalSnapshots){
-            Log::info('Debug Snapshots Data', [
-                'data' => $datas->first()->employee_id, // Log only the first 10 rows
-            ]);
+            if (!$snap->form_data) {
+                $isValid = false;
+            } else {
+                $decoded = json_decode($snap->form_data, true);
+                if (is_array($decoded) && isset($decoded['formGroupName']) && $decoded['formGroupName'] === 'Appraisal Form 360') {
+                    $isValid = false;
+                }
+            }
+
+            if ($isValid) {
+                $latestSnapshot = $snap;
+            }
         }
 
-        $goalData = $datas->isNotEmpty() ? json_decode($datas->first()->goal->form_data, true) : [];
-        $appraisalData = $datas->isNotEmpty() ? json_decode($datas->first()->approvalSnapshots->form_data, true) : [];
+        $goalData = $appraisal->goal ? json_decode($appraisal->goal->form_data, true) : [];
+        $appraisalData = $latestSnapshot ? json_decode($latestSnapshot->form_data, true) : [];
 
         $appraisalData['contributor_type'] = "employee";
 
         $appraisalData = array($appraisalData);
 
-        $data = $datas->first();
-        $employeeData = $data ? $data->employee : null;
+        $employeeData = $appraisal->employee;
 
         // Setelah data digabungkan, gunakan combineFormData untuk setiap jenis kontributor
 
-        $formGroupContent = $this->appService->formGroupAppraisal($datas->first()->employee_id, 'Appraisal Form', $contributor->period);
+        $formGroupContent = $this->appService->formGroupAppraisal($appraisal->employee_id, 'Appraisal Form', $appraisal->period);
 
-        if (!$formGroupContent) {
-            $appraisalForm = ['data' => ['formData' => []]];
+        if (!$formGroupContent || !isset($formGroupContent['data'])) {
+            $appraisalForm = ['data' => ['formData' => [], 'form_appraisals' => []]];
         } else {
             $appraisalForm = $formGroupContent;
         }
 
-        $cultureData = $this->appService->getDataByName($appraisalForm['data']['form_appraisals'], 'Culture') ?? [];
-        $leadershipData = $this->appService->getDataByName($appraisalForm['data']['form_appraisals'], 'Leadership') ?? [];
-        $sigapData = $this->appService->getDataByName($appraisalForm['data']['form_appraisals'], 'Sigap') ?? [];
+        $formAppraisals = data_get($appraisalForm, 'data.form_appraisals', []);
+        $cultureData = $this->appService->getDataByName($formAppraisals, 'Culture') ?? [];
+        $leadershipData = $this->appService->getDataByName($formAppraisals, 'Leadership') ?? [];
+        $sigapData = $this->appService->getDataByName($formAppraisals, 'Sigap') ?? [];
 
         $jobLevel = $employeeData->job_level;
 
-        $weightageData = MasterWeightage::where('group_company', 'LIKE', '%' . $employeeData->group_company . '%')->where('period', $contributor->period)->first();
+        $weightageData = MasterWeightage::where('group_company', 'LIKE', '%' . $employeeData->group_company . '%')->where('period', $appraisal->period)->first();
 
         $weightageContent = json_decode($weightageData->form_data, true);
 
         // Use the standard appraisalSummary to avoid the without-360 code path causing string-offset errors
         $result = $this->appService->appraisalSummary($weightageContent, $appraisalData, $employeeData->employee_id, $jobLevel);
 
-        $formData = $this->appService->combineFormData($result['calculated_data'][0], $goalData, 'employee', $employeeData, $datas->first()->period);
+        $formData = $this->appService->combineFormData($appraisalData[0], $goalData, 'employee', $employeeData, $appraisal->period);
 
         // Log::info('Calculated appraisal summary for self', [
         //     'formData' => $formData,
         // ]);
 
-        foreach ($formData['formData'] as &$form) {
-            if ($form['formName'] === 'Culture') {
-                foreach ($cultureData as $index => $cultureItem) {
-                    foreach ($cultureItem['items'] as $itemIndex => $item) {
-                        if (isset($form[$index][$itemIndex])) {
-                            $form[$index][$itemIndex] = [
-                                'formItem' => $item,
-                                'score' => $form[$index][$itemIndex]['score']
-                            ];
+        if (isset($formData['formData']) && is_array($formData['formData'])) {
+            foreach ($formData['formData'] as &$form) {
+                if ($form['formName'] === 'Culture') {
+                    foreach ($cultureData as $index => $cultureItem) {
+                        foreach ($cultureItem['items'] as $itemIndex => $item) {
+                            if (isset($form[$index][$itemIndex])) {
+                                $form[$index][$itemIndex] = [
+                                    'formItem' => $item,
+                                    'score' => $form[$index][$itemIndex]['score']
+                                ];
+                            }
                         }
+                        $form[$index]['title'] = $cultureItem['title'];
                     }
-                    $form[$index]['title'] = $cultureItem['title'];
                 }
-            }
-            if ($form['formName'] === 'Leadership') {
-                foreach ($leadershipData as $index => $leadershipItem) {
-                    foreach ($leadershipItem['items'] as $itemIndex => $item) {
-                        if (isset($form[$index][$itemIndex])) {
-                            $form[$index][$itemIndex] = [
-                                'formItem' => $item,
-                                'score' => $form[$index][$itemIndex]['score']
-                            ];
+                if ($form['formName'] === 'Leadership') {
+                    foreach ($leadershipData as $index => $leadershipItem) {
+                        foreach ($leadershipItem['items'] as $itemIndex => $item) {
+                            if (isset($form[$index][$itemIndex])) {
+                                $form[$index][$itemIndex] = [
+                                    'formItem' => $item,
+                                    'score' => $form[$index][$itemIndex]['score']
+                                ];
+                            }
                         }
+                        $form[$index]['title'] = $leadershipItem['title'];
                     }
-                    $form[$index]['title'] = $leadershipItem['title'];
                 }
-            }
-            if ($form['formName'] === 'Sigap') {
-                foreach ($sigapData as $index => $sigapItem) {
-                    foreach ($sigapItem['items'] as $itemIndex => $item) {
-                        if (isset($form[$index][$itemIndex])) {
-                            $form[$index][$itemIndex] = [
-                                'formItem' => $item,
-                                'score' => $form[$index][$itemIndex]['score']
-                            ];
+                if ($form['formName'] === 'Sigap') {
+                    foreach ($sigapData as $index => $sigapItem) {
+                        foreach ($sigapItem['items'] as $itemIndex => $item) {
+                            if (isset($form[$index][$itemIndex])) {
+                                $form[$index][$itemIndex] = [
+                                    'formItem' => $item,
+                                    'score' => $form[$index][$itemIndex]['score']
+                                ];
+                            }
                         }
+                        $form[$index]['title'] = $sigapItem['title'];
+                        $form[$index]['items'] = $sigapItem['items'];
                     }
-                    $form[$index]['title'] = $sigapItem['title'];
-                    $form[$index]['items'] = $sigapItem['items'];
                 }
             }
         }
@@ -504,23 +523,30 @@ class AppraisalDetailExport implements FromCollection, WithHeadings, WithMapping
         return $formData;
     }
 
-    private function getFormDataSummary(AppraisalContributor $contributor): array
+    private function getFormDataSummary(AppraisalContributor $contributor, Collection $contributorsForSummary, Collection $appraisals): array
     {
-        $datasQuery = AppraisalContributor::with(['employee'])->where('appraisal_id', $contributor->appraisal_id);
-        $datas = $datasQuery->get();
+        $datas = $contributorsForSummary->get($contributor->appraisal_id) ?? collect();
+        $appraisal = $appraisals->get($contributor->appraisal_id);
 
-        $checkSnapshot = ApprovalSnapshots::where('form_id', $contributor->appraisal_id)->where('created_by', $datas->first()->employee->id)
-            ->orderBy('created_at', 'desc');
-
-        // Check if `datas->first()->employee->id` exists
-        if ($checkSnapshot) {
-            $query = $checkSnapshot;
-        } else {
-            $query = ApprovalSnapshots::where('form_id', $contributor->appraisal_id)
-                ->orderBy('created_at', 'asc');
+        if ($datas->isEmpty() || !$appraisal) {
+            return [
+                'formData' => [],
+                'totalKpiScore' => null,
+                'totalCultureScore' => null,
+                'totalLeadershipScore' => null,
+                'sigapScore' => null,
+                'totalScore' => null,
+            ];
         }
 
-        $employeeForm = $query->first();
+        $firstEmployee = $datas->first()->employee;
+
+        $checkSnapshot = null;
+        if ($appraisal->relationLoaded('approvalSnapshots') && $appraisal->approvalSnapshots) {
+            $checkSnapshot = $appraisal->approvalSnapshots;
+        }
+
+        $employeeForm = $checkSnapshot;
 
         $data = [];
         $appraisalDataCollection = [];
@@ -528,15 +554,16 @@ class AppraisalDetailExport implements FromCollection, WithHeadings, WithMapping
 
         $formGroupContent = $this->appService->formGroupAppraisal($datas->first()->employee_id, 'Appraisal Form', $contributor->period);
 
-        if (!$formGroupContent) {
-            $appraisalForm = ['data' => ['formData' => []]];
+        if (!$formGroupContent || !isset($formGroupContent['data'])) {
+            $appraisalForm = ['data' => ['formData' => [], 'form_appraisals' => []]];
         } else {
             $appraisalForm = $formGroupContent;
         }
 
-        $cultureData = $this->appService->getDataByName($appraisalForm['data']['form_appraisals'], 'Culture') ?? [];
-        $leadershipData = $this->appService->getDataByName($appraisalForm['data']['form_appraisals'], 'Leadership') ?? [];
-        $sigapData = $this->appService->getDataByName($appraisalForm['data']['form_appraisals'], 'Sigap') ?? [];
+        $formAppraisals = data_get($appraisalForm, 'data.form_appraisals', []);
+        $cultureData = $this->appService->getDataByName($formAppraisals, 'Culture') ?? [];
+        $leadershipData = $this->appService->getDataByName($formAppraisals, 'Leadership') ?? [];
+        $sigapData = $this->appService->getDataByName($formAppraisals, 'Sigap') ?? [];
 
 
         if ($employeeForm) {
@@ -603,59 +630,63 @@ class AppraisalDetailExport implements FromCollection, WithHeadings, WithMapping
 
         }
 
-        $jobLevel = $employeeData->job_level;
+        $jobLevel = $firstEmployee->job_level;
 
-        $weightageData = MasterWeightage::where('group_company', 'LIKE', '%' . $employeeData->group_company . '%')->where('period', $request->period)->first();
+        $cacheKeyWeightage = "{$firstEmployee->group_company}_{$contributor->period}";
+        if (!isset($this->appService->masterWeightageCache[$cacheKeyWeightage])) {
+            $weightageData = MasterWeightage::where('group_company', 'LIKE', '%' . $firstEmployee->group_company . '%')->where('period', $contributor->period)->first();
+            $this->appService->masterWeightageCache[$cacheKeyWeightage] = $weightageData ? json_decode($weightageData->form_data, true) : null;
+        }
 
-        $weightageContent = json_decode($weightageData->form_data, true);
+        $weightageContent = $this->appService->masterWeightageCache[$cacheKeyWeightage];
 
-        $result = $this->appService->appraisalSummary($weightageContent, $formData, $employeeData->employee_id, $jobLevel);
+        $result = $this->appService->appraisalSummary($weightageContent, $formData, $firstEmployee->employee_id, $jobLevel);
 
-        // $formData = $this->appService->combineFormData($result['summary'], $goalData, $result['summary']['contributor_type'], $employeeData, $request->period);
+        $formData = $this->appService->combineSummaryFormData($result, $goalDataCollection, $firstEmployee, $contributor->period);
 
-        $formData = $this->appService->combineSummaryFormData($result, $goalData, $employeeData, $request->period);
-
-        foreach ($formData['formData'] as &$form) {
-            if ($form['formName'] === 'Culture') {
-                foreach ($cultureData as $index => $cultureItem) {
-                    foreach ($cultureItem['items'] as $itemIndex => $item) {
-                        if (isset($form[$index][$itemIndex])) {
-                            $form[$index][$itemIndex] = [
-                                'formItem' => $item,
-                                'score' => round($form[$index][$itemIndex]['average'], 2)
-                            ];
+        if (isset($formData['formData']) && is_array($formData['formData'])) {
+            foreach ($formData['formData'] as &$form) {
+                if ($form['formName'] === 'Culture') {
+                    foreach ($cultureData as $index => $cultureItem) {
+                        foreach ($cultureItem['items'] as $itemIndex => $item) {
+                            if (isset($form[$index][$itemIndex])) {
+                                $form[$index][$itemIndex] = [
+                                    'formItem' => $item,
+                                    'score' => round($form[$index][$itemIndex]['average'], 2)
+                                ];
+                            }
                         }
+                        $form[$index]['title'] = $cultureItem['title'];
                     }
-                    $form[$index]['title'] = $cultureItem['title'];
                 }
-            }
-            if ($form['formName'] === 'Leadership') {
-                foreach ($leadershipData as $index => $leadershipItem) {
-                    foreach ($leadershipItem['items'] as $itemIndex => $item) {
-                        if (isset($form[$index][$itemIndex])) {
-                            $form[$index][$itemIndex] = [
-                                'formItem' => $item,
-                                'score' => round($form[$index][$itemIndex]['average'], 2)
-                            ];
+                if ($form['formName'] === 'Leadership') {
+                    foreach ($leadershipData as $index => $leadershipItem) {
+                        foreach ($leadershipItem['items'] as $itemIndex => $item) {
+                            if (isset($form[$index][$itemIndex])) {
+                                $form[$index][$itemIndex] = [
+                                    'formItem' => $item,
+                                    'score' => round($form[$index][$itemIndex]['average'], 2)
+                                ];
+                            }
                         }
+                        $form[$index]['title'] = $leadershipItem['title'];
                     }
-                    $form[$index]['title'] = $leadershipItem['title'];
                 }
+                // if ($form['formName'] === 'Sigap') {
+                //     foreach ($sigapData as $index => $sigapItem) {
+                //         foreach ($sigapItem['items'] as $itemIndex => $item) {
+                //             if (isset($form[$index][$itemIndex])) {
+                //                 $form[$index][$itemIndex] = [
+                //                     'formItem' => $item,
+                //                     'score' => $form[$index][$itemIndex]['score']
+                //                 ];
+                //             }
+                //         }
+                //         $form[$index]['title'] = $sigapItem['title'];
+                //         $form[$index]['items'] = $sigapItem['items'];
+                //     }
+                // }
             }
-            // if ($form['formName'] === 'Sigap') {
-            //     foreach ($sigapData as $index => $sigapItem) {
-            //         foreach ($sigapItem['items'] as $itemIndex => $item) {
-            //             if (isset($form[$index][$itemIndex])) {
-            //                 $form[$index][$itemIndex] = [
-            //                     'formItem' => $item,
-            //                     'score' => $form[$index][$itemIndex]['score']
-            //                 ];
-            //             }
-            //         }
-            //         $form[$index]['title'] = $sigapItem['title'];
-            //         $form[$index]['items'] = $sigapItem['items'];
-            //     }
-            // }
         }
 
         return $formData;
