@@ -69,6 +69,18 @@ class AppraisalDetailExport implements FromCollection, WithHeadings, WithMapping
                 ->get()
                 ->keyBy('id');
 
+            $appraisalSelfs = Appraisal::with([
+                'employee',
+                'goal',
+                'approvalSnapshots' => function ($query) {
+                    $query->whereRaw("JSON_UNQUOTE(JSON_EXTRACT(form_data, '$.formGroupName')) = 'Appraisal Form'")
+                        ->latest();
+                }
+            ])
+            ->whereIn('id', $formIds)
+            ->get()
+            ->keyBy('id');
+
             $contributors = AppraisalContributor::with([
                 'employee'
             ])
@@ -90,7 +102,9 @@ class AppraisalDetailExport implements FromCollection, WithHeadings, WithMapping
 
                 if ($formId && $employeeId) {
                     $appraisal = $appraisals->get($formId);
-                    $this->expandRowForSelf($expandedData, $row, $appraisal);
+                    $appraisalSelf = $appraisalSelfs->get($formId);
+
+                    $this->expandRowForSelf($expandedData, $row, $appraisalSelf);
 
                     if ($contributorsGroupedByEmployee->has($employeeId)) {
                         $conts = $contributorsGroupedByEmployee->get($employeeId);
@@ -127,6 +141,7 @@ class AppraisalDetailExport implements FromCollection, WithHeadings, WithMapping
         if ($appraisal) {
             $contributorRow = $row;
             $formData = $this->getFormDataSelf($appraisal);
+            
             $contributorRow['Contributor ID'] = ['dataId' => $appraisal->employee_id];
             $contributorRow['Contributor Type'] = ['dataId' => 'self'];
             $this->addFormDataToRow($contributorRow, $formData);

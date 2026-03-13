@@ -361,13 +361,13 @@ class AppService
 
                             // Adding "percentage" key
                             if (array_key_exists('achievement', $entry) && isset($entry['target'], $entry['type'])) {
-                                Log::info('Proses employee KPI evaluation:', [
-                                    'employee_id' => $employeeData->employee_id,
-                                    'kpi' => $key,
-                                    'achievement' => $entry['achievement'],
-                                    'target' => $entry['target'],
-                                    'type' => $entry['type'],
-                                ]);
+                                // Log::info('Proses employee KPI evaluation:', [
+                                //     'employee_id' => $employeeData->employee_id,
+                                //     'kpi' => $key,
+                                //     'achievement' => $entry['achievement'],
+                                //     'target' => $entry['target'],
+                                //     'type' => $entry['type'],
+                                // ]);
                                 // Ensure achievement/target are numeric (strip non-numeric chars)
                                 $rawAchievement = $entry['achievement'] ?? 0;
                                 $rawTarget = $entry['target'] ?? 0;
@@ -387,18 +387,18 @@ class AppService
                 } elseif ($form['formName'] === "Culture") {
                     // Calculate average score for Culture form
                     $cultureAverageScore = $this->averageScore($form);
-                    Log::info('Form setelah normalisasi | Culture:', $form);
+                    // Log::info('Form setelah normalisasi | Culture:', $form);
                 } elseif ($form['formName'] === "Leadership") {
                     // Calculate average score for Leadership form
                     $leadershipAverageScore = $this->averageScore($form);
-                    Log::info('Form setelah normalisasi | Leadership:', $form);
+                    // Log::info('Form setelah normalisasi | Leadership:', $form);
                 } elseif ($form['formName'] === "Technical") {
                     // Calculate average score for Technical form
                     $technicalAverageScore = $this->averageScore($form);
                 } elseif ($form['formName'] === "Sigap") {
                     // Calculate average score for Sigap form
                     $sigapAverageScore = $this->averageScoreSigap($form);
-                    Log::info('Form setelah normalisasi | Sigap:', $form);
+                    // Log::info('Form setelah normalisasi | Sigap:', $form);
                 }
 
             }
