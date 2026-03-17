@@ -205,12 +205,17 @@
                                         </div>
                                     </div>
                                     <div class="row my-4">
-                                        <div class="col-md-12">
+                                        <div class="col-md-8">
                                             <div class="mb-2">
                                                 <label class="form-label" for="messages">Messages</label>
-                                                <div id="editor-container" class="form-control bg-light" style="height: 200px;"></div>
+
+                                                {{-- Quill Editor --}}
+                                                <div id="editor-container" class="form-control" style="height: 200px;">
+                                                    {!! $model->messages !!}
+                                                </div>
+
+                                                {{-- Hidden textarea untuk dikirim ke backend --}}
                                                 <textarea name="messages" id="messages" class="d-none"></textarea>
-                                                
                                             </div>
                                         </div>
                                     </div>
@@ -233,22 +238,35 @@
 <!-- Tambahkan script JavaScript untuk mengumpulkan nilai repeat_days[] -->
 @push('scripts')
 <script>
-    var quill = new Quill('#editor-container', {
-        theme: 'snow'
-    });
 
-    document.getElementById('scheduleForm').addEventListener('submit', function() {
-        document.querySelector('textarea[name=messages]').value = quill.root.innerHTML;
-    });
-    document.getElementById('scheduleForm').addEventListener('submit', function() {
+    document.getElementById('scheduleForm').addEventListener('submit', function(e) {
+
         var repeatDaysButtons = document.getElementsByName('repeat_days[]');
         var repeatDaysSelected = [];
+
+        var messageContent = quill.root.innerHTML.trim();
+        var reminderChecked = document.getElementById('checkbox_reminder').checked;
+
+        // set ke textarea hidden
+        document.getElementById('messages').value = messageContent;
+
+        // VALIDASI MESSAGE
+        if (reminderChecked && (messageContent === '' || messageContent === '<p><br></p>')) {
+            e.preventDefault();
+            alert('Message wajib diisi jika Reminder dicentang.');
+            quill.focus();
+            return false;
+        }
+
+        // kumpulkan repeat days
         repeatDaysButtons.forEach(function(button) {
             if (button.classList.contains('active')) {
                 repeatDaysSelected.push(button.value);
             }
         });
+
         document.getElementById('repeatDaysSelected').value = repeatDaysSelected.join(',');
+
     });
 
     function toggleDivs() {

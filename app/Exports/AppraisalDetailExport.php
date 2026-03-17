@@ -275,34 +275,47 @@ class AppraisalDetailExport implements FromCollection, WithHeadings, WithMapping
     private function processKPI(string $formName, array $itemGroup, array &$contributorRow, int $index): void
     {
         $maxKpi = 30;
-        $index = min($index, $maxKpi - 1); // Ensure index stays within 0-9
+        $index = min($index, $maxKpi - 1);
 
-        // Normalize / safeguard keys to avoid "Undefined array key" errors
-        $itemGroupSafe = [
-            'kpi' => $itemGroup['kpi'] ?? null,
-            'target' => $itemGroup['target'] ?? null,
-            'achievement' => $itemGroup['achievement'] ?? null,
-            'uom' => $itemGroup['uom'] ?? null,
-            'weightage' => $itemGroup['weightage'] ?? null,
-            'type' => $itemGroup['type'] ?? null,
-            'custom_uom' => $itemGroup['custom_uom'] ?? null,
-            'percentage' => $itemGroup['percentage'] ?? null,
-            'conversion' => $itemGroup['conversion'] ?? null,
-            'final_score' => $itemGroup['final_score'] ?? null,
-        ];
+        // ambil cluster, default personal
+        $cluster = $itemGroup['cluster'] ?? null;
+        if (empty($cluster)) {
+            $cluster = 'personal';
+        }
 
-        // Generate headers for ALL 10 KPI positions (1-10)
+        // Generate headers untuk semua KPI slot
         for ($kpiNumber = 1; $kpiNumber <= $maxKpi; $kpiNumber++) {
+
+            // HEADER CLUSTER (di dalam loop)
+            $clusterKey = strtolower("kpi_cluster_{$kpiNumber}");
+            $this->captureDynamicHeader($clusterKey);
+
+            // HEADER FIELD KPI
             foreach ($itemGroup as $subKey => $value) {
-                $kpiKey = strtolower(trim("{$formName}_{$subKey}_{$kpiNumber}"));
+
+                if ($subKey === 'cluster') {
+                    continue;
+                }
+
+                $kpiKey = strtolower("{$formName}_{$subKey}_{$kpiNumber}");
                 $this->captureDynamicHeader($kpiKey);
             }
         }
 
-        // Process current KPI's data
+        // isi value cluster sesuai index KPI
+        $clusterKey = strtolower("kpi_cluster_" . ($index + 1));
+        $contributorRow[$clusterKey] = ['dataId' => $cluster];
+
+        // isi data KPI
         foreach ($itemGroup as $subKey => $value) {
-            $subNumber = $index + 1; // Convert to 1-based index
-            $kpiKey = strtolower(trim("{$formName}_{$subKey}_{$subNumber}"));
+
+            if ($subKey === 'cluster') {
+                continue;
+            }
+
+            $subNumber = $index + 1;
+            $kpiKey = strtolower("{$formName}_{$subKey}_{$subNumber}");
+
             $contributorRow[$kpiKey] = ['dataId' => $value];
         }
     }

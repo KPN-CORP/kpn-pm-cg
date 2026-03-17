@@ -111,7 +111,7 @@
                                 <div class="col-md-6">
                                     <div class="mb-2">
                                         <label class="form-label" for="last_join_date">Last Join Date</label>
-                                        <input type="date" name="last_join_date" id="last_join_date" class="form-control" value="{{ $model->last_join_date }}" onclick="toggleMaster()" placeholder="mm/dd/yyyy">
+                                        <input type="date" name="last_join_date" id="last_join_date" class="form-control" value="{{ $model->last_join_date }}" required onclick="toggleMaster()" placeholder="mm/dd/yyyy">
                                     </div>
                                 </div>
                             </div>
@@ -185,8 +185,13 @@
                                         <div class="col-md-8">
                                             <div class="mb-2">
                                                 <label class="form-label" for="messages">Messages</label>
-                                                {{-- <textarea name="messages" id="messages" rows="5" class="form-control bg-light" placeholder="Enter message..">{{ $model->messages }}</textarea> --}}
-                                                <div id="editor-container" name="messages" class="form-control bg-light" style="height: 200px;"></div>
+
+                                                {{-- Quill Editor --}}
+                                                <div id="editor-container" class="form-control" style="height: 200px;">
+                                                    {!! $model->messages !!}
+                                                </div>
+
+                                                {{-- Hidden textarea untuk dikirim ke backend --}}
                                                 <textarea name="messages" id="messages" class="d-none"></textarea>
                                             </div>
                                         </div>
@@ -211,29 +216,38 @@
 <!-- Tambahkan script JavaScript untuk mengumpulkan nilai repeat_days[] -->
 @push('scripts')
 <script>
-    var quill = new Quill('#editor-container', {
-        theme: 'snow'
-    });
 
-    // Load the initial content into the Quill editor
-    var initialContent = `{!! $model->messages !!}`;
-    quill.clipboard.dangerouslyPasteHTML(initialContent);
+    var reminderChecked = document.getElementById('checkbox_reminder').checked;
 
-    // Ensure the content is properly set when the form is submitted
-    document.getElementById('scheduleForm').addEventListener('submit', function() {
-        document.querySelector('textarea[name=messages]').value = quill.root.innerHTML;
-    });
+    var repeatDaysButtons = document.getElementsByName('repeat_days[]');
+    var repeatDaysSelected = [];
 
-    document.getElementById('scheduleForm').addEventListener('submit', function() {
-        var repeatDaysButtons = document.getElementsByName('repeat_days[]');
-        var repeatDaysSelected = [];
+    
+    document.getElementById('scheduleForm').addEventListener('submit', function(e) {
+        
+        var messageContent = quill.root.innerHTML.trim();
+        // set ke textarea hidden
+        document.getElementById('messages').value = messageContent;
+
+        // VALIDASI MESSAGE
+        if (reminderChecked && (messageContent === '' || messageContent === '<p><br></p>')) {
+            e.preventDefault();
+            alert('Message wajib diisi jika Reminder dicentang.');
+            document.getElementById('editor-container').focus();
+            return false;
+        }
+
+        // kumpulkan repeat days
         repeatDaysButtons.forEach(function(button) {
             if (button.classList.contains('active')) {
                 repeatDaysSelected.push(button.value);
             }
         });
+
         document.getElementById('repeatDaysSelected').value = repeatDaysSelected.join(',');
+
     });
+
     function toggleDivs() {
         var selectBox = document.getElementById("inputState");
         var repeatOnDiv = document.getElementById("repeaton");
@@ -272,7 +286,7 @@
                 startJoinInput.min = startJoinDateFromDB;
                 endJoinInput.min = startJoinDateFromDB;
                 startJoinInput.setAttribute("required", true);
-            }
+            }            
 
             if (lastJoinDateFromDB) {
                 startJoinInput.max = lastJoinDateFromDB;
@@ -297,6 +311,9 @@
                 startJoinInput.setAttribute("required", true);
             }
 
+                        console.log(lastJoinDateFromDB);
+
+
             if (lastJoinDateFromDB) {
                 startJoinInput.max = lastJoinDateFromDB;
                 endJoinInput.max = lastJoinDateFromDB;
@@ -309,7 +326,6 @@
             endInput.min = '';
             endInput.max = '';
             startJoinInput.removeAttribute("required");
-            endJoinInput.removeAttribute("required");
         }
     }
 
@@ -317,11 +333,5 @@
         //input.value = input.value.replace(/[^0-9,]/g, '');
         input.value = input.value.replace(/[^0-9]/g, '');
     }
-</script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.13/js/select2.min.js"></script>
-<script>
-    $(document).ready(function() {
-        $('.select2').select2();
-    });
 </script>
 @endpush

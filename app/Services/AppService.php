@@ -288,9 +288,9 @@ class AppService
             return 1;
         } elseif ($evaluate >= 40 && $evaluate < 60) {
             return 2;
-        } elseif ($evaluate >= 60 && $evaluate <= 80) {
+        } elseif ($evaluate >= 60 && $evaluate < 80) {
             return 3;
-        } elseif ($evaluate > 80 && $evaluate <= 95) {
+        } elseif ($evaluate >= 80 && $evaluate < 95) {
             return 4;
         } else {
             return 5;
