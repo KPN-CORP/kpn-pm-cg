@@ -103,6 +103,30 @@ class LayerController extends Controller
             )
             ->groupBy('al.employee_id')
             ->get();
+
+        $employees = Employee::whereIn('employee_id', $approvalLayers->pluck('employee_id'))
+        ->when($criteria, function ($query) use ($criteria) {
+            foreach ($criteria as $key => $values) {
+                if (!empty($values)) {
+                    $query->whereIn($key, $values);
+                }
+            }
+        })
+        ->get()
+        ->keyBy('employee_id');
+
+        $approvalLayers = $approvalLayers
+        ->map(function ($item) use ($employees) {
+            if (!isset($employees[$item->employee_id])) {
+                return null; // tandai untuk dibuang
+            }
+
+            $item->employee = $employees[$item->employee_id];
+            return $item;
+        })
+        ->filter() // otomatis buang null
+        ->values();
+
         $employeeIds = collect();
 
         foreach ($approvalLayers as $row) {
@@ -115,11 +139,6 @@ class LayerController extends Controller
 
         $employeeIds = $employeeIds->unique()->values();
 
-        $employees = Employee::on('kpncorp')
-            ->whereIn('employee_id', $employeeIds)
-            ->whereNull('deleted_at')
-            ->get()
-            ->keyBy('employee_id');
         $approvalLayers->transform(function ($item) use ($employees) {
 
             $approverNames = [];
@@ -148,11 +167,6 @@ class LayerController extends Controller
 
             return $item;
         });
-
-        $employees = Employee::select('employee_id', 'fullname')
-        ->whereNotIn('job_level', ['2A', '2B', '2C', '2D', '3A', '3B','4A'])
-        ->orderBy('fullname', 'asc')
-        ->get();
 
     $employeeCount = $approvalLayers->unique('employee_id')->count();
         return view('pages.layers.layer', [

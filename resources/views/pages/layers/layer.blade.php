@@ -148,7 +148,7 @@
                         <div class="col">
                             <div class="mb-2">
                                 <label class="form-label" for="fullname">Download Templete here : </label>
-                                <a href="{{ asset('storage/files/template.xls') }}" class="badge-outline-primary p-1" download><i class="ri-file-text-line me-1"></i>Import_Excel_Template</a>
+                                <a href="{{ asset('storage/templates/template_import_layer_goal.xls') }}" class="badge-outline-primary p-1" download><i class="ri-file-text-line me-1"></i>Import_Excel_Template</a>
                             </div>
                         </div>
                     </div>
