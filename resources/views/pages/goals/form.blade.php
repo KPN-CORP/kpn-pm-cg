@@ -151,17 +151,24 @@
                         @if(!empty($clusterKPIs[$cluster]) || $cluster == 'personal' || $cluster == 'division')
                           <h5 class="mt-3">{{ $title }}</h5>
                           @php $clusterIndex = 0; @endphp
-                          @if($cluster == 'personal' || $cluster == 'division')
+                          @if(in_array($cluster, ['personal','division']))
                             <div id="{{ $cluster }}-goals">
                               <!-- Default Goal Card (Cannot be deleted) -->
                               <div class="card border-primary border col-md-12 mb-3 bg-primary-subtle">
                                   <div class="card-body">
-                                      <h5 class="card-title fs-16 text-primary">Goal {{ $clusterIndex + 1 }}</h5>
-                                      <input type="hidden" name="cluster[]" value="{{ $cluster }}">
-                                      <div class="row">
+                                    <div class='row align-items-end'>
+                                        <div class='col'>
+                                            <h5 class="card-title fs-16 text-primary">Goal {{ ++$clusterIndex }}</h5>
+                                        <input type="hidden" name="cluster[]" value="{{ $cluster }}">
+                                        </div>
+                                        @if($cluster === 'division')
+                                            <div class='col-auto'><a class='btn-close btn-sm remove_field' type='button'></a></div>
+                                        @endif
+                                    </div>
+                                      <div class="row mt-2">
                                         <div class="col-md">
                                             <div class="mb-3 position-relative">
-                                                <textarea name="kpi[]" id="kpi" class="form-control overflow-hidden kpi-textarea pb-2 pe-3" rows="2" placeholder="Input your goals.." required style="resize: none"></textarea>
+                                                <textarea name="kpi[]" id="kpi" class="form-control overflow-hidden kpi-textarea pb-2 pe-3" rows="2" placeholder="Input your goals.." style="resize: none" {{ $cluster == 'company' ? 'readonly' : 'required' }}></textarea>
                                                 <div class="invalid-feedback">
                                                     {{ __('This field is mandatory') }}
                                                 </div>
@@ -172,7 +179,7 @@
                                         <div class="col-md">
                                             <div class="mb-3 position-relative">
                                                 <label class="form-label text-primary" for="kpi-description">Goal Descriptions</label>
-                                                <textarea name="description[]" id="kpi-description" class="form-control overflow-hidden kpi-descriptions pb-2 pe-3" rows="2" placeholder="Input goal descriptions.." style="resize: none"></textarea>
+                                                <textarea name="description[]" id="kpi-description" class="form-control overflow-hidden kpi-descriptions pb-2 pe-3" rows="2" placeholder="Input goal descriptions.." style="resize: none" {{ $cluster == 'company' ? 'readonly' : '' }}></textarea>
                                             </div>
                                         </div>
                                       </div>
@@ -180,7 +187,7 @@
                                           <div class="col-md">
                                               <div class="mb-3">
                                                   <label class="form-label text-primary" for="target">Target</label>
-                                                  <input type="text" oninput="validateDigits(this, {{ $goalIndex }})" class="form-control" required>
+                                                  <input type="text" oninput="validateDigits(this, {{ $goalIndex }})" class="form-control" {{ $cluster == 'company' ? 'readonly' : 'required' }}>
                                                   <input type="hidden" name="target[]" id="target{{ $goalIndex }}">
                                                   <div class="invalid-feedback">
                                                     {{ __('This field is mandatory') }}
@@ -190,7 +197,7 @@
                                           <div class="col-md">
                                               <div class="mb-3">
                                                   <label class="form-label text-primary" for="uom">{{ __('Uom') }}</label>
-                                                  <select class="form-select select2 max-w-full select-uom" data-id="{{ $goalIndex }}" name="uom[]" id="uom{{ $goalIndex }}" title="Unit of Measure" required>
+                                                  <select class="form-select select2 max-w-full select-uom" data-id="{{ $goalIndex }}" name="uom[]" id="uom{{ $goalIndex }}" title="Unit of Measure" {{ $cluster == 'company' ? 'disabled' : 'required' }}>
                                                       <option value="">- Select -</option>
                                                       @foreach ($uomOption as $label => $options)
                                                       <optgroup label="{{ $label }}">
@@ -202,16 +209,17 @@
                                                       </optgroup>
                                                       @endforeach
                                                   </select>
+                                                  
                                                   <div class="invalid-feedback">
                                                     {{ __('This field is mandatory') }}
                                                 </div>
-                                                  <input type="text" class="form-control mt-2" name="custom_uom[]" id="custom_uom{{ $goalIndex }}" @style('display: none') placeholder="Enter UoM">
+                                                  <input type="text" class="form-control mt-2" name="custom_uom[]" id="custom_uom{{ $goalIndex }}" @style('display: none') placeholder="Enter UoM" {{ $cluster == 'company' ? 'readonly' : '' }}>
                                               </div>
                                           </div>
                                           <div class="col-md">
                                               <div class="mb-3">
                                                   <label class="form-label text-primary" for="type">{{ __('Type') }}</label>
-                                                  <select class="form-select select-type" name="type[]" id="type{{ $goalIndex }}" required>
+                                                  <select class="form-select select-type" name="type[]" id="type{{ $goalIndex }}" {{ $cluster == 'company' ? 'disabled' : 'required' }}>
                                                       <option value="">- Select -</option>
                                                       <option value="Higher Better">Higher Better</option>
                                                       <option value="Lower Better">Lower Better</option>
@@ -247,7 +255,7 @@
                                     <div class="row">
                                       <div class="col-md">
                                           <div class="mb-3 position-relative">
-                                              <textarea name="kpi[]" id="kpi" class="form-control overflow-hidden kpi-textarea pb-2 pe-3" rows="2" placeholder="Input your goals.." {{ in_array($cluster, ['personal', 'division']) ? 'required' : 'readonly' }} style="resize: none">{{ $kpi['kpi'] ?? old('kpi.' . $goalIndex) }}</textarea>
+                                              <textarea name="kpi[]" id="kpi" class="form-control overflow-hidden kpi-textarea pb-2 pe-3" rows="2" placeholder="Input your goals.." {{ $cluster == 'company' ? 'readonly' : 'required' }} style="resize: none">{{ $kpi['kpi'] ?? old('kpi.' . $goalIndex) }}</textarea>
                                               <div class="invalid-feedback">
                                                   {{ __('This field is mandatory') }}
                                               </div>
@@ -258,7 +266,7 @@
                                       <div class="col-md">
                                           <div class="mb-3 position-relative">
                                               <label class="form-label text-primary" for="kpi-description">Goal Descriptions</label>
-                                              <textarea name="description[]" id="kpi-description" class="form-control overflow-hidden kpi-descriptions pb-2 pe-3" rows="2" placeholder="Input goal descriptions.." style="resize: none" {{ in_array($cluster, ['personal', 'division']) ? '' : 'readonly' }}>{{ $kpi['description'] ?? old('description.' . $goalIndex) }}</textarea>
+                                              <textarea name="description[]" id="kpi-description" class="form-control overflow-hidden kpi-descriptions pb-2 pe-3" rows="2" placeholder="Input goal descriptions.." style="resize: none" {{ $cluster == 'company' ? 'readonly' : '' }}>{{ $kpi['description'] ?? old('description.' . $goalIndex) }}</textarea>
                                           </div>
                                       </div>
                                     </div>
@@ -272,11 +280,12 @@
                                                   {{ __('This field is mandatory') }}
                                               </div>
                                             </div>
+                                            <input type="text" class="form-control mt-2" name="target[]" id="target{{ $goalIndex }}" @style('display: none') value="{{ $kpi['target'] ?? '' }}" {{ $cluster == 'company' ? 'readonly' : '' }}>
                                         </div>
                                         <div class="col-md">
                                             <div class="mb-3">
                                                 <label class="form-label text-primary" for="uom">{{ __('Uom') }}</label>
-                                                <select class="form-select select2 max-w-full select-uom" data-id="{{ $goalIndex }}" name="uom[]" id="uom{{ $goalIndex }}" title="Unit of Measure" {{ in_array($cluster, ['personal', 'division']) ? 'required' : 'disabled' }}>
+                                                <select class="form-select select2 max-w-full select-uom" data-id="{{ $goalIndex }}" name="uom[]" id="uom{{ $goalIndex }}" title="Unit of Measure" {{ $cluster == 'company' ? 'disabled' : 'required' }}>
                                                     <option value="">- Select -</option>
                                                     @foreach ($uomOption as $label => $options)
                                                     <optgroup label="{{ $label }}">
@@ -288,21 +297,38 @@
                                                     </optgroup>
                                                     @endforeach
                                                 </select>
+                                                @if($cluster == 'company')
+                                                <input type="hidden" name="uom[]" value="{{ $kpi['uom'] }}">
+                                                @endif
                                                 <div class="invalid-feedback">
                                                   {{ __('This field is mandatory') }}
                                               </div>
-                                                <input type="text" class="form-control mt-2" name="custom_uom[]" id="custom_uom{{ $goalIndex }}" @style('display: none') placeholder="Enter UoM" value="{{ $kpi['custom_uom'] ?? '' }}">
+                                                <input 
+                                                    type="text" 
+                                                    name="custom_uom[]" 
+                                                    id="custom_uom{{ $goalIndex }}" 
+                                                    class="form-control mt-2" 
+                                                    value="{{ $kpi['custom_uom'] }}" 
+                                                    placeholder="Enter UoM" 
+                                                    @if (($kpi['uom'] ?? '') !== 'Other') 
+                                                        style="display: none;" 
+                                                    @endif 
+                                                    {{ in_array($cluster, ['personal', 'division']) ? '' : 'readonly' }}
+                                                >
                                             </div>
                                         </div>
                                         <div class="col-md">
                                             <div class="mb-3">
                                                 <label class="form-label text-primary" for="type">{{ __('Type') }}</label>
-                                                <select class="form-select select-type" name="type[]" id="type{{ $goalIndex }}" {{ in_array($cluster, ['personal', 'division']) ? 'required' : 'disabled' }}>
+                                                <select class="form-select select-type" name="type[]" id="type{{ $goalIndex }}" {{ $cluster == 'company' ? 'disabled' : 'required' }}>
                                                     <option value="">- Select -</option>
                                                     <option value="Higher Better" {{ ($kpi['type'] ?? '') == 'Higher Better' ? 'selected' : '' }}>Higher Better</option>
                                                     <option value="Lower Better" {{ ($kpi['type'] ?? '') == 'Lower Better' ? 'selected' : '' }}>Lower Better</option>
                                                     <option value="Exact Value" {{ ($kpi['type'] ?? '') == 'Exact Value' ? 'selected' : '' }}>Exact Value</option>
                                                 </select>
+                                                @if($cluster == 'company')
+                                                <input type="hidden" name="type[]" value="{{ $kpi['type'] }}">
+                                                @endif
                                                 <div class="invalid-feedback">
                                                   {{ __('This field is mandatory') }}
                                               </div>

@@ -150,11 +150,11 @@
                 </div>
             </div>
             @endif
-            <div class="row">
+            <div class="row mb-2">
                 <div class="col-lg">
                     <div class="text-center text-lg-end">
                         @can('sendbackonbehalf')
-                        <a class="btn btn-info px-2 me-2" href="javascript:void(0)" role="button" data-bs-toggle="dropdown" aria-expanded="false">Send back</a>
+                        <a class="btn btn-warning rounded px-2 me-2 dropdown-toggle" href="javascript:void(0)" role="button" aria-haspopup="true" data-bs-toggle="dropdown" data-bs-offset="0,10" aria-expanded="false">{{ __('Send Back') }}</a>
                             <div class="dropdown-menu shadow-sm m-2">
                             <h6 class="dropdown-header dark">Select person below :</h6>
                             <a class="dropdown-item {{ $row->request->employee->id == $row->request->created_by ? '' : 'd-none' }}" href="javascript:void(0)" onclick="sendBack('{{ $row->request->id }}','{{ $row->request->employee->employee_id }}','{{ $row->request->employee->fullname }}')">{{ $row->request->employee->fullname .' '.$row->request->employee->employee_id }}</a>

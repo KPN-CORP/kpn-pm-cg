@@ -25,15 +25,26 @@ class ClusteringKPIImport implements
     public int $errorCount = 0;
 
     public string $filePath;
+    protected string $mode;
+    public const MODE_FULL = 'full';
+    public const MODE_COMPANY = 'company';
 
     /** @var array<string, array> */
     public array $employeesData = [];
 
     public array $detailError = [];
 
-    public function __construct(string $filePath)
+    public function __construct(string $filePath, string $mode = 'full')
     {
         $this->filePath = $filePath;
+        $this->mode = $mode;
+
+        $options = json_decode(File::get(base_path('resources/goal.json')), true);
+        $this->validUoms = collect($options['UoM'])->flatten()->all();
+
+        if (!in_array($mode, ['full', 'company'])) {
+            throw new \Exception("Invalid import mode");
+        }
     }
 
     /**
@@ -55,10 +66,15 @@ class ClusteringKPIImport implements
     /**
      * Laravel-Excel per row handler
      */
+    protected array $validUoms;
+
     public function model(array $row)
     {
         Log::info('IMPORT ROW', $row);
 
+        if ($this->mode === 'company' && strtolower($row['cluster'] ?? '') !== 'company') {
+            return null;
+        }
         // 🔴 Hard stop if employee_id missing
         if (empty($row['employee_id'])) {
             $this->errorCount++;
@@ -89,7 +105,7 @@ class ClusteringKPIImport implements
 
         $validUoms = collect($options['UoM'])->flatten()->all();
 
-        $uom = in_array($row['uom'], $validUoms, true)
+        $uom = in_array($row['uom'], $this->validUoms, true)
             ? $row['uom']
             : 'Other';
 
@@ -105,14 +121,23 @@ class ClusteringKPIImport implements
             ];
         }
 
+        $typeMap = [
+            'higher better' => 'Higher Better',
+            'lower better' => 'Lower Better',
+            'exact value' => 'Exact Value',
+        ];
+
+        $type = strtolower($row['type']);
+        $type = $typeMap[$type] ?? 'Higher Better';
+
         $this->employeesData[$employeeId]['form_data'][] = [
-            'cluster' => $row['cluster'],
+            'cluster' => $this->mode === 'company' ? 'company' : $row['cluster'],
             'kpi' => $row['kpi'],
             'target' => $row['target'],
             'uom' => $uom,
             'custom_uom' => $customUom,
             'weightage' => $row['weightage'] * 100,
-            'type' => $row['type'],
+            'type' => $type,
             'description' => $row['achievement'] ?? '',
         ];
     }
@@ -157,51 +182,138 @@ class ClusteringKPIImport implements
 
                 $formId = (string) Str::uuid();
 
-                $goalIds = DB::table('goals')
+                $existingGoal = DB::table('goals')
                     ->where('employee_id', $employeeId)
-                    ->where('category', $data['category'])
+                    ->where('category', 'Goals')
                     ->where('period', $data['period'])
                     ->whereNull('deleted_at')
-                    ->pluck('id');
+                    ->first();
 
-                // soft delete goals
+                if ($this->mode === 'full') {
+
+                    // 🔴 FULL REPLACE
+                    $goalIds = DB::table('goals')
+                        ->where('employee_id', $employeeId)
+                        ->where('category', 'Goals')
+                        ->where('period', $data['period'])
+                        ->pluck('id');
+
+                    $total = array_sum(array_column($data['form_data'], 'weightage'));
+
+                    if (round($total, 2) !== 90.00) {
+                        throw new \Exception("Total weightage must be 90%");
+                    }
+                    DB::table('goals')->whereIn('id', $goalIds)->update(['deleted_at' => now()]);
+                    DB::table('approval_requests')->whereIn('form_id', $goalIds)->update(['deleted_at' => now()]);
+
+                    $total = array_sum(array_column($data['form_data'], 'weightage'));
+
+                    if (round($total, 2) !== 90.00) {
+                        throw new \Exception("Total weightage must be 90%");
+                    }
+
+                    DB::table('goals')->insert([
+                        'id' => $formId,
+                        'employee_id' => $employeeId,
+                        'category' => 'Goals',
+                        'form_data' => json_encode($data['form_data']),
+                        'form_status' => 'Approved',
+                        'period' => $data['period'],
+                        'created_at' => now(),
+                        'updated_at' => now(),
+                    ]);
+
+                } else {
+
+                    // 🔵 COMPANY UPDATE MODE
+                    $existingGoal = DB::table('goals')
+                    ->where('employee_id', $employeeId)
+                    ->where('category', 'Goals')
+                    ->where('period', $data['period'])
+                    ->whereNull('deleted_at')
+                    ->first();
+
+                $companyData = array_filter($data['form_data'], fn($x) => $x['cluster'] === 'company');
+
+                $companyData = collect($companyData)
+                ->unique('kpi')
+                ->values()
+                ->toArray();
+
+                $companyData = array_map(function ($item) {
+                    $item['weightage'] = (float) $item['weightage'];
+                    $item['target'] = (float) $item['target'];
+                    return $item;
+                }, $companyData);
+
+                // ==============================
+                // CASE 1: BELUM ADA GOAL
+                // ==============================
+                if (!$existingGoal) {
+
+                    DB::table('goals')->insert([
+                        'id' => (string) Str::uuid(),
+                        'employee_id' => $employeeId,
+                        'category' => 'Goals',
+                        'form_data' => json_encode($data['form_data']),
+                        'form_status' => 'Draft',
+                        'period' => $data['period'],
+                        'created_at' => now(),
+                        'updated_at' => now(),
+                    ]);
+
+                    
+
+                    return;
+                }
+
+
+                // ==============================
+                // EXISTING GOAL ADA
+                // ==============================
+
+                $existingFormData = json_decode($existingGoal->form_data, true) ?? [];
+
+
+                // ==============================
+                // VALIDASI IMPORT COMPANY
+                // ==============================
+                if (empty($companyData)) {
+                    throw new \Exception("Import company KPI kosong / tidak valid");
+                }
+
+
+                // ==============================
+                // SPLIT EXISTING DATA
+                // ==============================
+                $existingNonCompany = array_filter($existingFormData, fn($x) => ($x['cluster'] ?? '') !== 'company');
+
+
+                // ==============================
+                // MERGE FINAL (CORE LOGIC 🔥)
+                // ==============================
+                $merged = array_merge(
+                    $existingNonCompany,
+                    $companyData
+                );
+
+
+                // ==============================
+                // SORT BIAR RAPI (OPTIONAL)
+                // ==============================
+                usort($merged, fn($a, $b) => strcmp($a['cluster'], $b['cluster']));
+
+
+                // ==============================
+                // UPDATE
+                // ==============================
                 DB::table('goals')
-                    ->whereIn('id', $goalIds)
-                    ->update(['deleted_at' => now()]);
-
-                // soft delete approval_requests terkait
-                DB::table('approval_requests')
-                    ->whereIn('form_id', $goalIds)
-                    ->where('category', 'Goals') // kalau ada kolom ini (recommended)
-                    ->update(['deleted_at' => now()]);
-
-
-                DB::table('goals')->insert([
-                    'id' => $formId,
-                    'employee_id' => $employeeId,
-                    'category' => $data['category'],
-                    'form_data' => json_encode($data['form_data']),
-                    'form_status' => 'Approved',
-                    'period' => $data['period'],
-                    'created_at' => now(),
-                    'updated_at' => now(),
-                ]);
-
-                $empAppraisalId = EmployeeAppraisal::where('employee_id', $employeeId)
-                    ->value('id');
-
-                DB::table('approval_requests')->insert([
-                    'form_id' => $formId,
-                    'category' => 'Goals',
-                    'employee_id' => $employeeId,
-                    'current_approval_id' => 'admin',
-                    'status' => 'Approved',
-                    'messages' => 'import clustering KPI',
-                    'period' => $data['period'],
-                    'created_by' => $empAppraisalId,
-                    'created_at' => now(),
-                    'updated_at' => now(),
-                ]);
+                    ->where('id', $existingGoal->id)
+                    ->update([
+                        'form_data' => json_encode(array_values($merged)),
+                        'updated_at' => now(),
+                    ]);
+                }
 
                 DB::commit();
                 $this->successCount++;

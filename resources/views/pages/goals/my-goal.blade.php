@@ -139,7 +139,7 @@
                         <div class="row px-2">
                             <div class="col-lg col-sm-12 p-2">
                                 <h5>{{ __('Initiated By') }}</h5>
-                                <p class="mt-2 mb-0 text-muted">{{ $row->request->initiated->name.' ('.$row->request->initiated->employee_id.')' }}</p>
+                                <p class="mt-2 mb-0 text-muted">{{ $row->request->initiated->fullname.' ('.$row->request->initiated->employee_id.')' }}</p>
                             </div>
                             <div class="col-lg col-sm-12 p-2">
                                 <h5>{{ __('Initiated Date') }}</h5>
@@ -156,19 +156,48 @@
                             <div class="col-lg col-sm-12 p-2">
                                 <h5>Status</h5>
                                 <div>
-                                    <a href="javascript:void(0)" data-bs-id="{{ $row->request->employee_id }}" data-bs-toggle="popover" data-bs-trigger="hover focus" data-bs-content="{{ $row->request->goal->form_status == 'Draft' ? 'Draft' : ($row->approvalLayer && $row->request->goal->form_status == 'Approved' ? 'Manager L'.$row->approvalLayer.' : '.$row->name : '(Goals were auto-approved after you submitted PA '.$row->request->period .')') }}" class="badge {{ $row->request->goal->form_status == 'Draft' || $row->request->sendback_to == $row->request->employee_id ? 'bg-secondary' : ($row->request->appraisalCheck ? ($row->request->status === 'Approved' ? 'bg-success' : 'text-bg-light' ) : 'bg-warning')}} rounded-pill py-1 px-2">
-                                        {{ $row->request->goal->form_status == 'Draft' ? 'Draft': ($row->request->status == 'Approved' ? __('Approved') : ($row->request->appraisalCheck ? 'Auto Approved' : ($row->request->sendback_to == $row->request->employee_id ? 'Waiting For Revision' : __($row->request->status)))) }}
+                                    <a href="javascript:void(0)" data-bs-id="{{ $row->request->employee_id }}" data-bs-toggle="popover" data-bs-trigger="hover focus" 
+                                        data-bs-content="{{
+                                            $row->request->goal->form_status == 'Draft'
+                                                ? 'Draft'
+                                                : ($row->request->appraisalCheck
+                                                    ? '(Goals were auto-approved after you submitted PA '.$row->request->period .')'
+                                                    : ($row->approvalLayer && $row->request->status != 'Approved'
+                                                        ? 'Manager L'.$row->approvalLayer.' : '.$row->name.'-'.$row->request->appraisalCheck
+                                                        : ($row->request->status === 'Sendback' ? $row->name : 'Approved')
+                                                    ) 
+                                                )
+                                        }}"
+                                        class="badge {{ $row->request->goal->form_status == 'Draft' || $row->request->sendback_to == $row->request->employee_id ? 'bg-secondary' : ($row->request->appraisalCheck || $row->request->status == 'Pending' ? 'bg-warning' : ($row->request->status == 'Approved' ? 'bg-success' : 'text-bg-light'))}} rounded-pill py-1 px-2">
+                                        {{
+                                            $row->request->goal->form_status == 'Draft'
+                                                ? 'Draft'
+                                                : ($row->request->appraisalCheck
+                                                    ? 'Auto Approved'
+                                                    : ($row->request->status == 'Approved'
+                                                        ? __('Approved')
+                                                        : ($row->request->sendback_to == $row->request->employee_id
+                                                            ? 'Waiting Your Revision'
+                                                            : __($row->request->status)
+                                                        )
+                                                    )
+                                                )
+                                        }}
                                     </a>
                                 </div>
                             </div>
                         </div>
                         @if ($row->request->sendback_messages && $row->request->sendback_to == $row->request->employee_id && !$row->request->appraisalCheck)
                             <hr class="mt-2 mb-2">
-                            <div class="row p-2">
-                                <div class="col-lg col-sm-12 px-2">
-                                    <div class="form-group">
-                                        <h5>Revision Notes :</h5>
-                                        <p class="mt-1 mb-0 text-muted">{{ $row->request->sendback_messages }}</p>
+                            <div class="row mb-2">
+                                <div class="col-lg col-sm-12">
+                                    <div class="card shadow-none bg-warning-subtle m-0">
+                                        <div class="card-body">
+                                            <div class="form-group">
+                                                <h5>Revision Notes :</h5>
+                                                <p class="mt-1 mb-0 text-muted">{{ $row->request->sendback_messages }}</p>
+                                            </div>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
@@ -176,7 +205,7 @@
                         <div class="row">
                             <div class="col text-end">
                                 <a data-bs-toggle="collapse" href="#collapse{{ $goalIndex }}" aria-expanded="true" aria-controls="collapse{{ $goalIndex }}">
-                                    Detail <i class="ri-arrow-down-s-line"></i>
+                                    Details <i class="ri-arrow-right-s-line"></i>
                                 </a>
                             </div>
                         </div>

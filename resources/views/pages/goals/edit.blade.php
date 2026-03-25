@@ -80,16 +80,17 @@
                     <div class="container-card">
                     @php $goalIndex = 0; @endphp
                     @foreach(['company' => 'Company Goals', 'division' => 'Division Goals', 'personal' => 'Personal Goals'] as $cluster => $title)
-                      @if(!empty($data[$cluster]))
+                    @php $clusterData = $data[$cluster] ?? []; @endphp
+                    @if(!empty($clusterData) || $cluster === 'division' || $cluster === 'personal')
                         <h5 class="mt-3">{{ $title }}</h5>
                         @if($cluster == 'personal' || $cluster == 'division')
                           <div id="{{ $cluster }}-goals">
                         @endif
-                        @foreach($data[$cluster] as $index => $row)
+                        @foreach($clusterData as $index => $row)
                           <div class="card border-primary border col-md-12 mb-3 bg-primary-subtle">
                               <div class="card-body">
                                   <div class='row align-items-end'>
-                                    <div class='col'><h5 class='card-title fs-16 mb-0 text-primary'>Goal {{ $goalIndex + 1 }}</h5></div>
+                                    <div class='col'><h5 class='card-title fs-16 mb-0 text-primary'>Goal {{ $index + 1 }}</h5></div>
                                     @if ($cluster == 'personal' && $index >= 1)
                                         <div class='col-auto'><a class='btn-close remove_field' type='button'></a></div>
                                     @endif
@@ -109,7 +110,7 @@
                                       <div class="col-md">
                                           <div class="mb-3 position-relative">
                                               <label class="form-label text-primary" for="kpi-description">Goal Descriptions</label>
-                                              <textarea name="description[]" id="kpi-description" class="form-control overflow-hidden kpi-descriptions pb-2 pe-3" rows="2" placeholder="Input goal descriptions.." style="resize: none">{{ $row['description'] ?? "" }}</textarea>
+                                              <textarea name="description[]" id="kpi-description" class="form-control overflow-hidden kpi-descriptions pb-2 pe-3" rows="2" placeholder="Input goal descriptions.." style="resize: none" {{ in_array($cluster, ['personal', 'division']) ? '' : 'readonly' }}>{{ $row['description'] ?? "" }}</textarea>
                                           </div>
                                       </div>
                                   </div>
@@ -139,6 +140,9 @@
                                                 </optgroup>
                                                 @endforeach
                                             </select>
+                                            @if(!in_array($cluster, ['personal', 'division']))
+                                                <input type="hidden" name="uom[]" value="{{ $row['uom'] }}">
+                                            @endif
                                             <div class="invalid-feedback">
                                               {{ __('This field is mandatory') }}
                                             </div>
@@ -152,7 +156,11 @@
                                                 @if (($row['uom'] ?? '') !== 'Other') 
                                                     style="display: none;" 
                                                 @endif 
+                                                {{ in_array($cluster, ['personal', 'division']) ? '' : 'readonly' }}
                                             >
+                                            @if(!in_array($cluster, ['personal', 'division']))
+                                                <input type="hidden" name="custom_uom[]" value="{{ $row['custom_uom'] }}">
+                                            @endif
                                         </div>
                                       </div>
                                       <div class="col-md">
@@ -167,6 +175,9 @@
                                                     @endforeach
                                                 @endforeach
                                             </select>
+                                            @if(!in_array($cluster, ['personal', 'division']))
+                                                <input type="hidden" name="type[]" value="{{ $row['type'] }}">
+                                            @endif
                                             <div class="invalid-feedback">
                                               {{ __('This field is mandatory') }}
                                           </div>
@@ -204,9 +215,9 @@
                       @if ($approvalRequest->sendback_messages)
                           <div class="row">
                               <div class="col">
-                                  <div class="mb-3">
+                                  <div class="my-3">
                                       <label class="form-label">{{ __('Send Back Messages') }}</label>
-                                      <textarea class="form-control" rows="5" @disabled(true)>{{ $approvalRequest->sendback_messages }}</textarea>
+                                      <textarea class="form-control bg-warning-subtle" rows="3" @disabled(true)>{{ $approvalRequest->sendback_messages }}</textarea>
                                   </div>
                               </div>
                           </div>
@@ -235,6 +246,33 @@
     </div>
     @endsection
     @push('scripts')
+    <script>
+    const Toast = Swal.mixin({
+        toast: true,
+        position: 'top-end',
+        showConfirmButton: false,
+        timer: 2500,
+        timerProgressBar: true,
+    });
+
+    @if(session('success'))
+        Toast.fire({
+            icon: 'success',
+            title: "{{ session('success') }}"
+        });
+
+        setTimeout(() => {
+            window.location.href = "{{ url()->previous() }}";
+        }, 2600);
+    @endif
+
+    @if($errors->any())
+        Toast.fire({
+            icon: 'error',
+            title: "{{ $errors->first() }}"
+        });
+    @endif
+    </script>
     <script>
         const uom = '{{ __('Uom') }}';
         const type = '{{ __('Type') }}';

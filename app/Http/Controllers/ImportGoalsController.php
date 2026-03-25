@@ -45,6 +45,7 @@ class ImportGoalsController extends Controller
         // Validasi file
         $request->validate([
             'file' => 'required|file|mimes:xlsx,csv,xls',
+            'mode' => 'required|in:full,company',
         ]);
         
         // Pastikan file terupload
@@ -58,7 +59,7 @@ class ImportGoalsController extends Controller
         DB::enableQueryLog();
         // Jalankan proses impor
         try {
-            $import = new ClusteringKPIImport($filePath);
+            $import = new ClusteringKPIImport($filePath, $request->mode);
             Excel::import($import, $filePath);
 
             // Simpan data ke database setelah semua baris diproses

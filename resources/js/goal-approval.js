@@ -50,10 +50,10 @@ function validate() {
         sum += parseFloat(weight[i].value) || 0; // Parse input value to float, default to 0 if NaN
     }
 
-    if (sum != 100) {
+    if (sum != 90) {
         Swal.fire({
             title: "Submission failed",
-            html: `Your current weightage is ${sum}%, <br>Please adjust to reach the total weightage of 100%`,
+            html: `Your current weightage is ${sum}%, <br>Please adjust to reach the total weightage of 90%`,
             confirmButtonColor: "#3e60d5",
             icon: "error",
             // If confirmed, proceed with form submission
@@ -76,10 +76,10 @@ function validateWeightage() {
         var value = parseFloat(input.value);
 
         // Check if value is below 5%
-        if (value < 5) {
+        if (value < 1) {
             // Display alert message
             Swal.fire({
-                title: "The weightage cannot lower than 5%",
+                title: "The weightage cannot lower than 1%",
                 confirmButtonColor: "#3e60d5",
                 icon: "error",
                 // If confirmed, proceed with form submission
@@ -253,43 +253,16 @@ function sendBack(id, nik, name) {
 
 window.sendBack = sendBack;
 
-// Function to calculate and display the sum of weightage inputs
 function updateWeightageSummary() {
-    // Get all input elements with name="weightage[]"
-    var weightageInputs = document.getElementsByName("weightage[]");
-    var totalSum = 0;
+    let total = 0;
 
-    // Iterate through each input element
-    for (var i = 0; i < weightageInputs.length; i++) {
-        var input = weightageInputs[i];
+    document.querySelectorAll('input[name="weightage[]"]').forEach(input => {
+        const val = input.value;
+        const num = parseFloat(val);
+        total += isNaN(num) ? 0 : num;
+    });
 
-        // Get the value of the input (convert to number)
-        var value = parseFloat(input.value);
-
-        // Check if the value is a valid number and within the allowed range
-        if (!isNaN(value) && value >= 5 && value <= 100) {
-            totalSum += value; // Add valid value to total sum
-        }
-    }
-
-    // Display the total sum in a summary element
-    var summaryElement = document.getElementById("totalWeightage");
-
-    if (totalSum != 100) {
-        summaryElement.classList.remove("text-success");
-        summaryElement.classList.add("text-danger"); // Add text-danger class
-        // Add or update a sibling element to display the additional message
-        if (summaryElement) {
-            summaryElement.textContent = totalSum + "% of 100%";
-        }
-    } else {
-        summaryElement.classList.remove("text-danger"); // Remove text-danger class
-        summaryElement.classList.add("text-success"); // Remove text-danger class
-        // Hide the message element if totalSum is 100
-        if (summaryElement) {
-            summaryElement.textContent = totalSum.toFixed(0) + "%";
-        }
-    }
+    document.getElementById('totalWeightage').innerText = total.toFixed(0) + '% of 90%';
 }
 
 // Add event listener for keyup event on all weightage inputs

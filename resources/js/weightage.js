@@ -34,8 +34,8 @@ $(document).ready(function() {
             // Only set limits if there is a value
             if ($input.val() !== '') {
                 let numValue = parseInt($input.val(), 10);
-                if (numValue > 100) {
-                    $input.val(100);
+                if (numValue > 90) {
+                    $input.val(90);
                 } else if (numValue < 0) {
                     $input.val(0);
                 }
@@ -127,10 +127,10 @@ document.addEventListener('DOMContentLoaded', function() {
             weightageInputs.forEach(function(input) {
                 const weightageValue = parseInt(input.value) || 0;
 
-                if (weightageValue < 0 || weightageValue > 100) {
+                if (weightageValue < 0 || weightageValue > 90) {
                     input.classList.add('is-invalid');
                     const errorMessageElement = input.closest('.mb-3').querySelector('.error-message');
-                    errorMessageElement.textContent = 'Weightage must be between 0 and 100.';
+                    errorMessageElement.textContent = 'Weightage must be between 0 and 90.';
                     hasErrors = true;
                 } else {
                     input.classList.remove('is-invalid');
@@ -143,11 +143,11 @@ document.addEventListener('DOMContentLoaded', function() {
 
             totalInput.value = totalWeightage;
 
-            // Check if the total weightage is exactly 100
-            if (totalWeightage !== 100) {
+            // Check if the total weightage is exactly 90
+            if (totalWeightage !== 90) {
                 totalInput.classList.add('is-invalid');
                 const errorMessageElement = totalInput.closest('.mb-3').querySelector('.error-message');
-                errorMessageElement.textContent = 'Total weightage must equal 100.';
+                errorMessageElement.textContent = 'Total weightage must equal 90.';
                 hasErrors = true;
             } else {
                 totalInput.classList.remove('is-invalid');
@@ -281,7 +281,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 event.preventDefault();
                 Swal.fire({
                     title: "Error",
-                    text: "Please fill out all required fields and ensure weightages total 100.",
+                    text: "Please fill out all required fields and ensure weightages total 90.",
                     icon: "error",
                     confirmButtonColor: "#f15776"
                 });
@@ -451,7 +451,7 @@ $(document).ready(function() {
                                         id: `weightage-${formIndex}-${index}`,
                                         class: 'form-control weightage-input',
                                         min: 0,
-                                        max: 100
+                                        max: 90
                                     }),
                                     $('<span>', { class: 'input-group-text' }).append(
                                         $('<i>', { class: 'ri-percent-line' })
@@ -545,7 +545,7 @@ $(document).ready(function() {
                                     type: 'number',
                                     class: 'form-control',
                                     min: 0,
-                                    max: 100,
+                                    max: 90,
                                     readonly: true
                                 }),
                                 $('<span>', { class: 'input-group-text' }).append(
@@ -604,9 +604,9 @@ $(document).ready(function() {
                 
                 $totalInput.val(total);
                 
-                if (total !== 100) {
+                if (total !== 90) {
                     $totalInput.addClass('is-invalid');
-                    $totalInput.siblings('.invalid-feedback').text('Total weightage must equal 100%');
+                    $totalInput.siblings('.invalid-feedback').text('Total weightage must equal 90%');
                 } else {
                     $totalInput.removeClass('is-invalid');
                     $totalInput.siblings('.invalid-feedback').text('');

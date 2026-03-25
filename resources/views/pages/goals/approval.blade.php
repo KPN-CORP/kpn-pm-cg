@@ -143,7 +143,7 @@
                           <div class="row">
                               <div class="col-lg">
                                   <div class="mt-2 mb-3">
-                                      <label class="form-label" for="messages">Messages*</label>
+                                      <label class="form-label" for="messages">Messages (Optional)</label>
                                       <textarea name="messages" id="messages{{ $row->request->id }}" class="form-control" placeholder="Enter messages..">{{ $row->request->messages }}</textarea>
                                   </div>
                               </div>
@@ -151,11 +151,6 @@
                       </div>
                 </form>
                 <div class="row">
-                    <div class="col-lg">
-                        <div class="align-items-center text-center text-md-start mb-3">
-                            <h4>{{ __('Total Weightage') }} : <span class="font-weight-bold text-success" id="totalWeightage">100%</span></h4>
-                        </div>
-                    </div>
                     <div class="col-lg">
                         <form id="goalSendbackForm" action="{{ route('sendback.goal') }}" method="post">
                             @csrf
@@ -169,10 +164,10 @@
                             
                             <input type="hidden" name="employee_id" value="{{ $row->request->employee_id }}">
                             @if ($row->request->sendback_messages)
-                            <div class="d-flex align-items-center mt-4">
+                            <div class="d-flex align-items-center my-2">
                                 <div class="form-group w-100">
                                     <label>Sendback Messages</label>
-                                    <textarea class="form-control" @disabled(true)>{{ $row->request->sendback_messages }}</textarea>
+                                    <textarea class="form-control bg-warning-subtle" @disabled(true)>{{ $row->request->sendback_messages }}</textarea>
                                 </div>
                             </div>
                             @endif

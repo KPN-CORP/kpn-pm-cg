@@ -187,9 +187,18 @@
                                                     <li>Achievement field will be mapped to KPI description</li>
                                                     <li>If UoM doesn't match available options, it will be set to "Other" and the value stored in custom_uom</li>
                                                     <li>Weightage validation is not enforced (each cluster can have different weightage distribution)</li>
+                                                    <li><strong>Mode Full:</strong> Replace all KPI (must total 90%)</li>
+                                                    <li><strong>Mode Company:</strong> Only update company KPI (no weight validation)</li>
                                                 </ul>
                                             </div>
                                         </div>
+                                    </div>
+                                    <div class="form-group mb-3">
+                                        <label for="mode">Import Mode</label>
+                                        <select name="mode" class="form-select" required>
+                                            <option value="full">Full Import (Company + Division + Personal)</option>
+                                            <option value="company">Company Only (Update Company KPI)</option>
+                                        </select>
                                     </div>
                                     <div class="form-group">
                                         <label for="file">Upload File</label>

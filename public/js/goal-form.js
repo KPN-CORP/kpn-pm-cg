@@ -267,10 +267,10 @@ function validateWeightage(submitType) {
         var value = parseFloat(input.value);
 
         // Check if value is below 5%
-        if (value < 5 && submitType === "submit_form") {
+        if (value < 1 && submitType === "submit_form") {
             // Display alert message
             Swal.fire({
-                title: "The weightage cannot lower than 5%",
+                title: "The weightage cannot lower than 1%",
                 confirmButtonColor: "#3e60d5",
                 icon: "error",
                 // If confirmed, proceed with form submission

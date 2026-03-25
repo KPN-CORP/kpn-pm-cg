@@ -234,30 +234,89 @@ class LayerController extends Controller
 
     public function importLayer(Request $request)
     {
+        $period = $this->appService->goalActivePeriod();
+
         $request->validate([
             'excelFile' => 'required|mimes:xlsx,xls,csv'
         ]);
-        
-        // Muat file Excel ke dalam array
-        $rows = Excel::toArray([], $request->file('excelFile'));
-        $data = $rows[0]; // Ambil sheet pertama
-        $employeeIds = [];
 
-        // Mulai dari indeks 1 untuk mengabaikan header
-        for ($i = 1; $i < count($data); $i++) {
-            $employeeIds[] = $data[$i][0];
-        }
+        DB::beginTransaction();
 
-        $employeeIds = array_unique($employeeIds);
+        try {
 
-        // Ambil employee_ids dari data
-        //$employeeIds = array_unique(array_column($data, 'employee_id'));
+            // =========================
+            // 1. LOAD EXCEL
+            // =========================
+            $rows = Excel::toArray([], $request->file('excelFile'));
+            $data = $rows[0];
 
-        if (!empty($employeeIds)) {
-            // Backup data sebelum menghapus
-            $approvalLayersToDelete = ApprovalLayer::whereIn('employee_id', $employeeIds)->get();
+            $employeeIds = [];
+            $newLayersFromExcel = [];
 
-            foreach ($approvalLayersToDelete as $layer) {
+            for ($i = 1; $i < count($data); $i++) {
+                
+                $employeeId = $data[$i][0] ?? null;
+                $layer1 = $data[$i][2] ?? null; // layer_approval_id_1
+                
+                if ($employeeId) {
+                    $employeeIds[] = $employeeId;
+
+                    if ($layer1) {
+                        $newLayersFromExcel[$employeeId] = $layer1;
+                    }
+                }
+            }
+
+            $employeeIds = array_unique($employeeIds);
+
+            // =========================
+            // 2. UPDATE APPROVAL REQUEST
+            // =========================
+            $requests = ApprovalRequest::whereIn('employee_id', $employeeIds)
+                ->where('category', 'Goals')
+                ->where('period', $period)
+                ->whereNull('deleted_at')
+                ->get();
+
+            foreach ($requests as $req) {
+
+                $employeeId = $req->employee_id;
+
+                $newApprover = $newLayersFromExcel[$employeeId];
+                $oldApprover = $req->current_approval_id;
+
+                if (!isset($newLayersFromExcel[$employeeId])) continue;
+
+                if ($oldApprover != $newApprover) {
+
+                    ApprovalRequest::where('id', $req->id)
+                        ->update([
+                            'current_approval_id' => $newApprover,
+                            'status' => 'Pending',
+                        ]);
+
+                    Goal::where('employee_id', $employeeId)
+                        ->where('period', $req->period)
+                        ->whereNull('deleted_at')
+                        ->update([
+                            'form_status' => 'Submitted',
+                        ]);
+
+                    Log::info('Layer Goals updated (excel)', [
+                        'employee_id' => $employeeId,
+                        'period' => $req->period,
+                        'old' => $oldApprover,
+                        'new' => $newApprover,
+                    ]);
+                }
+            }
+
+            // =========================
+            // 3. BACKUP OLD LAYER
+            // =========================
+            $oldLayers = ApprovalLayer::whereIn('employee_id', $employeeIds)->get();
+
+            foreach ($oldLayers as $layer) {
                 ApprovalLayerBackup::create([
                     'employee_id' => $layer->employee_id,
                     'approver_id' => $layer->approver_id,
@@ -267,28 +326,43 @@ class LayerController extends Controller
                     'updated_at' => $layer->updated_at,
                 ]);
             }
-            // Hapus data lama
+
+            // =========================
+            // 4. DELETE OLD
+            // =========================
             ApprovalLayer::whereIn('employee_id', $employeeIds)->delete();
+
+            // =========================
+            // 5. IMPORT NEW
+            // =========================
+            $userId = Auth::id();
+            $import = new ApprovalLayerImport($userId);
+            Excel::import($import, $request->file('excelFile'));
+
+            // =========================
+            // 6. COMMIT
+            // =========================
+            DB::commit();
+
+            $invalidEmployees = $import->getInvalidEmployees();
+
+            $message = 'Data imported successfully.';
+            if (!empty($invalidEmployees)) {
+                $message .= '\nInvalid employees: ' . implode(', ', $invalidEmployees);
+            }
+
+            return back()->with('success', $message);
+
+        } catch (\Throwable $e) {
+
+            DB::rollBack();
+
+            Log::error('Import layer failed', [
+                'error' => $e->getMessage()
+            ]);
+
+            return back()->withErrors(['error' => $e->getMessage()]);
         }
-        $userId = Auth::id();
-        // Import data baru
-        //Excel::import(new ApprovalLayerImport, $request->file('excelFile'));
-        // Excel::import(new ApprovalLayerImport($userId), $request->file('excelFile'));
-
-        // return back()->with('success', 'Data imported successfully.');
-        $import = new ApprovalLayerImport($userId);
-        Excel::import($import, $request->file('excelFile'));
-
-        // Ambil ID karyawan yang memiliki layer lebih dari 6
-        $invalidEmployees = $import->getInvalidEmployees();
-
-        // Format pesan umpan balik
-        $message = 'Data imported successfully.';
-        if (!empty($invalidEmployees)) {
-            $message .= '\nThe following employee IDs have layers greater than 6 and were not imported: \n' . implode(', ', $invalidEmployees);
-        }
-
-        return back()->with('success', $message);
     }
 
     public function show(Request $request)

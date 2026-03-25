@@ -24,8 +24,8 @@ function initSelect2($element) {
     });
 }
 
-$(document).on('input change', '[name="weightage[]"]', function () {
-  updateWeightageSummary();
+$(document).on('input', 'input[name="weightage[]"]', function () {
+    updateWeightageSummary();
 });
 
 $(document).ready(function() {
@@ -214,16 +214,22 @@ document.addEventListener("DOMContentLoaded", function () {
 
     $(wrapper).on("click", ".remove_field", function (e) {
         e.preventDefault();
-        // hapus card yang diklik
-        $(this).closest(".card").remove();
 
-        // reindex per cluster
+        const card = $(this).closest(".card");
+        const cluster = card.find('input[name="cluster[]"]').val();
+
+        if (cluster === 'personal') {
+            const total = $('#personal-goals .card').length;
+            if (total <= 1) {
+                alert('Minimal 1 Personal KPI required');
+                return;
+            }
+        }
+
+        card.remove();
+
         reindexCardsPerCluster();
-
-        // perbarui count dari DOM
         $("#count").val($(".container-card .card").length);
-
-        // hitung ulang total weightage
         updateWeightageSummary();
     });
 
@@ -390,15 +396,17 @@ function validate(submitType) {
 
     var weight = document.querySelectorAll('input[name="weightage[]"]');
     var sum = 0;
+    
     for (var i = 0; i < weight.length; i++) {
-        sum += parseFloat(weight[i].value) || 0; // Parse input value to integer, default to 0 if NaN
+        const num = parseFloat(weight[i].value);
+        sum += isNaN(num) ? 0 : num; // Parse input value to integer, default to 0 if NaN
     }
 
     // Skip total weightage validation for cluster forms
-    if (!isClusterForm && sum != 100 && submitType === "submit_form") {
+    if (!isClusterForm && sum != 90 && submitType === "submit_form") {
         Swal.fire({
             title: "Submit failed",
-            html: `Your current weightage is ${sum}%, <br>Please adjust to reach the total weightage of 100%`,
+            html: `Your current weightage is ${sum}%, <br>Please adjust to reach the total weightage of 90%`,
             confirmButtonColor: "#3e60d5",
             icon: "error",
             // If confirmed, proceed with form submission
@@ -421,10 +429,10 @@ function validateWeightage(submitType) {
         var value = parseFloat(input.value);
 
         // Check if value is below 5%
-        if (value < 5 && submitType === "submit_form") {
+        if (value < 1 && submitType === "submit_form") {
             // Display alert message
             Swal.fire({
-                title: "The weightage cannot lower than 5%",
+                title: "The weightage cannot lower than 1%",
                 confirmButtonColor: "#3e60d5",
                 icon: "error",
                 // If confirmed, proceed with form submission
@@ -499,12 +507,12 @@ function confirmSubmission(submitType) {
             }
 
             document.getElementById("goalForm").submit();
-            Swal.fire({
-                title: title2,
-                icon: "success",
-                showConfirmButton: false,
-                // If confirmed, proceed with form submission
-            });
+            // Swal.fire({
+            //     title: title2,
+            //     icon: "success",
+            //     showConfirmButton: false,
+            //     // If confirmed, proceed with form submission
+            // });
         }
     });
 
@@ -513,56 +521,15 @@ function confirmSubmission(submitType) {
 
 // Function to calculate and display the sum of weightage inputs
 function updateWeightageSummary() {
-    // Check if this is a cluster form (has containers with id ending in "-goals")
-    var isClusterForm = document.querySelector('[id$="-goals"]') !== null;
+    let total = 0;
 
-    // Get all input elements with name="weightage[]"
-    var weightageInputs = document.getElementsByName("weightage[]");
-    var totalSum = 0;
+    document.querySelectorAll('input[name="weightage[]"]').forEach(input => {
+        const val = input.value;
+        const num = parseFloat(val);
+        total += isNaN(num) ? 0 : num;
+    });
 
-    // Iterate through each input element
-    for (var i = 0; i < weightageInputs.length; i++) {
-        var input = weightageInputs[i];
-
-        // Get the value of the input (convert to number)
-        var value = parseFloat(input.value);
-
-        // Check if the value is a valid number and within the allowed range
-        if (!isNaN(value) && value >= 5 && value <= 100) {
-            totalSum += value; // Add valid value to total sum
-        }
-    }
-
-    // Display the total sum in a summary element
-    var summaryElement = document.getElementById("totalWeightage");
-    var summaryContainer = summaryElement ? summaryElement.closest('h5, h4') : null;
-
-    if (isClusterForm) {
-        // For cluster forms, hide the total weightage display
-        if (summaryContainer) {
-            summaryContainer.style.display = 'none';
-        }
-    } else {
-        // For non-cluster forms, show and validate total = 100%
-        if (summaryContainer) {
-            summaryContainer.style.display = 'block';
-        }
-        if (totalSum != 100) {
-            summaryElement.classList.remove("text-success");
-            summaryElement.classList.add("text-danger"); // Add text-danger class
-            // Add or update a sibling element to display the additional message
-            if (summaryElement) {
-                summaryElement.textContent = totalSum + "% of 100%";
-            }
-        } else {
-            summaryElement.classList.remove("text-danger"); // Remove text-danger class
-            summaryElement.classList.add("text-success"); // Remove text-danger class
-            // Hide the message element if totalSum is 100
-            if (summaryElement) {
-                summaryElement.textContent = totalSum.toFixed(0) + "%";
-            }
-        }
-    }
+    document.getElementById('totalWeightage').innerText = total.toFixed(0) + '% of 90%';
 }
 
 // Add event listener for keyup event on all weightage inputs
@@ -917,3 +884,23 @@ function reindexCardsPerCluster() {
         });
     });
 }
+
+$('#goalForm').on('submit', function () {
+
+    $('.container-card .card').each(function () {
+
+        const kpi = $(this).find('[name="kpi[]"]').val();
+
+        // kalau kosong → hapus dari DOM (tidak ikut submit)
+        if (!kpi || kpi.trim() === '') {
+            $(this).remove();
+        }
+
+    });
+
+});
+
+$(document).on('input', 'input[oninput^="validateDigits"]', function () {
+    const val = $(this).val();
+    $(this).closest('.mb-3').find('input[type="hidden"]').val(val);
+});

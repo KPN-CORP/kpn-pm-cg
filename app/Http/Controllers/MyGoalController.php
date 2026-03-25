@@ -177,7 +177,6 @@ class MyGoalController extends Controller
             return $req;
         });
 
-
         $countDraft = Goal::where('employee_id', $user)->where('category', $this->category)->where('form_status', 'Draft')->count();
     
         return view('pages.goals.my-goal', compact('data', 'link', 'parentLink', 'uomOption', 'typeOption', 'access', 'selectYear', 'adjustByManager', 'period', 'countDraft'));
@@ -217,7 +216,7 @@ class MyGoalController extends Controller
             return redirect('goals');
         }
 
-        $goal = Goal::where('employee_id', $id)->where('period', $period)->get();
+        $goal = ApprovalRequest::where('category', 'Goals')->where('employee_id', $id)->where('period', $period)->get();
         if ($goal->isNotEmpty()) {
             // User ID doesn't match the condition, show error message
             Session::flash('error', [
@@ -257,8 +256,26 @@ class MyGoalController extends Controller
 
         $uomOption = $uomOptions['UoM'];
 
+        $existingGoal = Goal::where('employee_id', $id)
+            ->where('category', 'Goals')
+            ->where('period', $period)
+            ->where('form_status', 'Draft')
+            ->whereNull('deleted_at')
+            ->first();
+
         // Get cluster KPIs
-        $clusterKPIs = $this->appService->getClusterKPIs($id);
+        if ($existingGoal) {
+
+            $formData = json_decode($existingGoal->form_data, true);
+
+            $clusterKPIs = collect($formData)
+                ->groupBy('cluster')
+                ->toArray();
+
+        } else {
+
+            $clusterKPIs = $this->appService->getClusterKPIs($id);
+        }
         
         $parentLink = __('Goal');
         $link = 'Create';
@@ -404,7 +421,7 @@ class MyGoalController extends Controller
                 'kpi.*' => 'required|string',
                 'target.*' => 'required|string',
                 'uom.*' => 'required|string',
-                'weightage.*' => 'required|numeric|min:5|max:100',
+                'weightage.*' => 'required|numeric|min:1|max:100',
                 'type.*' => 'required|string',
             ];
 
@@ -424,10 +441,6 @@ class MyGoalController extends Controller
             ->where('category', $request->category)
             ->where('period', $period)
             ->exists();
-
-        if ($existingGoal) {
-            return redirect('goals')->withErrors(['error' => "You already have goals initiated for {$period}"]);
-        }
 
         // Start transaction
         DB::beginTransaction();
@@ -469,17 +482,35 @@ class MyGoalController extends Controller
             }
 
             // Save main goal record
-            $goal = new Goal();
-            $goal->id = Str::uuid();
-            $goal->employee_id = $request->employee_id;
-            $goal->category = $request->category;
-            $goal->form_data = json_encode($kpiData);
-            $goal->form_status = $statusForm;
-            $goal->period = $period;
+            if ($existingGoal) {
 
-            if (!$goal->save()) {
-                throw new Exception("Failed to save goal data");
-            }
+                $goal = Goal::where('employee_id', $request->employee_id)
+                    ->where('category', $request->category)
+                    ->where('period', $period)
+                    ->whereNull('deleted_at')
+                    ->first();
+
+                $goal->form_data = json_encode($kpiData);
+                $goal->form_status = $statusForm;
+                $goal->updated_at = now();
+                $goal->save();
+
+            } else {
+
+                $goal = new Goal();
+                $goal->id = Str::uuid();
+                $goal->employee_id = $request->employee_id;
+                $goal->category = $request->category;
+                $goal->form_data = json_encode($kpiData);
+                $goal->form_status = $statusForm;
+                $goal->period = $period;
+                $goal->save();
+                }
+
+                if (!$goal->save()) {
+                    throw new Exception("Failed to save goal data");
+                }
+
 
             // Save approval snapshot
             $snapshot = new ApprovalSnapshots();
@@ -548,13 +579,18 @@ class MyGoalController extends Controller
         // Validate submission type
         $submit_status = $request->submit_type === 'save_draft' ? 'Draft' : 'Submitted';
 
+        $request->merge([
+            'target' => collect($request->target)->map(function ($val) {
+                return str_replace(',', '', $val);
+            })->toArray()
+        ]);
         // Validation for submitted forms
         if ($submit_status === 'Submitted') {
             $rules = [
                 'kpi.*' => 'required|string',
                 'target.*' => 'required|numeric',
                 'uom.*' => 'required|string',
-                'weightage.*' => 'required|numeric|min:5|max:100',
+                'weightage.*' => 'required|numeric|min:1|max:100',
                 'type.*' => 'required|string',
             ];
 
@@ -605,24 +641,52 @@ class MyGoalController extends Controller
                 throw new Exception("You don't have permission to update this goal");
             }
 
-            // Prepare KPI data
+            $existing = json_decode($goal->form_data, true);
+
+            $kpis = $request->kpi ?? [];
+            $targets = $request->target ?? [];
+            $clusters = $request->cluster ?? [];
+            $uoms = $request->uom ?? [];
+            $weightages = $request->weightage ?? [];
+            $types = $request->type ?? [];
+            $descriptions = $request->description ?? [];
+
             $kpiData = [];
-            foreach ($request->input('kpi', []) as $index => $kpi) {
-                $kpiData[$index] = [
-                    'cluster' => $request->input('cluster.' . $index, 'personal'), // Get cluster from request
+
+            foreach ($kpis as $i => $kpi) {
+
+                // skip kalau tidak lengkap (hindari Undefined array key)
+                if (!isset($targets[$i], $clusters[$i])) {
+                    continue;
+                }
+
+                // skip kalau kosong
+                if (!$kpi) {
+                    continue;
+                }
+
+                $kpiData[] = [
+                    'cluster' => $clusters[$i],
                     'kpi' => $kpi,
-                    'description' => $request->description[$index] ?? '',
-                    'target' => $request->target[$index],
-                    'uom' => $request->uom[$index],
-                    'weightage' => $request->weightage[$index],
-                    'type' => $request->type[$index],
-                    'custom_uom' => $request->custom_uom[$index] ?? null,
+                    'target' => $targets[$i],
+                    'uom' => $uoms[$i] ?? null,
+                    'custom_uom' => $request->custom_uom[$i] ?? null,
+                    'weightage' => $weightages[$i] ?? 0,
+                    'type' => $types[$i] ?? null,
+                    'description' => $descriptions[$i] ?? '',
                 ];
+            }
+            // Validate total weightage record
+            $total = array_sum(array_column($kpiData, 'weightage'));
+
+            if (round($total, 2) !== 90.00) {
+                throw new Exception("Total weightage must be 90%");
             }
 
             // Update goal record
             $goal->form_data = json_encode($kpiData);
             $goal->form_status = $submit_status;
+            $goal->save();
             
             if (!$goal->save()) {
                 throw new Exception("Failed to update goal data");
@@ -634,7 +698,7 @@ class MyGoalController extends Controller
             if($approver){
                 $approvalRequest->current_approval_id = $approver;
             }
-            $approvalRequest->sendback_messages = null;
+            // $approvalRequest->sendback_messages = null;
             $approvalRequest->sendback_to = null;
             $approvalRequest->updated_by = Auth::id();
             $approvalRequest->updated_at = now(); // Explicitly set updated_at

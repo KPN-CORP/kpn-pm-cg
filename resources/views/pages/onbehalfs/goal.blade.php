@@ -45,7 +45,7 @@
                       <td class="text-center sorting_1 px-1">
                         @can('approvalonbehalf')
                         <div class="btn-group dropstart">
-                          <button class="btn btn-sm {{ $row->status != 'Sendback' && $row->goal->form_status != 'Draft' && $row->access ? 'btn-primary' : 'btn-light disabled' }} px-1 rounded" type="button" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false" id="animated-preview" data-bs-offset="0,10">
+                          <button class="btn btn-sm {{ $row->status != 'Sendback' && $row->goal->form_status != 'Draft' ? 'btn-primary' : 'btn-light disabled' }} px-1 rounded" type="button" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false" id="animated-preview" data-bs-offset="0,10">
                             Action
                           </button>
                           <div class="dropdown-menu dropdown-menu-animated">
