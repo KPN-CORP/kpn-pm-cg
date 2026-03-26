@@ -211,7 +211,6 @@
 
                                                 {{-- Quill Editor --}}
                                                 <div id="editor-container" class="form-control" style="height: 200px;">
-                                                    {!! $model->messages !!}
                                                 </div>
 
                                                 {{-- Hidden textarea untuk dikirim ke backend --}}
