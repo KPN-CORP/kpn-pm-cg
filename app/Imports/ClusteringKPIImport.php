@@ -4,6 +4,7 @@ namespace App\Imports;
 
 use App\Models\Appraisal;
 use App\Models\ApprovalLayer;
+use App\Models\ApprovalRequest;
 use App\Models\Employee;
 use App\Models\EmployeeAppraisal;
 use App\Models\Goal;
@@ -181,8 +182,6 @@ class ClusteringKPIImport implements
                     throw new \Exception('Appraisal already exists');
                 }
 
-                $formId = (string) Str::uuid();
-
                 $existingGoal = DB::table('goals')
                     ->where('employee_id', $employeeId)
                     ->where('category', 'Goals')
@@ -213,16 +212,26 @@ class ClusteringKPIImport implements
                         throw new \Exception("Total weightage must be 90%");
                     }
 
-                    DB::table('goals')->insert([
-                        'id' => $formId,
-                        'employee_id' => $employeeId,
-                        'category' => 'Goals',
-                        'form_data' => json_encode($data['form_data']),
-                        'form_status' => 'Approved',
-                        'period' => $data['period'],
-                        'created_at' => now(),
-                        'updated_at' => now(),
-                    ]);
+                    $empAppraisalId = EmployeeAppraisal::where('employee_id', $employeeId)->value('id');
+
+                    $goal = new Goal();
+                    $goal->id = Str::uuid();
+                    $goal->employee_id = $employeeId;
+                    $goal->category = 'Goals';
+                    $goal->form_data = json_encode($data['form_data']);
+                    $goal->form_status = 'Approved';
+                    $goal->period = $data['period'];
+                    $goal->save();
+
+                    $approvalRequest = new ApprovalRequest();
+                    $approvalRequest->form_id = $goal->id;
+                    $approvalRequest->category = 'Goals';
+                    $approvalRequest->employee_id = $employeeId;
+                    $approvalRequest->current_approval_id = 'admin'; /// Approver pertama
+                    $approvalRequest->period = $data['period'];
+                    $approvalRequest->status = 'Approved';
+                    $approvalRequest->created_by = $empAppraisalId;
+                    $approvalRequest->save();
 
                 } else {
 
