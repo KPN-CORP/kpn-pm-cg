@@ -137,7 +137,7 @@ class ReportController extends Controller
         $location = $request->input('location', []);
         $company = $request->input('company', []);
         // $report_type = $reportType;
-        // $period = '2025';
+        // $period = '2026';
         // $group_company = [];
         // $location = [];
         // $company = [];
@@ -149,7 +149,7 @@ class ReportController extends Controller
 
         // Start building the query
         if ($report_type === 'Goal') {
-            $query = ApprovalRequest::with(['initiated:id,employee_id,name','employee', 'manager', 'goal'])->where('category', $this->category)->whereHas('employee')->whereHas('goal');
+            $query = ApprovalRequest::with(['initiated:id,employee_id,fullname','employee', 'manager', 'goal'])->where('category', $this->category)->whereHas('employee')->whereHas('goal');
 
             $criteria = [
                 'work_area_code' => $permissionLocations,

@@ -3,8 +3,11 @@
 namespace App\Imports;
 
 use App\Models\Appraisal;
+use App\Models\ApprovalLayer;
+use App\Models\ApprovalRequest;
 use App\Models\Employee;
 use App\Models\EmployeeAppraisal;
+use App\Models\Goal;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\File;
@@ -107,8 +110,6 @@ class KPICompanyClusterImport implements ToModel, WithHeadingRow, WithValidation
                     ->whereNull('deleted_at')
                     ->first();
 
-                $formId = (string) Str::uuid();
-
                 if ($existingGoal) {
 
                     $existingFormData = json_decode($existingGoal->form_data, true) ?? [];
@@ -136,31 +137,34 @@ class KPICompanyClusterImport implements ToModel, WithHeadingRow, WithValidation
 
                 } else {
 
-                    DB::table('goals')->insert([
-                        'id' => $formId,
-                        'employee_id' => $employeeId,
-                        'category' => 'Goals',
-                        'form_data' => json_encode($data['form_data']),
-                        'form_status' => 'Approved',
-                        'period' => $data['period'],
-                        'created_at' => now(),
-                        'updated_at' => now(),
-                    ]);
+                    $goal = new Goal();
+                    $goal->id = Str::uuid();
+                    $goal->employee_id = $employeeId;
+                    $goal->category = 'Goals';
+                    $goal->form_data = json_encode($data['form_data']);
+                    $goal->form_status = 'Draft';
+                    $goal->period = $data['period'];
+                    $goal->save();
 
                     $empAppraisalId = EmployeeAppraisal::where('employee_id', $employeeId)->value('id');
 
-                    DB::table('approval_requests')->insert([
-                        'form_id' => $formId,
-                        'category' => 'Goals',
-                        'employee_id' => $employeeId,
-                        'current_approval_id' => 'admin',
-                        'status' => 'Approved',
-                        'messages' => 'import company KPI',
-                        'period' => $data['period'],
-                        'created_by' => $empAppraisalId,
-                        'created_at' => now(),
-                        'updated_at' => now(),
-                    ]);
+                    $firstLayer = ApprovalLayer::where('employee_id', $employeeId)
+                        ->where('layer', 1)
+                        ->first();
+
+                    if (!$firstLayer) {
+                        throw new \Exception("Approval layer 1 tidak ditemukan untuk employee: $employeeId");
+                    }
+
+                    $approvalRequest = new ApprovalRequest();
+                    $approvalRequest->form_id = $goal->id;
+                    $approvalRequest->category = 'Goals';
+                    $approvalRequest->employee_id = $employeeId;
+                    $approvalRequest->current_approval_id = $firstLayer->approver_id; /// Approver pertama
+                    $approvalRequest->period = $data['period'];
+                    $approvalRequest->status = 'Approved';
+                    $approvalRequest->created_by = $empAppraisalId;
+                    $approvalRequest->save();
                 }
 
                 DB::commit();

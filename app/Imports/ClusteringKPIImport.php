@@ -6,6 +6,7 @@ use App\Models\Appraisal;
 use App\Models\ApprovalLayer;
 use App\Models\Employee;
 use App\Models\EmployeeAppraisal;
+use App\Models\Goal;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\File;
@@ -251,20 +252,20 @@ class ClusteringKPIImport implements
                 // ==============================
                 if (!$existingGoal) {
 
-                    DB::table('goals')->insert([
-                        'id' => (string) Str::uuid(),
-                        'employee_id' => $employeeId,
-                        'category' => 'Goals',
-                        'form_data' => json_encode($data['form_data']),
-                        'form_status' => 'Draft',
-                        'period' => $data['period'],
-                        'created_at' => now(),
-                        'updated_at' => now(),
-                    ]);
+                    $goal = new Goal();
+                    $goal->id = Str::uuid();
+                    $goal->employee_id = $employeeId;
+                    $goal->category = 'Goals';
+                    $goal->form_data = json_encode($data['form_data']);
+                    $goal->form_status = 'Draft';
+                    $goal->period = $data['period'];
+                    $goal->save();
 
-                    
+                    DB::commit();
 
-                    return;
+                    $this->successCount++;
+
+                    continue;
                 }
 
 

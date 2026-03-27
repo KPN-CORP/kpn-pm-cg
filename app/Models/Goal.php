@@ -15,6 +15,15 @@ class Goal extends Model
     public $incrementing = false;
     protected $keyType = 'string';
 
+    protected $fillable = [
+        'id',
+        'employee_id',
+        'category',
+        'form_data',
+        'form_status',
+        'period',
+    ];
+
     public function approvalRequest()
     {
         return $this->belongsTo(ApprovalRequest::class, 'id', 'form_id');

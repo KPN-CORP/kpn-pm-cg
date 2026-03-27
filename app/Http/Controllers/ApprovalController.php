@@ -142,7 +142,7 @@ class ApprovalController extends Controller
             }
 
             DB::commit();
-            return redirect()->route('team-goals')->with('success', 'Data berhasil disimpan');
+            return redirect()->route('team-goals')->with('success', 'Data berhasil disubmit');
 
         } catch (Exception $e) {
             DB::rollBack();

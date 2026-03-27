@@ -234,7 +234,7 @@
                                               <div class="mb-3">
                                                   <label class="form-label text-primary" for="weightage">{{ __('Weightage') }}</label>
                                                   <div class="input-group">
-                                                      <input type="number" min="5" max="100" step="0.1" class="form-control" name="weightage[]" required>
+                                                      <input type="number" min="1" max="100" step="0.1" class="form-control" name="weightage[]" required>
                                                       <span class="input-group-text">%</span>
                                                         <div class="invalid-feedback">
                                                             {{ __('This field is mandatory') }}
@@ -338,7 +338,7 @@
                                             <div class="mb-3">
                                                 <label class="form-label text-primary" for="weightage">{{ __('Weightage') }}</label>
                                                 <div class="input-group">
-                                                    <input type="number" min="5" max="100" step="0.1" class="form-control" name="weightage[]" value="{{ $kpi['weightage'] ?? old('weightage.' . $goalIndex) }}" required>
+                                                    <input type="number" min="1" max="100" step="0.1" class="form-control" name="weightage[]" value="{{ $kpi['weightage'] ?? old('weightage.' . $goalIndex) }}" required>
                                                     <span class="input-group-text">%</span>
                                                       <div class="invalid-feedback">
                                                           {{ __('This field is mandatory') }}
@@ -367,7 +367,12 @@
                     <div class="row">
                         <div class="col-md d-md-flex align-items-center">
                             <div class="mb-3 text-center text-md-start">
-                                <h5>{{ __('Total Weightage') }} : <span class="font-weight-bold" id="totalWeightage">-</span></h5>
+                                <h5>Total Weightage</h5>
+                                <div>Company: <span id="totalCompany">0%</span></div>
+                                <div>Division: <span id="totalDivision">0%</span></div>
+                                <div>Personal: <span id="totalPersonal">0%</span></div>
+                                <hr class="my-1">
+                                <div><strong>Total: <span id="totalWeightage">0%</span></strong></div>
                             </div>
                         </div>
                         <div class="col-md-auto">

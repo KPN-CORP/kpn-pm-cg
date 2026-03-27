@@ -79,12 +79,47 @@
               <div class="container-fluid p-0">
                 <div class="card col-md-12 mb-3 shadow">
                     <div class="card-body pb-0 px-2 px-md-3">
+                            @php
+                            $formData = json_decode($row->request->goal->form_data, true);
+
+                            $groupedFormData = collect($formData)
+                                ->groupBy('cluster')
+                                ->toArray();
+
+                            $clusterTotals = [
+                                'company' => 0,
+                                'division' => 0,
+                                'personal' => 0,
+                            ];
+
+                            foreach ($formData as $item) {
+                                $cluster = $item['cluster'] ?? null;
+                                if (isset($clusterTotals[$cluster])) {
+                                    $clusterTotals[$cluster] += (float) $item['weightage'];
+                                }
+                            }
+                            @endphp
                         <div class="container-card">
-                          @foreach ($formData as $index => $data)
-                              <div class="card border-primary border col-md-12 mb-3 bg-primary-subtle">
+                            @foreach(['company' => 'Company Goals', 'division' => 'Division Goals', 'personal' => 'Personal Goals'] as $cluster => $title)
+
+                            @php 
+                                $clusterData = $groupedFormData[$cluster] ?? [];
+                                $i = 1;
+                            @endphp
+
+                            @if(!empty($clusterData))
+
+                                <h5 class="mt-3">{{ $title }}</h5>
+
+                                @foreach ($clusterData as $data)
+
+                                <div class="card border-primary border col-md-12 mb-3 bg-primary-subtle">
                                   <div class="card-body">
                                       <div class='row align-items-end'>
-                                          <div class='col'><h5 class='card-title fs-16 mb-0 text-primary'>Goal {{ $index + 1 }}</h5></div>
+                                          <div class='col'>
+                                            <h5 class='card-title fs-16 mb-0 text-primary'>Goal {{ $i++ }}
+                                                <input type="hidden" name="cluster[]" value="{{ $cluster }}">
+                                    </h5></div>
                                           {{-- @if ($index >= 1)
                                               <div class='col-auto'><a class='btn-close remove_field' type='button'></a></div>
                                           @endif --}}
@@ -128,7 +163,7 @@
                                               <div class="mb-3">
                                                   <label class="form-label text-primary" for="weightage">{{ __('Weightage') }}</label>
                                                   <div class="input-group flex-nowrap ">
-                                                      <input type="number" min="5" max="100" step="0.1" class="form-control text-center" name="weightage[]" value="{{ $data['weightage'] }}" readonly>
+                                                      <input type="number" min="1" max="100" step="0.1" class="form-control text-center" name="weightage[]" value="{{ $data['weightage'] }}" readonly>
                                                       <div class="input-group-append">
                                                           <span class="input-group-text">%</span>
                                                       </div>
@@ -139,7 +174,12 @@
                                       </div>
                                   </div>
                               </div>
-                          @endforeach
+
+                                @endforeach
+
+                            @endif
+
+                        @endforeach
                           <div class="row">
                               <div class="col-lg">
                                   <div class="mt-2 mb-3">
@@ -151,6 +191,16 @@
                       </div>
                 </form>
                 <div class="row">
+                    <div class="col-md d-md-flex align-items-center">
+                            <div class="mb-3 text-center text-md-start">
+                                <h5>Total Weightage</h5>
+                                <div>Company: {{ $clusterTotals['company'] }}%</div>
+                                <div>Division: {{ $clusterTotals['division'] }}%</div>
+                                <div>Personal: {{ $clusterTotals['personal'] }}%</div>
+                                <hr>
+                                <div><strong>Total: {{ array_sum($clusterTotals) }}%</strong></div>
+                            </div>
+                        </div>
                     <div class="col-lg">
                         <form id="goalSendbackForm" action="{{ route('sendback.goal') }}" method="post">
                             @csrf
@@ -184,7 +234,7 @@
                                                     <a class="dropdown-item" href="javascript:void(0)" onclick="sendBack('{{ $item->request_id }}','{{ $item->approver_id }}','{{ $item->approverName->fullname }}')">{{ $item->approverName->fullname.' '.$item->approver_id }}</a>
                                                 @endforeach
                                             </div> 
-                                        <a href="{{ url()->previous() }}" class="btn btn-outline-secondary rounded px-2 me-2">{{ __('Cancel') }}</a>
+                                        <a href="{{ url('team-goals') }}" class="btn btn-outline-secondary rounded px-2 me-2">{{ __('Cancel') }}</a>
                                         <a href="javascript:void(0)" id="submitButton" onclick="confirmAprroval()" class="btn btn-primary rounded px-2"><span class="spinner-border spinner-border-sm me-1 d-none" role="status" aria-hidden="true"></span>{{ __('Approve') }}</a>
                                     </div>
                                 </div>

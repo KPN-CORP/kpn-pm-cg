@@ -101,7 +101,7 @@
                                             <div class="mb-3">
                                                 <label class="form-label text-primary" for="weightage">{{ __('Weightage') }}</label>
                                                 <div class="input-group flex-nowrap ">
-                                                    <input type="number" min="5" max="100" step="0.1" class="form-control text-center" name="weightage[]" value="{{ $data['weightage'] }}" readonly>
+                                                    <input type="number" min="1" max="100" step="0.1" class="form-control text-center" name="weightage[]" value="{{ $data['weightage'] }}" readonly>
                                                     <div class="input-group-append">
                                                         <span class="input-group-text">%</span>
                                                     </div>

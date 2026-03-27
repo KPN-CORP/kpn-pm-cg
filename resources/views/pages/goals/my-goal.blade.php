@@ -163,7 +163,7 @@
                                                 : ($row->request->appraisalCheck
                                                     ? '(Goals were auto-approved after you submitted PA '.$row->request->period .')'
                                                     : ($row->approvalLayer && $row->request->status != 'Approved'
-                                                        ? 'Manager L'.$row->approvalLayer.' : '.$row->name.'-'.$row->request->appraisalCheck
+                                                        ? 'Manager L'.$row->approvalLayer.' : '.$row->name
                                                         : ($row->request->status === 'Sendback' ? $row->name : 'Approved')
                                                     ) 
                                                 )
@@ -215,11 +215,26 @@
                             <table class="table table-striped table-bordered m-0">
                                 <tbody>
                                 @if ($groupedFormData)
+                                @php
+                                $clusterTotals = [
+                                    'company' => 0,
+                                    'division' => 0,
+                                    'personal' => 0,
+                                ];
+
+                                if (!empty($groupedFormData)) {
+                                    foreach ($groupedFormData as $clusterKey => $items) {
+                                        foreach ($items as $item) {
+                                            $clusterTotals[$clusterKey] += (float) ($item['weightage'] ?? 0);
+                                        }
+                                    }
+                                }
+                            @endphp
                                 @foreach(['company' => 'Company Goals', 'division' => 'Division Goals', 'personal' => 'Personal Goals'] as $cluster => $title)
                                   @if(!empty($groupedFormData[$cluster]))
                                     <tr>
                                       <td colspan="5" class="bg-light">
-                                        <strong>{{ $title }} :</strong>
+                                        <strong>{{ $title }} : {{ number_format($clusterTotals[$cluster] ?? 0, 1) }}%</strong>
                                       </td>
                                     </tr>
                                     @foreach ($groupedFormData[$cluster] as $index => $data)

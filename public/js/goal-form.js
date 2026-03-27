@@ -108,7 +108,7 @@ document.addEventListener("DOMContentLoaded", function () {
                     '<div class="col-md-2 mb-3">' +
                     '<label class="form-label" for="weightage">Weightage</label>' +
                     '<div class="input-group">' +
-                    '<input type="number" min="5" max="100" class="form-control" name="weightage[]" value="{{ old("weightage") }}" required>' +
+                    '<input type="number" min="1" max="100" class="form-control" name="weightage[]" value="{{ old("weightage") }}" required>' +
                     '<div class="input-group-append">' +
                     '<span class="input-group-text">%</span>' +
                     "</div>" +

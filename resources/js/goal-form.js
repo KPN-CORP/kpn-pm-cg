@@ -15,6 +15,7 @@ document.addEventListener('DOMContentLoaded', function () {
     const popoverList = popoverTriggerList.map(function (popoverTriggerEl) {
         return new bootstrap.Popover(popoverTriggerEl);
     });
+    updateWeightageSummary();
 });
 
 function initSelect2($element) {
@@ -178,7 +179,7 @@ document.addEventListener("DOMContentLoaded", function () {
                     '<div class="col-6 col-md-2 mb-3">' +
                     '<label class="form-label text-primary" for="weightage">'+ weightage +'</label>' +
                     '<div class="input-group">' +
-                    '<input type="number" min="5" max="100" step="0.1" class="form-control" name="weightage[]" required>' +
+                    '<input type="number" min="1" max="100" step="0.1" class="form-control" name="weightage[]" required>' +
                     '<span class="input-group-text">%</span>' +
                     '<div class="invalid-feedback">' + textMandatory + '</div>' +
                     "</div>" +
@@ -331,7 +332,7 @@ function addFieldForCluster(cluster) {
                     <div class="mb-3">
                         <label class="form-label text-primary" for="weightage">${weightage}</label>
                         <div class="input-group">
-                            <input type="number" min="5" max="100" step="0.1" class="form-control" name="weightage[]" required>
+                            <input type="number" min="1" max="100" step="0.1" class="form-control" name="weightage[]" required>
                             <span class="input-group-text">%</span>
                             <div class="invalid-feedback">${textMandatory}</div>
                         </div>
@@ -521,15 +522,41 @@ function confirmSubmission(submitType) {
 
 // Function to calculate and display the sum of weightage inputs
 function updateWeightageSummary() {
-    let total = 0;
 
-    document.querySelectorAll('input[name="weightage[]"]').forEach(input => {
-        const val = input.value;
-        const num = parseFloat(val);
-        total += isNaN(num) ? 0 : num;
+    let total = 0;
+    let company = 0;
+    let division = 0;
+    let personal = 0;
+
+    document.querySelectorAll('.container-card .card').forEach(card => {
+
+        const weightInput = card.querySelector('input[name="weightage[]"]');
+        const clusterInput = card.querySelector('input[name="cluster[]"]');
+
+        if (!weightInput || !clusterInput) return;
+
+        const val = parseFloat(weightInput.value);
+        const weight = isNaN(val) ? 0 : val;
+
+        const cluster = clusterInput.value;
+
+        total += weight;
+
+        if (cluster === 'company') company += weight;
+        if (cluster === 'division') division += weight;
+        if (cluster === 'personal') personal += weight;
     });
 
-    document.getElementById('totalWeightage').innerText = total.toFixed(0) + '% of 90%';
+    document.getElementById('totalCompany').innerText = company.toFixed(1) + '%';
+    document.getElementById('totalDivision').innerText = division.toFixed(1) + '%';
+    document.getElementById('totalPersonal').innerText = personal.toFixed(1) + '%';
+    document.getElementById('totalWeightage').innerText = total.toFixed(1) + '%';
+
+    if (total !== 90) {
+        document.getElementById('totalWeightage').style.color = 'red';
+    } else {
+        document.getElementById('totalWeightage').style.color = '';
+    }
 }
 
 // Add event listener for keyup event on all weightage inputs
@@ -700,7 +727,7 @@ $(document).on('click', '#getLatestGoal', function(){
                         <div class="col-6 col-md-2 mb-3">
                           <label class="form-label text-primary">Weightage</label>
                           <div class="input-group">
-                            <input type="number" min="5" max="100" step="0.1" class="form-control" name="weightage[]" required value="${g.weightage??''}">
+                            <input type="number" min="1" max="100" step="0.1" class="form-control" name="weightage[]" required value="${g.weightage??''}">
                             <span class="input-group-text">%</span>
                           </div>
                         </div>

@@ -187,7 +187,7 @@
                                         <div class="mb-3">
                                             <label class="form-label text-primary" for="weightage">{{ __('Weightage') }}</label>
                                               <div class="input-group">
-                                                  <input type="number" min="5" max="100" step="0.1" class="form-control" name="weightage[]" value="{{ $row['weightage'] }}" required>
+                                                  <input type="number" min="1" max="100" step="0.1" class="form-control" name="weightage[]" value="{{ $row['weightage'] }}" required>
                                                   <span class="input-group-text">%</span>
                                                   <div class="invalid-feedback">
                                                       {{ __('This field is mandatory') }}
@@ -222,19 +222,24 @@
                               </div>
                           </div>
                       @endif
-                      <div class="row align-items-center">
-                          <div class="col">
-                              <input type="hidden" name="submit_type" id="submitType" value=""> <!-- Hidden input to store the button clicked -->
-                              <div class="mb-3 text-center text-md-start">
-                                  <h5>{{ __('Total Weightage') }} : <span class="font-weight-bold text-success" id="totalWeightage">{{ $totalWeightages.'%' }}</span></h5>
-                              </div>
+                      <div class="row">
+                          <div class="col-md d-md-flex align-items-center">
+                                <input type="hidden" name="submit_type" id="submitType" value=""> <!-- Hidden input to store the button clicked -->
+                                <div class="my-3 text-center text-md-start">
+                                    <h5>Total Weightage</h5>
+                                    <div>Company: <span id="totalCompany">0%</span></div>
+                                    <div>Division: <span id="totalDivision">0%</span></div>
+                                    <div>Personal: <span id="totalPersonal">0%</span></div>
+                                    <hr class="my-1">
+                                    <div><strong>Total: <span id="totalWeightage">0%</span></strong></div>
+                                </div>
                           </div>
                           <div class="col-md-auto">
                               <div class="mb-3 text-center">
                                   @if ($goal->form_status=='Draft')
                                   <a id="submitButton" name="save_draft" class="btn btn-outline-info rounded save-draft me-1" data-id="save_draft" ><i class="fas fa-save d-sm-none"></i><span class="d-sm-inline d-none">Save as </span>Draft</a>  
                                   @endif
-                                  <a href="{{ url()->previous() }}" class="btn btn-outline-secondary rounded px-3 me-1">{{ __('Cancel') }}</a>
+                                  <a href="{{ url('goals') }}" class="btn btn-outline-secondary rounded px-3 me-1">{{ __('Cancel') }}</a>
                                   <a id="submitButton" data-id="submit_form" name="submit_form" class="btn btn-primary rounded px-3 shadow"><span class="spinner-border spinner-border-sm me-1 d-none" role="status" aria-hidden="true"></span>{{ __('Submit') }}</a>
                               </div>
                           </div>

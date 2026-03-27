@@ -10,6 +10,7 @@ document.addEventListener('DOMContentLoaded', function () {
     const dropdownList = dropdownTriggerList.map(function (dropdownTriggerEl) {
         return new bootstrap.Dropdown(dropdownTriggerEl);
     });
+    updateWeightageSummary();
 });
 
 function checkEmptyFields() {
@@ -254,15 +255,41 @@ function sendBack(id, nik, name) {
 window.sendBack = sendBack;
 
 function updateWeightageSummary() {
-    let total = 0;
 
-    document.querySelectorAll('input[name="weightage[]"]').forEach(input => {
-        const val = input.value;
-        const num = parseFloat(val);
-        total += isNaN(num) ? 0 : num;
+    let total = 0;
+    let company = 0;
+    let division = 0;
+    let personal = 0;
+
+    document.querySelectorAll('.container-card .card').forEach(card => {
+
+        const weightInput = card.querySelector('input[name="weightage[]"]');
+        const clusterInput = card.querySelector('input[name="cluster[]"]');
+
+        if (!weightInput || !clusterInput) return;
+
+        const val = parseFloat(weightInput.value);
+        const weight = isNaN(val) ? 0 : val;
+
+        const cluster = clusterInput.value;
+
+        total += weight;
+
+        if (cluster === 'company') company += weight;
+        if (cluster === 'division') division += weight;
+        if (cluster === 'personal') personal += weight;
     });
 
-    document.getElementById('totalWeightage').innerText = total.toFixed(0) + '% of 90%';
+    document.getElementById('totalCompany').innerText = company.toFixed(1) + '%';
+    document.getElementById('totalDivision').innerText = division.toFixed(1) + '%';
+    document.getElementById('totalPersonal').innerText = personal.toFixed(1) + '%';
+    document.getElementById('totalWeightage').innerText = total.toFixed(1) + '%';
+
+    if (total !== 90) {
+        document.getElementById('totalWeightage').style.color = 'red';
+    } else {
+        document.getElementById('totalWeightage').style.color = '';
+    }
 }
 
 // Add event listener for keyup event on all weightage inputs
