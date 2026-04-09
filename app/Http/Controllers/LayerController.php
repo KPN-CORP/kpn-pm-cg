@@ -267,7 +267,7 @@ class LayerController extends Controller
             $message = 'Data imported successfully.';
 
             if (!empty($invalidEmployees)) {
-                $message .= ' Invalid employees: ' . implode(', ', $invalidEmployees);
+                $message .= '\nInvalid employees: ' . implode(', ', $invalidEmployees);
             }
 
             return back()->with('success', $message);
