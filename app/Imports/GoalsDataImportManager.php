@@ -48,20 +48,20 @@ class GoalsDataImportManager implements ToModel, WithValidation, WithHeadingRow
 
         try {
 
-            static $headersChecked = false;  
+            static $headersChecked = false;
 
-            if (!$headersChecked) {  
-                $headers = collect($row)->keys();  
-                $expectedHeaders = ['employee_id', 'kpi', 'target', 'uom', 'weightage', 'type'];  
+            if (!$headersChecked) {
+                $headers = collect($row)->keys();
+                $expectedHeaders = ['employee_id', 'kpi', 'target', 'uom', 'weightage', 'type'];
 
-                if (!collect($expectedHeaders)->diff($headers)->isEmpty()) {  
-                    throw ValidationException::withMessages([  
-                        'error' => 'Invalid excel format. The header must contain Employee_ID, KPI, Target, UOM, Weightage, Type, Description.',  
-                    ]);  
-                }  
+                if (!collect($expectedHeaders)->diff($headers)->isEmpty()) {
+                    throw ValidationException::withMessages([
+                        'error' => 'Invalid excel format. The header must contain Employee_ID, KPI, Target, UOM, Weightage, Type, Description.',
+                    ]);
+                }
 
-                $headersChecked = true;  
-            }  
+                $headersChecked = true;
+            }
 
             $nextLayer = ApprovalLayer::where('approver_id', $this->userId)
                                     ->where('employee_id', $row['employee_id'])->max('layer');
@@ -93,7 +93,7 @@ class GoalsDataImportManager implements ToModel, WithValidation, WithHeadingRow
 
             if ($validate->fails()) {
                 $errors = $validate->errors(); // Get validation errors
-                            
+
                 // Check if 'employee_id' has errors
                 if ($errors->has('employee_id')) {
                     $this->detailError[] = [
@@ -106,7 +106,7 @@ class GoalsDataImportManager implements ToModel, WithValidation, WithHeadingRow
                     ];
                     return;
                 }
-                
+
                 // Check if 'weightage' has errors
                 if ($errors->has('weightage')) {
                     $this->detailError[] = [
@@ -122,15 +122,15 @@ class GoalsDataImportManager implements ToModel, WithValidation, WithHeadingRow
             }
 
             $path = base_path('resources/goal.json');
-    
+
             // Check if the JSON file exists
             if (!File::exists($path)) {
                 abort(500, 'JSON file does not exist.');
             }
-        
+
             // Read the contents of the JSON file
             $options = json_decode(File::get($path), true);
-        
+
             $uomOption = $options['UoM'];
 
             $validUoms = collect($uomOption)->flatten()->all();
@@ -170,7 +170,7 @@ class GoalsDataImportManager implements ToModel, WithValidation, WithHeadingRow
                 'type' => $row['type'],
                 'custom_uom' => $custom_uom,
             ];
-            
+
         } catch (\Exception $e) {
             Log::error("Error processing row: " . $e->getMessage());
             $this->errorCount++;
@@ -198,7 +198,7 @@ class GoalsDataImportManager implements ToModel, WithValidation, WithHeadingRow
                 if (!$employeeExist) {
                     $message = "Employee ID: $employeeId not exist.";
                     Log::info($message);
-                    
+
                     $this->detailError[] = [
                         'employee_id' => $employeeId,
                         'message' => $message,
@@ -212,7 +212,7 @@ class GoalsDataImportManager implements ToModel, WithValidation, WithHeadingRow
                     DB::rollBack();
                     continue;
                 }
-                
+
                 $existsInAppraisals = Appraisal::where('employee_id', $employeeId)
                     ->where('period', $data['period'])
                     ->exists();
@@ -224,7 +224,7 @@ class GoalsDataImportManager implements ToModel, WithValidation, WithHeadingRow
                 if ($existsInGoals) {
                     $message = "Employee ID: $employeeId already has goals data.";
                     Log::info($message);
-                    
+
                     $this->detailError[] = [
                         'employee_id' => $employeeId,
                         'message' => $message,
@@ -239,11 +239,11 @@ class GoalsDataImportManager implements ToModel, WithValidation, WithHeadingRow
                     DB::rollBack();
                     continue;
                 }
-    
+
                 if ($existsInAppraisals) {
                     $message = "Employee ID: $employeeId already has appraisal data.";
                     Log::info($message);
-                    
+
                     $this->detailError[] = [
                         'employee_id' => $employeeId,
                         'message' => $message,
@@ -274,22 +274,22 @@ class GoalsDataImportManager implements ToModel, WithValidation, WithHeadingRow
                     if ($weightage < 5.0 || $weightage > 100.0) {
                         $message = "Weightage must be minimum 5% and maximum 100%.";
                         Log::info($message);
-    
+
                         $this->detailError[] = [
                             'employee_id' => $employeeId,
                             'message' => $message,
                         ];
-                        
+
                         $this->invalidEmployees[] = [
                             'employee_id' => $employeeId,
                             'message' => $message, // Separate messages
                         ];
-    
+
                         $this->errorCount++;
                         DB::rollBack();
                         continue 2; // Skip to the next employee
                     }
-                    
+
                     $totalWeightage += $weightage; // Sum the weightage
                 }
 
@@ -297,7 +297,7 @@ class GoalsDataImportManager implements ToModel, WithValidation, WithHeadingRow
                 if ($totalWeightage !== 100.0) {
                     $message = "Total weightage for Employee ID $employeeId must be 100%. Current total: $totalWeightage%";
                     Log::info($message);
-                    
+
                     $this->detailError[] = [
                         'employee_id' => $employeeId,
                         'message' => $message,
@@ -372,12 +372,12 @@ class GoalsDataImportManager implements ToModel, WithValidation, WithHeadingRow
                 DB::commit();
             } catch (\Exception $e) {
                 DB::rollBack();
-                
+
                 // Define the error message explicitly
                 $errorMessage = "Error during import for Employee ID $employeeId: " . $e->getMessage();
-                
+
                 Log::error($errorMessage);
-                
+
                 $this->errorCount++;
                 $this->detailError[] = [
                     'employee_id' => $employeeId,

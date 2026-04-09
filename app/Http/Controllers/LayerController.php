@@ -5,7 +5,7 @@ namespace App\Http\Controllers;
 use App\Exports\InvalidApprovalAppraisalImport;
 use App\Imports\ApprovalLayerAppraisalImport;
 use Illuminate\Http\Request;
-use App\Models\ApprovalLayer; 
+use App\Models\ApprovalLayer;
 use App\Models\ApprovalRequest;
 use App\Models\Approval;
 use App\Models\User;
@@ -53,7 +53,7 @@ class LayerController extends Controller
         if(!is_null($roles)){
             $restrictionData = json_decode($roles->first()->restriction, true);
         }
-        
+
         $permissionGroupCompanies = $restrictionData['group_company'] ?? [];
         $permissionCompanies = $restrictionData['contribution_level_code'] ?? [];
         $permissionLocations = $restrictionData['work_area_code'] ?? [];
@@ -72,7 +72,7 @@ class LayerController extends Controller
                 $criteria[$key] = (array) $value;
             }
         }
-        
+
         // $approvalLayers = DB::table('approval_layers as al')
         // ->select('al.employee_id', 'emp.fullname', 'emp.job_level', 'emp.contribution_level_code', 'emp.group_company', 'emp.office_area')
         // ->selectRaw("GROUP_CONCAT(al.layer ORDER BY al.layer ASC SEPARATOR '|') AS layers")
@@ -212,7 +212,7 @@ class LayerController extends Controller
                     'approver_id' => $approverId,
                     'layer' => $layer,
                     'updated_by' => $userId
-                ]);    
+                ]);
 
                 if($layer===1){
                     $cekApprovalRequest = ApprovalRequest::where('category', $this->category)
@@ -222,7 +222,7 @@ class LayerController extends Controller
 
                     if ($cekApprovalRequest->isNotEmpty()) {
                         $approvalRequestIds = $cekApprovalRequest->pluck('id');
-                
+
                         DB::transaction(function() use ($employeeId, $approverId, $approvalRequestIds) {
                             ApprovalRequest::where('category', $this->category)
                                            ->where('employee_id', $employeeId)
@@ -232,7 +232,7 @@ class LayerController extends Controller
                                                'updated_by' => null,
                                                'updated_at' => null
                                            ]);
-                
+
                             Approval::whereIn('request_id', $approvalRequestIds)
                                     ->delete();
                         });
@@ -248,128 +248,32 @@ class LayerController extends Controller
 
     public function importLayer(Request $request)
     {
+        set_time_limit(300);
         $period = $this->appService->goalActivePeriod();
 
         $request->validate([
             'excelFile' => 'required|mimes:xlsx,xls,csv'
         ]);
 
-        DB::beginTransaction();
-
         try {
 
-            // =========================
-            // 1. LOAD EXCEL
-            // =========================
-            $rows = Excel::toArray([], $request->file('excelFile'));
-            $data = $rows[0];
-
-            $employeeIds = [];
-            $newLayersFromExcel = [];
-
-            for ($i = 1; $i < count($data); $i++) {
-                
-                $employeeId = $data[$i][0] ?? null;
-                $layer1 = $data[$i][2] ?? null; // layer_approval_id_1
-                
-                if ($employeeId) {
-                    $employeeIds[] = $employeeId;
-
-                    if ($layer1) {
-                        $newLayersFromExcel[$employeeId] = $layer1;
-                    }
-                }
-            }
-
-            $employeeIds = array_unique($employeeIds);
-
-            // =========================
-            // 2. UPDATE APPROVAL REQUEST
-            // =========================
-            $requests = ApprovalRequest::whereIn('employee_id', $employeeIds)
-                ->where('category', 'Goals')
-                ->where('period', $period)
-                ->whereNull('deleted_at')
-                ->get();
-
-            foreach ($requests as $req) {
-
-                $employeeId = $req->employee_id;
-
-                $newApprover = $newLayersFromExcel[$employeeId];
-                $oldApprover = $req->current_approval_id;
-
-                if (!isset($newLayersFromExcel[$employeeId])) continue;
-
-                if ($oldApprover != $newApprover) {
-
-                    ApprovalRequest::where('id', $req->id)
-                        ->update([
-                            'current_approval_id' => $newApprover,
-                            'status' => 'Pending',
-                        ]);
-
-                    Goal::where('employee_id', $employeeId)
-                        ->where('period', $req->period)
-                        ->whereNull('deleted_at')
-                        ->update([
-                            'form_status' => 'Submitted',
-                        ]);
-
-                    Log::info('Layer Goals updated (excel)', [
-                        'employee_id' => $employeeId,
-                        'period' => $req->period,
-                        'old' => $oldApprover,
-                        'new' => $newApprover,
-                    ]);
-                }
-            }
-
-            // =========================
-            // 3. BACKUP OLD LAYER
-            // =========================
-            $oldLayers = ApprovalLayer::whereIn('employee_id', $employeeIds)->get();
-
-            foreach ($oldLayers as $layer) {
-                ApprovalLayerBackup::create([
-                    'employee_id' => $layer->employee_id,
-                    'approver_id' => $layer->approver_id,
-                    'layer' => $layer->layer,
-                    'updated_by' => $layer->updated_by,
-                    'created_at' => $layer->created_at,
-                    'updated_at' => $layer->updated_at,
-                ]);
-            }
-
-            // =========================
-            // 4. DELETE OLD
-            // =========================
-            ApprovalLayer::whereIn('employee_id', $employeeIds)->delete();
-
-            // =========================
-            // 5. IMPORT NEW
-            // =========================
             $userId = Auth::id();
-            $import = new ApprovalLayerImport($userId);
-            Excel::import($import, $request->file('excelFile'));
 
-            // =========================
-            // 6. COMMIT
-            // =========================
-            DB::commit();
+            $import = new ApprovalLayerImport($userId, $period);
+
+            Excel::import($import, $request->file('excelFile'));
 
             $invalidEmployees = $import->getInvalidEmployees();
 
             $message = 'Data imported successfully.';
+
             if (!empty($invalidEmployees)) {
-                $message .= '\nInvalid employees: ' . implode(', ', $invalidEmployees);
+                $message .= ' Invalid employees: ' . implode(', ', $invalidEmployees);
             }
 
             return back()->with('success', $message);
 
         } catch (\Throwable $e) {
-
-            DB::rollBack();
 
             Log::error('Import layer failed', [
                 'error' => $e->getMessage()
@@ -485,7 +389,7 @@ class LayerController extends Controller
         if(!is_null($roles)){
             $restrictionData = json_decode($roles->first()->restriction, true);
         }
-        
+
         $permissionGroupCompanies = $restrictionData['group_company'] ?? [];
         $permissionCompanies = $restrictionData['contribution_level_code'] ?? [];
         $permissionLocations = $restrictionData['work_area_code'] ?? [];
@@ -515,7 +419,7 @@ class LayerController extends Controller
         $query->whereNull('deleted_at'); // Add condition to check if deleted_at is null
 
         $datas = $query->get();
-        
+
         return view('pages.layers.layer-appraisal', [
             'parentLink' => $parentLink,
             'link' => $link,
@@ -531,7 +435,7 @@ class LayerController extends Controller
         if(!is_null($roles)){
             $restrictionData = json_decode($roles->first()->restriction, true);
         }
-        
+
         $permissionGroupCompanies = $restrictionData['group_company'] ?? [];
         $permissionCompanies = $restrictionData['contribution_level_code'] ?? [];
         $permissionLocations = $restrictionData['work_area_code'] ?? [];
@@ -624,14 +528,14 @@ class LayerController extends Controller
         $currentPeers = $currentLayers->where('layer_type', 'peers')->pluck('approver.employee_id')->toArray();
 
         $peersToDelete = array_diff($currentPeers, $peers);
-        
+
         // Get all subordinates (already limited by the database to a max of 3)
         $currentSub = $currentLayers->where('layer_type', 'subordinate')->pluck('approver.employee_id')->toArray();
         $subsToDelete = array_diff($currentSub, $subs);
 
         // return response()->json($peersToDelete);
 
-        
+
         $approvalRequest = ApprovalRequest::where('employee_id', $validated['employee_id'])->where('category', 'Appraisal')->where('period', $period)->first();
 
         // $firstNonNullValue = reset(array_filter($calibrators));
@@ -651,14 +555,14 @@ class LayerController extends Controller
                 $checkCalibration->save(); // Save changes to the database
             }
         }
-        
+
         if ($currentManager) {
             if($currentManager->approver_id != $manager){
                 // Check if the employee record exists
                 if ($approvalRequest) {
 
                     $appraisal = Appraisal::where('id', $approvalRequest->form_id)->where('created_by', $currentManager->approver->id)->first();
-        
+
                     if ($approvalRequest->created_by == $currentManager->approver->id) {
                         // Soft delete the record
                         $approvalRequest->delete();
@@ -666,34 +570,34 @@ class LayerController extends Controller
                         if ($appraisal) {
                             // Soft delete the record
                             $appraisal->delete();
-                            
+
                         }
-                        
+
                     } else {
                         // Update the current_approval_id if not created by the current user
                         $approvalRequest->update([
                             'current_approval_id' => $manager,
                             'status' => 'Pending'
                         ]);
-                        
+
                     }
-        
+
                     $calibration = Calibration::where('appraisal_id', $approvalRequest->form_id)->where('created_by', $currentManager->approver->id)->where('status', 'Pending')->first();
-        
+
                     if ($calibration) {
                         // Soft delete the record
                         $calibration->delete();
-                        
+
                     }
-        
+
                     $contributor = AppraisalContributor::where('appraisal_id', $approvalRequest->form_id)->where('contributor_id', $currentManager->approver_id)->first();
-        
+
                     if ($contributor) {
                         // Soft delete the record
                         $contributor->delete();
-                        
+
                     }
-        
+
                 }
             }
         }
@@ -713,14 +617,14 @@ class LayerController extends Controller
                             ->where('contributor_id', $peerId)
                             ->where('contributor_type', 'peers')
                             ->first();
-                
+
                         // If a record is found, perform a soft delete
                         if ($contributor) {
                             $contributor->delete();
                         }
                     }
                 }
-        
+
                 if (!empty($subsToDelete)) {
                     // Iterate through each peer that needs to be deleted
                     foreach ($subsToDelete as $subId) {
@@ -729,7 +633,7 @@ class LayerController extends Controller
                             ->where('contributor_id', $subId)
                             ->where('contributor_type', 'subordinate')
                             ->first();
-                
+
                         // If a record is found, perform a soft delete
                         if ($contributor) {
                             $contributor->delete();
@@ -739,7 +643,7 @@ class LayerController extends Controller
             }
         }
 
-        
+
         // Delete existing records for the employee_id
         ApprovalLayerAppraisal::where('employee_id', $validated['employee_id'])->delete();
 
@@ -825,24 +729,24 @@ class LayerController extends Controller
         try {
             // Get the ID of the currently authenticated user
             $userId = Auth::id();
-    
+
             // Initialize the import process with the user ID and period
             $import = new ApprovalLayerAppraisalImport($userId, $period);
-    
+
             // Perform the import
             Excel::import($import, $request->file('excelFile'));
-    
+
             // Check for any invalid employees
             $invalidEmployees = $import->getInvalidEmployees();
             $message = 'Data imported successfully.';
-    
+
             if (!empty($invalidEmployees)) {
                 session()->put('invalid_employees', $invalidEmployees);
                 $message .= ' With some errors. <a href="' . route('export.invalid.layer.appraisal') . '">Click here to download the list of errors.</a>';
             }
-    
+
             return redirect()->back()->with('success', $message);
-    
+
         } catch (ValidationException $e) {
             // Catch the validation exception and redirect back with a custom error message
             return redirect()->back()->with('error', $e->errors()['error'][0]);
