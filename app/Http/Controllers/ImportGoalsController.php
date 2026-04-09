@@ -31,7 +31,7 @@ class ImportGoalsController extends Controller
         //                     ->orderBy('created_at')
         //                     ->first();
         $goals_imports = GoalsImportTransaction::where('submit_by',$userId)->orderBy('created_at', 'desc')->get();
-                            
+
         return view('pages.imports.import-goals', [
             'link' => $link,
             'parentLink' => $parentLink,
@@ -47,7 +47,7 @@ class ImportGoalsController extends Controller
             'file' => 'required|file|mimes:xlsx,csv,xls',
             'mode' => 'required|in:full,company',
         ]);
-        
+
         // Pastikan file terupload
         if ($request->hasFile('file')) {
             $filePath = $request->file('file')->store($path='public/uploads');
