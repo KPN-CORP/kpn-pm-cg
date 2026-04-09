@@ -248,7 +248,6 @@ class LayerController extends Controller
 
     public function importLayer(Request $request)
     {
-        set_time_limit(300);
         $period = $this->appService->goalActivePeriod();
 
         $request->validate([
