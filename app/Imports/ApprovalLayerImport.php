@@ -4,53 +4,84 @@ namespace App\Imports;
 
 use App\Models\ApprovalLayer;
 use App\Models\Employee;
+// removed ShouldQueue to allow synchronous imports when needed
 use Illuminate\Support\Facades\Log;
-use Maatwebsite\Excel\Concerns\ToModel;
+use Illuminate\Support\Facades\Cache;
+use Maatwebsite\Excel\Concerns\ToCollection;
 use Maatwebsite\Excel\Concerns\WithHeadingRow;
+use Maatwebsite\Excel\Concerns\WithChunkReading;
+use Maatwebsite\Excel\Concerns\WithBatchInserts;
+use Illuminate\Support\Collection;
 
-class ApprovalLayerImport implements ToModel, WithHeadingRow
+class ApprovalLayerImport implements ToCollection, WithHeadingRow, WithChunkReading, WithBatchInserts
 {
     protected $userId;
-    protected $invalidEmployees = [];
+    protected $period;
 
-    public function __construct($userId)
+    protected $invalidEmployees = [];
+    protected $employeeIds = [];
+    protected $layer1Map = [];
+
+    protected $employeeCache = [];
+    protected $cacheKey;
+
+    public function __construct($userId, $period)
     {
         $this->userId = $userId;
+        $this->period = $period;
+
+        // preload employee (anti N+1)
+        $this->employeeCache = Employee::pluck('employee_id')->toArray();
+
+        // set cache key for storing incremental results (useful for queued imports)
+        $this->cacheKey = "approval_layer_import_{$this->userId}_{$this->period}";
+
+        // prevent PHP timeout for large imports
+        if (function_exists('set_time_limit')) {
+            @set_time_limit(0);
+        }
     }
-    /**
-    * @param array $row
-    *
-    * @return \Illuminate\Database\Eloquent\Model|null
-    */
 
-    public function model(array $row)
+    public function collection(Collection $rows)
     {
-        $employeeId = $row['employee_id'];
+        $insertData = [];
 
-        if (!$employeeId) return null;
+        // load any existing cached results so we can merge per-chunk (keeps memory bounded)
+        $cached = Cache::get($this->cacheKey, [
+            'employee_ids' => [],
+            'layer1_map' => [],
+            'invalid' => [],
+        ]);
 
-        $layers = [];
+        foreach ($rows as $row) {
+            $employeeId = $row['employee_id'] ?? null;
 
-        // max 5 layer
-        for ($i = 1; $i <= 5; $i++) {
+            if (!$employeeId) continue;
 
-            $approverId = $row["layer_approval_id_$i"] ?? null;
+            $cached['employee_ids'][] = $employeeId;
 
-            if (!Employee::where('employee_id', $approverId)->exists()) {
-                $this->invalidEmployees[] = $employeeId;
-                continue;
-            }
+            $layers = [];
+            $approverSeen = [];
 
-            $unique = collect($layers)->unique('approver_id');
+            for ($i = 1; $i <= 5; $i++) {
+                $approverId = $row["layer_approval_id_$i"] ?? null;
+                if (!$approverId) continue;
 
-            if ($unique->count() !== count($layers)) {
-                $this->invalidEmployees[] = $employeeId;
-                return null;
-            }
+                // validasi employee
+                if (!in_array($approverId, $this->employeeCache)) {
+                    $cached['invalid'][] = $employeeId;
+                    continue;
+                }
 
-            if ($approverId) {
+                // validasi duplicate layer
+                if (in_array($approverId, $approverSeen, true)) {
+                    $cached['invalid'][] = $employeeId;
+                    continue;
+                }
 
-                $layers[] = [
+                $approverSeen[] = $approverId;
+
+                $insertData[] = [
                     'employee_id' => $employeeId,
                     'approver_id' => $approverId,
                     'layer' => $i,
@@ -58,26 +89,63 @@ class ApprovalLayerImport implements ToModel, WithHeadingRow
                     'created_at' => now(),
                     'updated_at' => now(),
                 ];
+
+                // ambil layer 1 untuk update ApprovalRequest
+                if ($i == 1) {
+                    $cached['layer1_map'][$employeeId] = $approverId;
+                }
+            }
+
+            // insert per-row batches handled after loop
+        }
+
+        // batch insert for this chunk
+        if (!empty($insertData)) {
+            try {
+                ApprovalLayer::insert($insertData);
+            } catch (\Throwable $e) {
+                Log::error('ApprovalLayerImport chunk insert failed', ['error' => $e->getMessage()]);
             }
         }
 
-        // VALIDASI max layer
-        if (count($layers) > 5) {
-            $this->invalidEmployees[] = $employeeId;
-            return null;
-        }
+        // dedupe cached values and persist for later retrieval
+        $cached['employee_ids'] = array_values(array_unique($cached['employee_ids']));
+        $cached['invalid'] = array_values(array_unique($cached['invalid']));
 
-        // INSERT MULTIPLE
-        if (!empty($layers)) {
-            ApprovalLayer::insert($layers);
+        Cache::put($this->cacheKey, $cached, now()->addMinutes(30));
 
-        }
-
-        return null;
+        // also keep in-memory copies for immediate synchronous reads
+        $this->employeeIds = array_merge($this->employeeIds, $cached['employee_ids']);
+        $this->invalidEmployees = array_merge($this->invalidEmployees, $cached['invalid']);
+        $this->layer1Map = array_merge($this->layer1Map, $cached['layer1_map']);
     }
+
+    public function chunkSize(): int
+    {
+        return 200; // lower chunk size to reduce memory usage
+    }
+
+    public function batchSize(): int
+    {
+        return 200;
+    }
+
+    // =========================
+    // GETTER
+    // =========================
 
     public function getInvalidEmployees()
     {
         return $this->invalidEmployees;
+    }
+
+    public function getEmployeeIds()
+    {
+        return array_unique($this->employeeIds);
+    }
+
+    public function getLayer1Map()
+    {
+        return $this->layer1Map;
     }
 }

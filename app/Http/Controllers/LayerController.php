@@ -14,6 +14,7 @@ use Illuminate\Support\Facades\DB;
 use RealRashid\SweetAlert\Facades\Alert;
 use Maatwebsite\Excel\Facades\Excel;
 use App\Imports\ApprovalLayerImport;
+use App\Jobs\ProcessApprovalLayerImport;
 use App\Models\Appraisal;
 use App\Models\AppraisalContributor;
 use App\Models\ApprovalLayerAppraisal;
@@ -249,120 +250,115 @@ class LayerController extends Controller
     public function importLayer(Request $request)
     {
         $period = $this->appService->goalActivePeriod();
-
+        $userId = Auth::id();
         $request->validate([
             'excelFile' => 'required|mimes:xlsx,xls,csv'
         ]);
 
+        // If queue driver is not sync, store file and dispatch job, then return immediately.
+        if (config('queue.default') !== 'sync') {
+            $path = $request->file('excelFile')->store('imports');
+
+            // dispatch the job (fully-qualified to avoid namespace issues)
+            \App\Jobs\ProcessApprovalLayerImport::dispatch($userId, $period, $path);
+
+            return back()->with('success', 'Import queued and will be processed in background.');
+        }
+
+        // Otherwise run synchronous import and perform DB operations
         DB::beginTransaction();
 
         try {
-
             // =========================
-            // 1. LOAD EXCEL
+            // 1. IMPORT (SYNC)
             // =========================
-            $rows = Excel::toArray([], $request->file('excelFile'));
-            $data = $rows[0];
-
-            $employeeIds = [];
-            $newLayersFromExcel = [];
-
-            for ($i = 1; $i < count($data); $i++) {
-                
-                $employeeId = $data[$i][0] ?? null;
-                $layer1 = $data[$i][2] ?? null; // layer_approval_id_1
-                
-                if ($employeeId) {
-                    $employeeIds[] = $employeeId;
-
-                    if ($layer1) {
-                        $newLayersFromExcel[$employeeId] = $layer1;
-                    }
-                }
-            }
-
-            $employeeIds = array_unique($employeeIds);
-
-            // =========================
-            // 2. UPDATE APPROVAL REQUEST
-            // =========================
-            $requests = ApprovalRequest::whereIn('employee_id', $employeeIds)
-                ->where('category', 'Goals')
-                ->where('period', $period)
-                ->whereNull('deleted_at')
-                ->get();
-
-            foreach ($requests as $req) {
-
-                $employeeId = $req->employee_id;
-
-                $newApprover = $newLayersFromExcel[$employeeId];
-                $oldApprover = $req->current_approval_id;
-
-                if (!isset($newLayersFromExcel[$employeeId])) continue;
-
-                if ($oldApprover != $newApprover) {
-
-                    ApprovalRequest::where('id', $req->id)
-                        ->update([
-                            'current_approval_id' => $newApprover,
-                            'status' => 'Pending',
-                        ]);
-
-                    Goal::where('employee_id', $employeeId)
-                        ->where('period', $req->period)
-                        ->whereNull('deleted_at')
-                        ->update([
-                            'form_status' => 'Submitted',
-                        ]);
-
-                    Log::info('Layer Goals updated (excel)', [
-                        'employee_id' => $employeeId,
-                        'period' => $req->period,
-                        'old' => $oldApprover,
-                        'new' => $newApprover,
-                    ]);
-                }
-            }
-
-            // =========================
-            // 3. BACKUP OLD LAYER
-            // =========================
-            $oldLayers = ApprovalLayer::whereIn('employee_id', $employeeIds)->get();
-
-            foreach ($oldLayers as $layer) {
-                ApprovalLayerBackup::create([
-                    'employee_id' => $layer->employee_id,
-                    'approver_id' => $layer->approver_id,
-                    'layer' => $layer->layer,
-                    'updated_by' => $layer->updated_by,
-                    'created_at' => $layer->created_at,
-                    'updated_at' => $layer->updated_at,
-                ]);
-            }
-
-            // =========================
-            // 4. DELETE OLD
-            // =========================
-            ApprovalLayer::whereIn('employee_id', $employeeIds)->delete();
-
-            // =========================
-            // 5. IMPORT NEW
-            // =========================
-            $userId = Auth::id();
-            $import = new ApprovalLayerImport($userId);
+            $import = new ApprovalLayerImport($userId, $period);
             Excel::import($import, $request->file('excelFile'));
 
             // =========================
-            // 6. COMMIT
+            // 2. GET DATA HASIL PARSING
             // =========================
+            $employeeIds = $import->getEmployeeIds();
+            $newLayers = $import->getLayer1Map();
+
+            if (empty($employeeIds)) {
+                DB::rollBack();
+                return back()->withErrors(['error' => 'No valid data found']);
+            }
+
+            // =========================
+            // 3. UPDATE APPROVAL REQUEST (CHUNK)
+            // =========================
+            ApprovalRequest::whereIn('employee_id', $employeeIds)
+                ->where('category', 'Goals')
+                ->where('period', $period)
+                ->whereNull('deleted_at')
+                ->chunk(500, function ($requests) use ($newLayers) {
+
+                    foreach ($requests as $req) {
+
+                        $employeeId = $req->employee_id;
+
+                        if (!isset($newLayers[$employeeId])) continue;
+
+                        $newApprover = $newLayers[$employeeId];
+                        $oldApprover = $req->current_approval_id;
+
+                        if ($oldApprover != $newApprover) {
+
+                            ApprovalRequest::where('id', $req->id)->update([
+                                'current_approval_id' => $newApprover,
+                                'status' => 'Pending',
+                            ]);
+
+                            Goal::where('employee_id', $employeeId)
+                                ->where('period', $req->period)
+                                ->whereNull('deleted_at')
+                                ->update([
+                                    'form_status' => 'Submitted',
+                                ]);
+                        }
+                    }
+                });
+
+            // =========================
+            // 4. BACKUP OLD LAYER (CHUNK)
+            // =========================
+            ApprovalLayer::whereIn('employee_id', $employeeIds)
+                ->chunk(500, function ($layers) {
+
+                    $insert = [];
+
+                    foreach ($layers as $layer) {
+                        $insert[] = [
+                            'employee_id' => $layer->employee_id,
+                            'approver_id' => $layer->approver_id,
+                            'layer' => $layer->layer,
+                            'updated_by' => $layer->updated_by,
+                            'created_at' => $layer->created_at,
+                            'updated_at' => $layer->updated_at,
+                        ];
+                    }
+
+                    ApprovalLayerBackup::insert($insert);
+                });
+
+            // =========================
+            // 5. DELETE OLD
+            // =========================
+            ApprovalLayer::whereIn('employee_id', $employeeIds)->delete();
+
             DB::commit();
 
+            // =========================
+            // 6. RESULT MESSAGE
+            // =========================
             $invalidEmployees = $import->getInvalidEmployees();
 
-            $message = 'Data imported successfully.';
+            $message = 'Data imported successfully';
+
             if (!empty($invalidEmployees)) {
-                $message .= '\nInvalid employees: ' . implode(', ', $invalidEmployees);
+                $message .= '\nInvalid employees: ' . implode(', ', array_unique($invalidEmployees));
             }
 
             return back()->with('success', $message);

@@ -243,7 +243,9 @@ return [
         | Drivers: memory|illuminate|batch
         |
         */
-        'driver'      => 'memory',
+        // Use the "batch" driver to persist cell cache to disk when memory limit
+        // is reached. This reduces peak memory usage for large imports.
+        'driver'      => 'batch',
 
         /*
         |--------------------------------------------------------------------------
@@ -256,7 +258,9 @@ return [
         |
         */
         'batch'       => [
-            'memory_limit' => 60000,
+            // Increase batch memory limit (in KB) before persisting to store.
+            // Default 60000 may be low for large XLSX files; raise to 200000 (~200MB).
+            'memory_limit' => 200000,
         ],
 
         /*
