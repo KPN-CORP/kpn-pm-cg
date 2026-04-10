@@ -1472,6 +1472,7 @@ class AppService
                 $query->where('form_status', 'Submitted');
             })
             ->whereHas('employee', function ($query) {
+                $query->getModel()->setConnection('kpncorp');
                 $query->whereNull('deleted_at');
             })
             ->get();
