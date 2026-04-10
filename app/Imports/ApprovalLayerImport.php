@@ -3,83 +3,76 @@
 namespace App\Imports;
 
 use App\Models\ApprovalLayer;
+use App\Models\ApprovalLayerBackup;
+use App\Models\ApprovalRequest;
 use App\Models\Employee;
-// removed ShouldQueue to allow synchronous imports when needed
+use App\Models\Goal;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Cache;
-use Maatwebsite\Excel\Concerns\ToCollection;
-use Maatwebsite\Excel\Concerns\WithHeadingRow;
-use Maatwebsite\Excel\Concerns\WithChunkReading;
-use Maatwebsite\Excel\Concerns\WithBatchInserts;
-use Illuminate\Support\Collection;
+use Maatwebsite\Excel\Concerns\{
+    ToModel,
+    WithHeadingRow,
+    WithChunkReading,
+    WithBatchInserts,
+    WithColumnLimit
+};
 
-class ApprovalLayerImport implements ToCollection, WithHeadingRow, WithChunkReading, WithBatchInserts
+class ApprovalLayerImport implements
+    ToModel,
+    WithHeadingRow,
+    WithChunkReading,
+    WithBatchInserts,
+    WithColumnLimit
 {
     protected $userId;
     protected $period;
-
     protected $invalidEmployees = [];
     protected $employeeIds = [];
-    protected $layer1Map = [];
-
-    protected $employeeCache = [];
-    protected $cacheKey;
 
     public function __construct($userId, $period)
     {
         $this->userId = $userId;
         $this->period = $period;
 
-        // preload employee (anti N+1)
-        $this->employeeCache = Employee::pluck('employee_id')->toArray();
-
-        // set cache key for storing incremental results (useful for queued imports)
-        $this->cacheKey = "approval_layer_import_{$this->userId}_{$this->period}";
-
-        // prevent PHP timeout for large imports
-        if (function_exists('set_time_limit')) {
-            @set_time_limit(0);
-        }
+        // cache employee
+        $this->employeeIds = Employee::pluck('employee_id')->toArray();
     }
 
-    public function collection(Collection $rows)
+    public function chunkSize(): int
     {
-        $insertData = [];
+        return 100;
+    }
 
-        // load any existing cached results so we can merge per-chunk (keeps memory bounded)
-        $cached = Cache::get($this->cacheKey, [
-            'employee_ids' => [],
-            'layer1_map' => [],
-            'invalid' => [],
-        ]);
+    public function batchSize(): int
+    {
+        return 100;
+    }
 
-        foreach ($rows as $row) {
-            $employeeId = $row['employee_id'] ?? null;
+    public function endColumn(): string
+    {
+        return 'Z';
+    }
 
-            if (!$employeeId) continue;
+    public function model(array $row)
+    {
+        $employeeId = $row['employee_id'] ?? null;
+        if (!$employeeId) return null;
 
-            $cached['employee_ids'][] = $employeeId;
+        DB::beginTransaction();
+
+        try {
 
             $layers = [];
-            $approverSeen = [];
 
             for ($i = 1; $i <= 5; $i++) {
                 $approverId = $row["layer_approval_id_$i"] ?? null;
+
                 if (!$approverId) continue;
 
-                // validasi employee
-                if (!in_array($approverId, $this->employeeCache)) {
-                    $cached['invalid'][] = $employeeId;
+                if (!in_array($approverId, $this->employeeIds)) {
+                    $this->invalidEmployees[] = $employeeId;
                     continue;
                 }
-
-                // validasi duplicate layer
-                if (in_array($approverId, $approverSeen, true)) {
-                    $cached['invalid'][] = $employeeId;
-                    continue;
-                }
-
-                $approverSeen[] = $approverId;
 
                 $insertData[] = [
                     'employee_id' => $employeeId,
@@ -96,23 +89,75 @@ class ApprovalLayerImport implements ToCollection, WithHeadingRow, WithChunkRead
                 }
             }
 
-            // insert per-row batches handled after loop
-        }
-
-        // batch insert for this chunk
-        if (!empty($insertData)) {
-            try {
-                ApprovalLayer::insert($insertData);
-            } catch (\Throwable $e) {
-                Log::error('ApprovalLayerImport chunk insert failed', ['error' => $e->getMessage()]);
+            // unique check
+            if (collect($layers)->unique('approver_id')->count() !== count($layers)) {
+                $this->invalidEmployees[] = $employeeId;
+                DB::rollBack();
+                return null;
             }
+
+            // backup
+            $oldLayers = ApprovalLayer::where('employee_id', $employeeId)->get();
+            foreach ($oldLayers as $layer) {
+                ApprovalLayerBackup::create([
+                    'employee_id' => $layer->employee_id,
+                    'approver_id' => $layer->approver_id,
+                    'layer' => $layer->layer,
+                    'updated_by' => $layer->updated_by,
+                    'created_at' => $layer->created_at,
+                    'updated_at' => $layer->updated_at,
+                ]);
+            }
+
+            // delete old
+            ApprovalLayer::where('employee_id', $employeeId)->delete();
+
+            // insert new
+            if (!empty($layers)) {
+                ApprovalLayer::insert($layers);
+            }
+
+            // update request + goal
+            $newApprover = $row['layer_approval_id_1'] ?? null;
+
+            if ($newApprover) {
+                $requests = ApprovalRequest::where('employee_id', $employeeId)
+                    ->where('category', 'Goals')
+                    ->where('period', $this->period)
+                    ->whereNull('deleted_at')
+                    ->get();
+
+                foreach ($requests as $req) {
+
+                    if ($req->current_approval_id != $newApprover) {
+
+                        $req->update([
+                            'current_approval_id' => $newApprover,
+                            'status' => 'Pending',
+                        ]);
+
+                        Goal::where('employee_id', $employeeId)
+                            ->where('period', $this->period)
+                            ->whereNull('deleted_at')
+                            ->update([
+                                'form_status' => 'Submitted',
+                            ]);
+                    }
+                }
+            }
+
+            DB::commit();
+
+        } catch (\Throwable $e) {
+            DB::rollBack();
+
+            Log::error('Import failed', [
+                'employee_id' => $employeeId,
+                'error' => $e->getMessage()
+            ]);
+
+            $this->invalidEmployees[] = $employeeId;
         }
-
-        // dedupe cached values and persist for later retrieval
-        $cached['employee_ids'] = array_values(array_unique($cached['employee_ids']));
-        $cached['invalid'] = array_values(array_unique($cached['invalid']));
-
-        Cache::put($this->cacheKey, $cached, now()->addMinutes(30));
 
         // also keep in-memory copies for immediate synchronous reads
         $this->employeeIds = array_merge($this->employeeIds, $cached['employee_ids']);
@@ -136,7 +181,7 @@ class ApprovalLayerImport implements ToCollection, WithHeadingRow, WithChunkRead
 
     public function getInvalidEmployees()
     {
-        return $this->invalidEmployees;
+        return array_unique($this->invalidEmployees);
     }
 
     public function getEmployeeIds()
