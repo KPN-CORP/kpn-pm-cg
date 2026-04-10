@@ -404,10 +404,8 @@ function validate(submitType) {
         sum += isNaN(num) ? 0 : num; // Parse input value to integer, default to 0 if NaN
     }
 
-        console.log(isClusterForm,sum,submitType);
-
     // Skip total weightage validation for cluster forms
-    if (!isClusterForm && sum != 90 && submitType === "submit_form") {
+    if (sum != 90 && submitType === "submit_form") {
         Swal.fire({
             title: "Submit failed",
             html: `Your current weightage is ${sum}%, <br>Please adjust to reach the total weightage of 90%`,
