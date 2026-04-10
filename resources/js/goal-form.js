@@ -392,6 +392,8 @@ function checkEmptyFields(submitType) {
 }
 
 function validate(submitType) {
+    console.log('weightage of 90%');
+    
     // Check if this is a cluster form (has containers with id ending in "-goals")
     var isClusterForm = document.querySelector('[id$="-goals"]') !== null;
 

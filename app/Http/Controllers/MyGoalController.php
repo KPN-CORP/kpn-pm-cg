@@ -421,7 +421,7 @@ class MyGoalController extends Controller
                 'kpi.*' => 'required|string',
                 'target.*' => 'required|string',
                 'uom.*' => 'required|string',
-                'weightage.*' => 'required|numeric|min:1|max:100',
+                'weightage.*' => 'required|numeric|min:1|max:90',
                 'type.*' => 'required|string',
             ];
 
@@ -590,7 +590,7 @@ class MyGoalController extends Controller
                 'kpi.*' => 'required|string',
                 'target.*' => 'required|numeric',
                 'uom.*' => 'required|string',
-                'weightage.*' => 'required|numeric|min:1|max:100',
+                'weightage.*' => 'required|numeric|min:1|max:90',
                 'type.*' => 'required|string',
             ];
 
