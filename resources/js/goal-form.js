@@ -392,7 +392,6 @@ function checkEmptyFields(submitType) {
 }
 
 function validate(submitType) {
-    console.log('weightage of 90%');
     
     // Check if this is a cluster form (has containers with id ending in "-goals")
     var isClusterForm = document.querySelector('[id$="-goals"]') !== null;
@@ -404,6 +403,8 @@ function validate(submitType) {
         const num = parseFloat(weight[i].value);
         sum += isNaN(num) ? 0 : num; // Parse input value to integer, default to 0 if NaN
     }
+
+        console.log(isClusterForm,sum,submitType);
 
     // Skip total weightage validation for cluster forms
     if (!isClusterForm && sum != 90 && submitType === "submit_form") {
