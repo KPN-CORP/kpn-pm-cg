@@ -146,7 +146,7 @@ class KPICompanyClusterImport implements ToModel, WithHeadingRow, WithValidation
                     $goal->period = $data['period'];
                     $goal->save();
 
-                    $empAppraisalId = EmployeeAppraisal::where('employee_id', $employeeId)->value('id');
+                    $empAppraisalId = Employee::where('employee_id', $employeeId)->value('id');
 
                     $firstLayer = ApprovalLayer::where('employee_id', $employeeId)
                         ->where('layer', 1)
