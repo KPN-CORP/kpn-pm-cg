@@ -1471,6 +1471,9 @@ class AppService
             ->whereHas('goal', function ($query) {
                 $query->where('form_status', 'Submitted');
             })
+            ->whereHas('employee', function ($query) {
+                $query->whereNull('deleted_at');
+            })
             ->get();
 
         $isApprover = $tasks->count();

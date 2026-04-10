@@ -65,10 +65,6 @@ class ApprovalRequest extends Model
     }
     public function employee()
     {
-        return $this->belongsTo(Employee::class, 'employee_id', 'employee_id');
-    }
-    public function employeeAppraisal()
-    {
         return $this->belongsTo(EmployeeAppraisal::class, 'employee_id', 'employee_id');
     }
 
