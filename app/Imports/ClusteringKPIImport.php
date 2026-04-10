@@ -212,7 +212,7 @@ class ClusteringKPIImport implements
                         throw new \Exception("Total weightage must be 90%");
                     }
 
-                    $empAppraisalId = EmployeeAppraisal::where('employee_id', $employeeId)->value('id');
+                    $empAppraisalId = Employee::where('employee_id', $employeeId)->value('id');
 
                     $goal = new Goal();
                     $goal->id = Str::uuid();
