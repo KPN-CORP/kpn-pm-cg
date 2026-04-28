@@ -7,7 +7,7 @@ import bootstrap from "bootstrap/dist/js/bootstrap.bundle.min.js";
 import { GoogleGenAI } from "@google/genai";
 
 import select2 from "select2"
-select2(); 
+select2();
 
 document.addEventListener('DOMContentLoaded', function () {
     // Initialize all popovers on the page
@@ -21,7 +21,7 @@ document.addEventListener('DOMContentLoaded', function () {
 function initSelect2($element) {
     $element.select2({
         theme: "bootstrap-5",
-        width: '100%' 
+        width: '100%'
     });
 }
 
@@ -105,15 +105,15 @@ document.addEventListener("DOMContentLoaded", function () {
     var count = $("#count").val();
     // var index = $("#count").val();
     var wrapper = $(".container-card"); // Fields wrapper
-    
+
     function addField(val) {
         var max_fields = val === "input" ? 9 : 10 - count; // maximum input boxes allowed
-        
+
         var currentCount = wrapper.children(".card").length; // jumlah card saat ini
         var index = currentCount + 1;                        // index card baru = last + 1
 
         // batas total card: input = 9, normal = 10
-        var maxTotal = (val === "input") ? 9 : 10;        
+        var maxTotal = (val === "input") ? 9 : 10;
 
         if (currentCount <= maxTotal) {
             // max input box allowed
@@ -392,13 +392,13 @@ function checkEmptyFields(submitType) {
 }
 
 function validate(submitType) {
-    
+
     // Check if this is a cluster form (has containers with id ending in "-goals")
     var isClusterForm = document.querySelector('[id$="-goals"]') !== null;
 
     var weight = document.querySelectorAll('input[name="weightage[]"]');
     var sum = 0;
-    
+
     for (var i = 0; i < weight.length; i++) {
         const num = parseFloat(weight[i].value);
         sum += isNaN(num) ? 0 : num; // Parse input value to integer, default to 0 if NaN
@@ -447,6 +447,61 @@ function validateWeightage(submitType) {
     return true; // All weightages are valid
 }
 
+function validateDesignationWeightage(submitType) {
+    // Get all input elements with name="weightage[]"
+    //
+    // <span id="designationWeightageType" style="display:none;overflow:hidden">{{ $designationWeightage->weightage_type }}</span>
+    // <span id="companyDesignation" style="display:none;overflow:hidden">{{ $designationWeightage->company_kpi }}</span>
+    // <span id="divisionDesignation" style="display:none;overflow:hidden">{{ $designationWeightage->dept_kpi }}</span>
+    // <span id="personalDesignation" style="display:none;overflow:hidden">{{ $designationWeightage->dev_kpi }}</span>
+    //
+    // <div>Company: <span id="totalCompany">0%</span></div>
+    // <div>Division: <span id="totalDivision">0%</span></div>
+    // <div>Personal: <span id="totalPersonal">0%</span></div>
+    //
+
+    var companyDesignationInpt = document.getElementsByID("companyDesignationInpt");
+    var divisionDesignationInpt = document.getElementsByID("divisionDesignationInpt");
+    var personalDesignationInpt = document.getElementsByID("personalDesignationInpt");
+    var totalCompanyInpt = document.getElementsByID("totalCompanyInpt");
+    var totalDivisionInpt = document.getElementsByID("totalDivisionInpt");
+    var totalPersonalInpt = document.getElementsByID("totalPersonalInpt");
+
+    var companyDesignationVal = companyDesignationInpt ? companyDesignationInpt.value : 0;
+    var divisionDesignationVal = divisionDesignationInpt ? divisionDesignationInpt.value : 0;
+    var personalDesignationVal = personalDesignationInpt ? personalDesignationInpt.value : 0;
+    var totalCompanyVal = totalCompanyInpt ? totalCompanyInpt.value : 0;
+    var totalDivisionVal = totalDivisionInpt ? totalDivisionInpt.value : 0;
+    var totalPersonalVal = totalPersonalInpt ? totalPersonalInpt.value : 0;
+
+    return true;
+
+    // var weightageInputs = document.getElementsByName("weightage[]");
+
+    // // Iterate through each input element
+    // for (var i = 0; i < weightageInputs.length; i++) {
+    //     var input = weightageInputs[i];
+
+    //     // Get the value of the input (convert to number)
+    //     var value = parseFloat(input.value);
+
+    //     // Check if value is below 5%
+    //     if (value < 1 && submitType === "submit_form") {
+    //         // Display alert message
+    //         Swal.fire({
+    //             title: "The weightage cannot lower than 1%",
+    //             confirmButtonColor: "#3e60d5",
+    //             icon: "error",
+    //             // If confirmed, proceed with form submission
+    //         });
+    //         weightageInputs.focus();
+    //         return false; // Prevent form submission
+    //     }
+    // }
+
+    // return true; // All weightages are valid
+}
+
 $(document).on('click', '#submitButton', function (event) {
     event.preventDefault();
 
@@ -459,6 +514,9 @@ $(document).on('click', '#submitButton', function (event) {
         return false; // Stop submission if required fields are empty
     }
     if (!validateWeightage(submitType)) {
+        return false; // Stop submission if required fields are empty
+    }
+    if (!validateDesignationWeightage(submitType)) {
         return false; // Stop submission if required fields are empty
     }
     if (!validate(submitType)) {
@@ -653,23 +711,23 @@ $(document).on('click', '#getLatestGoal', function(){
     fetch(`/goals/latest/${employeeId}`)
         .then(r => r.json())
         .then(async res => { // Add async here to use await
-            if(!res.success){ 
-                Swal.fire("Data not found","Sorry, I cannot find your latest goals","info"); 
+            if(!res.success){
+                Swal.fire("Data not found","Sorry, I cannot find your latest goals","info");
                 return;
             }
 
             let goals = res.data;
-            if(typeof goals === "string"){ 
-                try{ goals = JSON.parse(goals); }catch(e){ goals = []; } 
+            if(typeof goals === "string"){
+                try{ goals = JSON.parse(goals); }catch(e){ goals = []; }
             }
 
             if(!Array.isArray(goals) || goals.length===0){
-                Swal.fire("Data not found","","info"); 
+                Swal.fire("Data not found","","info");
                 return;
             }
 
-            const wrapper = $(".container-card"); 
-            wrapper.html(''); 
+            const wrapper = $(".container-card");
+            wrapper.html('');
             $("#count").val(goals.length);
 
             // Use Promise.all to optimize all texts concurrently
@@ -769,40 +827,40 @@ const GEMINI_API_KEY = import.meta.env.VITE_GOOGLE_GENAI_API_KEY;
 const GEMINI_API_ENDPOINT = import.meta.env.VITE_GOOGLE_GENAI_API_ENDPOINT;
 
 async function optimizeText(kpi, text, period) {
-    if (!text) return '';    
+    if (!text) return '';
 
     // Validate if the necessary variables are present
     if (!GEMINI_API_KEY || !GEMINI_API_ENDPOINT) {
         console.error("API Key or Endpoint is not configured.");
         return text;
     }
-    
-    
+
+
     const genAI = new GoogleGenAI({
         apiKey: GEMINI_API_KEY,
         baseUrl: GEMINI_API_ENDPOINT,
-    });    
+    });
 
-    const promptKpi = `Improve this KPI text: "${text}". Make it concise, clear, and impactful. 
-    If the text contains any year, always replace it with ${period}. 
-    If no year exists, do not add one. 
-    Adjust to the language used in the original text. 
-    Do not add extra symbols, punctuation, or formatting beyond what is needed for clarity. 
+    const promptKpi = `Improve this KPI text: "${text}". Make it concise, clear, and impactful.
+    If the text contains any year, always replace it with ${period}.
+    If no year exists, do not add one.
+    Adjust to the language used in the original text.
+    Do not add extra symbols, punctuation, or formatting beyond what is needed for clarity.
     Maintain a professional tone and return only the improved text without any introduction or explanation.`;
 
-    const promptDesc = `Improve this description text: "${text}". The description is for a goal with the KPI "${kpi}". 
-    Make it concise, clear, and easy to understand. 
-    If the text contains any year, always replace it with ${period}. 
-    If no year exists, do not add one. 
-    Adjust to the language used in the original text. 
-    Do not add extra symbols, punctuation, or formatting beyond what is needed for clarity. 
+    const promptDesc = `Improve this description text: "${text}". The description is for a goal with the KPI "${kpi}".
+    Make it concise, clear, and easy to understand.
+    If the text contains any year, always replace it with ${period}.
+    If no year exists, do not add one.
+    Adjust to the language used in the original text.
+    Do not add extra symbols, punctuation, or formatting beyond what is needed for clarity.
     Maintain a professional tone and return only the improved text without any introduction or explanation.`;
 
 
-    
+
     // Define the prompt for text optimization
     const prompt = !kpi ? promptKpi : promptDesc;
-    
+
     try {
 
         const response = await genAI.models.generateContent({

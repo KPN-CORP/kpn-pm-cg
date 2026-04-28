@@ -209,7 +209,7 @@
                                                       </optgroup>
                                                       @endforeach
                                                   </select>
-                                                  
+
                                                   <div class="invalid-feedback">
                                                     {{ __('This field is mandatory') }}
                                                 </div>
@@ -239,7 +239,7 @@
                                                         <div class="invalid-feedback">
                                                             {{ __('This field is mandatory') }}
                                                         </div>
-                                                  </div>                                  
+                                                  </div>
                                               </div>
                                           </div>
                                       </div>
@@ -303,16 +303,16 @@
                                                 <div class="invalid-feedback">
                                                   {{ __('This field is mandatory') }}
                                               </div>
-                                                <input 
-                                                    type="text" 
-                                                    name="custom_uom[]" 
-                                                    id="custom_uom{{ $goalIndex }}" 
-                                                    class="form-control mt-2" 
-                                                    value="{{ $kpi['custom_uom'] }}" 
-                                                    placeholder="Enter UoM" 
-                                                    @if (($kpi['uom'] ?? '') !== 'Other') 
-                                                        style="display: none;" 
-                                                    @endif 
+                                                <input
+                                                    type="text"
+                                                    name="custom_uom[]"
+                                                    id="custom_uom{{ $goalIndex }}"
+                                                    class="form-control mt-2"
+                                                    value="{{ $kpi['custom_uom'] }}"
+                                                    placeholder="Enter UoM"
+                                                    @if (($kpi['uom'] ?? '') !== 'Other')
+                                                        style="display: none;"
+                                                    @endif
                                                     {{ in_array($cluster, ['personal', 'division']) ? '' : 'readonly' }}
                                                 >
                                             </div>
@@ -343,7 +343,7 @@
                                                       <div class="invalid-feedback">
                                                           {{ __('This field is mandatory') }}
                                                       </div>
-                                                </div>                                  
+                                                </div>
                                             </div>
                                             {{ $errors->first("weightage") }}
                                         </div>
@@ -371,6 +371,18 @@
                                 <div>Company: <span id="totalCompany">0%</span></div>
                                 <div>Division: <span id="totalDivision">0%</span></div>
                                 <div>Personal: <span id="totalPersonal">0%</span></div>
+
+                                <input id="totalCompanyInpt" type="hidden" value="0" style="display:none;overflow:hidden" disabled />
+                                <input id="totalDivisionInpt" type="hidden" value="0" style="display:none;overflow:hidden" disabled />
+                                <input id="totalPersonalInpt" type="hidden" value="0" style="display:none;overflow:hidden" disabled />
+
+                                @if ($designationWeightage)
+                                    <input id="designationWeightageTypeInpt" type="hidden" value="{{ $designationWeightage->weightage_type }}" style="display:none;overflow:hidden" disabled />
+                                    <input id="companyDesignationInpt" type="hidden" value="{{ $designationWeightage->company_kpi }}" style="display:none;overflow:hidden" disabled />
+                                    <input id="divisionDesignationInpt" type="hidden" value="{{ $designationWeightage->dept_kpi }}" style="display:none;overflow:hidden" disabled />
+                                    <input id="personalDesignationInpt" type="hidden" value="{{ $designationWeightage->dev_kpi }}" style="display:none;overflow:hidden" disabled />
+                                @endif
+
                                 <hr class="my-1">
                                 <div><strong>Total: <span id="totalWeightage">0%</span></strong></div>
                             </div>
