@@ -469,7 +469,7 @@ function validateDesignationWeightage(submitType) {
 
     var designationWeightageSymbol = "%";
 
-    if (designationWeightageTypeVal.lower() == "percentage") {
+    if (designationWeightageTypeVal.toLowerCase() == "percentage") {
         designationWeightageSymbol = "%";
     }
 
