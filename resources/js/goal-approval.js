@@ -390,7 +390,7 @@ document.addEventListener("DOMContentLoaded", function () {
             return new bootstrap.Popover(popoverTriggerEl);
         });
     }
-    
+
     // Submit form event handler
     form.on("submit", function (event) {
         event.preventDefault(); // Prevent default form submission behavior
@@ -419,11 +419,11 @@ document.addEventListener("DOMContentLoaded", function () {
                         { targets: [0], orderable: false }, // Disable sorting for the first column
                     ],
                 });
-                
+
                 onBehalfTable.on('draw', function () {
                     initializePopovers();
                 });
-                
+
                 customsearch.on("keyup", function () {
                     onBehalfTable.search($(this).val()).draw();
                 });
@@ -437,9 +437,9 @@ document.addEventListener("DOMContentLoaded", function () {
                         onBehalfTable.search(filterValue).draw();
                     }
                 });
-                
+
                 initializePopovers();
-                
+
                 hideLoader();
 
                 $("#offcanvas-cancel").click();
@@ -500,7 +500,7 @@ function revokeGoal(button) {
                 if (data.success) {
                     Swal.fire('Revise Granted!', 'The employee now can revise their goals.', 'success');
                     $(button).addClass('d-none'); // Hide button after successful action
-                    
+
                     $.ajax({
                         url: "/admin/onbehalf/content",
                         method: "POST",

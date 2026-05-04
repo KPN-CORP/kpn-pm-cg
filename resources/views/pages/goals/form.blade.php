@@ -147,7 +147,32 @@
                 <div class="card-body pb-0 px-2 px-md-3">
                     <div class="container-card">
                       @php $goalIndex = 0; @endphp
-                      @foreach(['company' => 'Company Goals', 'division' => 'Division Goals', 'personal' => 'Personal Goals'] as $cluster => $title)
+                      @php
+                            $titleCompanyGoal = "Company Goals";
+                            $titleDivisionGoal = "Division Goals";
+                            $titlePersonalGoal = "Personal Goals";
+                            $titleTotalCompany = "";
+
+                            if ($designationWeightage) {
+                                $weightTypeSymbol = "%";
+
+                                if ($designationWeightage->weightage_type && strtolower($designationWeightage->weightage_type) == "percentage") {
+                                    $weightTypeSymbol = "%";
+                                }
+
+                                if ($designationWeightage->company_kpi && $designationWeightage->company_kpi > 0) {
+                                    $titleCompanyGoal .= " (" . $designationWeightage->company_kpi . $weightTypeSymbol . ")";
+                                    $titleTotalCompany .= " (" . $designationWeightage->company_kpi . $weightTypeSymbol . ")";
+                                }
+                                if ($designationWeightage->dept_kpi && $designationWeightage->dept_kpi > 0) {
+                                    $titleDivisionGoal .= " (" . $designationWeightage->dept_kpi . $weightTypeSymbol . ")";
+                                }
+                                if ($designationWeightage->dev_kpi && $designationWeightage->dev_kpi > 0) {
+                                    $titlePersonalGoal .= " (" . $designationWeightage->dev_kpi . $weightTypeSymbol . ")";
+                                }
+                            }
+                      @endphp
+                      @foreach(['company' => $titleCompanyGoal, 'division' => $titleDivisionGoal, 'personal' => $titlePersonalGoal] as $cluster => $title)
                         @if(!empty($clusterKPIs[$cluster]) || $cluster == 'personal' || $cluster == 'division')
                           <h5 class="mt-3">{{ $title }}</h5>
                           @php $clusterIndex = 0; @endphp
@@ -209,7 +234,7 @@
                                                       </optgroup>
                                                       @endforeach
                                                   </select>
-                                                  
+
                                                   <div class="invalid-feedback">
                                                     {{ __('This field is mandatory') }}
                                                 </div>
@@ -239,7 +264,7 @@
                                                         <div class="invalid-feedback">
                                                             {{ __('This field is mandatory') }}
                                                         </div>
-                                                  </div>                                  
+                                                  </div>
                                               </div>
                                           </div>
                                       </div>
@@ -303,16 +328,16 @@
                                                 <div class="invalid-feedback">
                                                   {{ __('This field is mandatory') }}
                                               </div>
-                                                <input 
-                                                    type="text" 
-                                                    name="custom_uom[]" 
-                                                    id="custom_uom{{ $goalIndex }}" 
-                                                    class="form-control mt-2" 
-                                                    value="{{ $kpi['custom_uom'] }}" 
-                                                    placeholder="Enter UoM" 
-                                                    @if (($kpi['uom'] ?? '') !== 'Other') 
-                                                        style="display: none;" 
-                                                    @endif 
+                                                <input
+                                                    type="text"
+                                                    name="custom_uom[]"
+                                                    id="custom_uom{{ $goalIndex }}"
+                                                    class="form-control mt-2"
+                                                    value="{{ $kpi['custom_uom'] }}"
+                                                    placeholder="Enter UoM"
+                                                    @if (($kpi['uom'] ?? '') !== 'Other')
+                                                        style="display: none;"
+                                                    @endif
                                                     {{ in_array($cluster, ['personal', 'division']) ? '' : 'readonly' }}
                                                 >
                                             </div>
@@ -343,7 +368,7 @@
                                                       <div class="invalid-feedback">
                                                           {{ __('This field is mandatory') }}
                                                       </div>
-                                                </div>                                  
+                                                </div>
                                             </div>
                                             {{ $errors->first("weightage") }}
                                         </div>
@@ -368,9 +393,21 @@
                         <div class="col-md d-md-flex align-items-center">
                             <div class="mb-3 text-center text-md-start">
                                 <h5>Total Weightage</h5>
-                                <div>Company: <span id="totalCompany">0%</span></div>
+                                <div>Company: <span id="totalCompany">0%</span>{{ $titleTotalCompany }}</div>
                                 <div>Division: <span id="totalDivision">0%</span></div>
                                 <div>Personal: <span id="totalPersonal">0%</span></div>
+
+                                <input id="totalCompanyInpt" type="hidden" value="0" style="display:none;overflow:hidden" disabled />
+                                <input id="totalDivisionInpt" type="hidden" value="0" style="display:none;overflow:hidden" disabled />
+                                <input id="totalPersonalInpt" type="hidden" value="0" style="display:none;overflow:hidden" disabled />
+
+                                @if ($designationWeightage)
+                                    <input id="designationWeightageTypeInpt" type="hidden" value="{{ $designationWeightage->weightage_type }}" style="display:none;overflow:hidden" disabled />
+                                    <input id="companyDesignationInpt" type="hidden" value="{{ $designationWeightage->company_kpi }}" style="display:none;overflow:hidden" disabled />
+                                    <input id="divisionDesignationInpt" type="hidden" value="{{ $designationWeightage->dept_kpi }}" style="display:none;overflow:hidden" disabled />
+                                    <input id="personalDesignationInpt" type="hidden" value="{{ $designationWeightage->dev_kpi }}" style="display:none;overflow:hidden" disabled />
+                                @endif
+
                                 <hr class="my-1">
                                 <div><strong>Total: <span id="totalWeightage">0%</span></strong></div>
                             </div>
