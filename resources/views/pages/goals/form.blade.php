@@ -152,6 +152,8 @@
                             $titleDivisionGoal = "Division Goals";
                             $titlePersonalGoal = "Personal Goals";
                             $titleTotalCompany = "";
+                            $titleTotalDivision = "";
+                            $titleTotalPersonal = "";
 
                             if ($designationWeightage) {
                                 $weightTypeSymbol = "%";
@@ -166,9 +168,11 @@
                                 }
                                 if ($designationWeightage->dept_kpi && $designationWeightage->dept_kpi > 0) {
                                     $titleDivisionGoal .= " (" . $designationWeightage->dept_kpi . $weightTypeSymbol . ")";
+                                    $titleTotalDivision .= " (" . $designationWeightage->dept_kpi . $weightTypeSymbol . ")";
                                 }
                                 if ($designationWeightage->dev_kpi && $designationWeightage->dev_kpi > 0) {
                                     $titlePersonalGoal .= " (" . $designationWeightage->dev_kpi . $weightTypeSymbol . ")";
+                                    $titleTotalPersonal .= " (" . $designationWeightage->dev_kpi . $weightTypeSymbol . ")";
                                 }
                             }
                       @endphp
@@ -394,8 +398,8 @@
                             <div class="mb-3 text-center text-md-start">
                                 <h5>Total Weightage</h5>
                                 <div>Company: <span id="totalCompany">0%</span>{{ $titleTotalCompany }}</div>
-                                <div>Division: <span id="totalDivision">0%</span></div>
-                                <div>Personal: <span id="totalPersonal">0%</span></div>
+                                <div>Division: <span id="totalDivision">0%</span>{{ $titleTotalDivision }}</div>
+                                <div>Personal: <span id="totalPersonal">0%</span>{{ $titleTotalPersonal }}</div>
 
                                 <input id="totalCompanyInpt" type="hidden" value="0" style="display:none;overflow:hidden" disabled />
                                 <input id="totalDivisionInpt" type="hidden" value="0" style="display:none;overflow:hidden" disabled />
