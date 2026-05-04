@@ -151,6 +151,7 @@
                             $titleCompanyGoal = "Company Goals";
                             $titleDivisionGoal = "Division Goals";
                             $titlePersonalGoal = "Personal Goals";
+                            $titleTotalCompany = "";
 
                             if ($designationWeightage) {
                                 $weightTypeSymbol = "%";
@@ -161,6 +162,7 @@
 
                                 if ($designationWeightage->company_kpi && $designationWeightage->company_kpi > 0) {
                                     $titleCompanyGoal .= " (" . $designationWeightage->company_kpi . $weightTypeSymbol . ")";
+                                    $titleTotalCompany .= " (" . $designationWeightage->company_kpi . $weightTypeSymbol . ")";
                                 }
                                 if ($designationWeightage->dept_kpi && $designationWeightage->dept_kpi > 0) {
                                     $titleDivisionGoal .= " (" . $designationWeightage->dept_kpi . $weightTypeSymbol . ")";
@@ -391,7 +393,7 @@
                         <div class="col-md d-md-flex align-items-center">
                             <div class="mb-3 text-center text-md-start">
                                 <h5>Total Weightage</h5>
-                                <div>Company: <span id="totalCompany">0%</span></div>
+                                <div>Company: <span id="totalCompany">0%</span>{{ $titleTotalCompany }}</div>
                                 <div>Division: <span id="totalDivision">0%</span></div>
                                 <div>Personal: <span id="totalPersonal">0%</span></div>
 
