@@ -318,12 +318,25 @@ class MyGoalController extends Controller
             ]);
             return redirect()->route('goals');
         }else{
-
             if ($goalsCheck->isEmpty() || $goalsCheck->first()->approvalRequest == null) {
                 // User ID doesn't match the condition, show error message
                 Session::flash('error', [
                     'title' => 'Permission Denied',
                     'message' => "You do not have permission to edit this goal."
+                ]);
+
+                if ($this->user != $goal->employee_id) {
+                    return redirect('team-goals');
+                }
+                return redirect('goals');
+            }
+
+            $employee = Employee::where('employee_id', $goal->employee_id)->first();
+            if (!$employee) {
+                // User ID doesn't match the condition, show error message
+                Session::flash('error', [
+                    'title' => 'Permission Denied',
+                    'message' => "You do not have permission to edit this goal, employee not found."
                 ]);
 
                 if ($this->user != $goal->employee_id) {
@@ -383,7 +396,18 @@ class MyGoalController extends Controller
 
             $data = $groupedData;
 
-            return view('pages.goals.edit', compact('goal', 'formCount', 'link', 'data', 'uomOption', 'selectedUoM', 'typeOption', 'selectedType', 'approvalRequest', 'totalWeightages', 'parentLink', 'clusterKPIs'));
+            // Get Designation Weightage
+
+            $employeeJobCode = $employee->designation_code;
+            $designationWeightage = MasterDesignationWeightage::where("job_code", $employeeJobCode)
+                ->whereNull("deleted_at")
+                ->first();
+
+            if (!$designationWeightage || !$designationWeightage->cluster || strtolower($designationWeightage->cluster) == "non kpi") {
+                $designationWeightage = null;
+            }
+
+            return view('pages.goals.edit', compact('goal', 'formCount', 'link', 'data', 'uomOption', 'selectedUoM', 'typeOption', 'selectedType', 'approvalRequest', 'totalWeightages', 'parentLink', 'clusterKPIs', 'designationWeightage'));
         }
 
     }

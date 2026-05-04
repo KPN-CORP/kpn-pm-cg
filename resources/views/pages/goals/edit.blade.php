@@ -79,7 +79,36 @@
                 <div class="card-body pb-0 px-2 px-md-3">
                     <div class="container-card">
                     @php $goalIndex = 0; @endphp
-                    @foreach(['company' => 'Company Goals', 'division' => 'Division Goals', 'personal' => 'Personal Goals'] as $cluster => $title)
+                    @php
+                          $titleCompanyGoal = "Company Goals";
+                          $titleDivisionGoal = "Division Goals";
+                          $titlePersonalGoal = "Personal Goals";
+                          $titleTotalCompany = "";
+                          $titleTotalDivision = "";
+                          $titleTotalPersonal = "";
+
+                          if ($designationWeightage) {
+                              $weightTypeSymbol = "%";
+
+                              if ($designationWeightage->weightage_type && strtolower($designationWeightage->weightage_type) == "percentage") {
+                                  $weightTypeSymbol = "%";
+                              }
+
+                              if ($designationWeightage->company_kpi && $designationWeightage->company_kpi > 0) {
+                                  $titleCompanyGoal .= " (" . $designationWeightage->company_kpi . $weightTypeSymbol . ")";
+                                  $titleTotalCompany .= " (" . $designationWeightage->company_kpi . $weightTypeSymbol . ")";
+                              }
+                              if ($designationWeightage->dept_kpi && $designationWeightage->dept_kpi > 0) {
+                                  $titleDivisionGoal .= " (" . $designationWeightage->dept_kpi . $weightTypeSymbol . ")";
+                                  $titleTotalDivision .= " (" . $designationWeightage->dept_kpi . $weightTypeSymbol . ")";
+                              }
+                              if ($designationWeightage->dev_kpi && $designationWeightage->dev_kpi > 0) {
+                                  $titlePersonalGoal .= " (" . $designationWeightage->dev_kpi . $weightTypeSymbol . ")";
+                                  $titleTotalPersonal .= " (" . $designationWeightage->dev_kpi . $weightTypeSymbol . ")";
+                              }
+                          }
+                    @endphp
+                    @foreach(['company' => $titleCompanyGoal, 'division' => $titleDivisionGoal, 'personal' => $titlePersonalGoal] as $cluster => $title)
                     @php $clusterData = $data[$cluster] ?? []; @endphp
                     @if(!empty($clusterData) || $cluster === 'division' || $cluster === 'personal')
                         <h5 class="mt-3">{{ $title }}</h5>
@@ -146,16 +175,16 @@
                                             <div class="invalid-feedback">
                                               {{ __('This field is mandatory') }}
                                             </div>
-                                            <input 
-                                                type="text" 
-                                                name="custom_uom[]" 
-                                                id="custom_uom{{ $goalIndex }}" 
-                                                class="form-control mt-2" 
-                                                value="{{ $row['custom_uom'] }}" 
-                                                placeholder="Enter UoM" 
-                                                @if (($row['uom'] ?? '') !== 'Other') 
-                                                    style="display: none;" 
-                                                @endif 
+                                            <input
+                                                type="text"
+                                                name="custom_uom[]"
+                                                id="custom_uom{{ $goalIndex }}"
+                                                class="form-control mt-2"
+                                                value="{{ $row['custom_uom'] }}"
+                                                placeholder="Enter UoM"
+                                                @if (($row['uom'] ?? '') !== 'Other')
+                                                    style="display: none;"
+                                                @endif
                                                 {{ in_array($cluster, ['personal', 'division']) ? '' : 'readonly' }}
                                             >
                                             @if(!in_array($cluster, ['personal', 'division']))
@@ -192,7 +221,7 @@
                                                   <div class="invalid-feedback">
                                                       {{ __('This field is mandatory') }}
                                                   </div>
-                                              </div>                              
+                                              </div>
                                             {{ $errors->first("weightage") }}
                                         </div>
                                       </div>
@@ -211,7 +240,7 @@
                     @endforeach
                       </div>
                       <input type="hidden" id="count" value="{{ $goalIndex }}">
-                      
+
                       @if ($approvalRequest->sendback_messages)
                           <div class="row">
                               <div class="col">
@@ -227,9 +256,21 @@
                                 <input type="hidden" name="submit_type" id="submitType" value=""> <!-- Hidden input to store the button clicked -->
                                 <div class="my-3 text-center text-md-start">
                                     <h5>Total Weightage</h5>
-                                    <div>Company: <span id="totalCompany">0%</span></div>
-                                    <div>Division: <span id="totalDivision">0%</span></div>
-                                    <div>Personal: <span id="totalPersonal">0%</span></div>
+                                    <div>Company: <span id="totalCompany">0%</span>{{ $titleTotalCompany }}</div>
+                                    <div>Division: <span id="totalDivision">0%</span>{{ $titleTotalDivision }}</div>
+                                    <div>Personal: <span id="totalPersonal">0%</span>{{ $titleTotalPersonal }}</div>
+
+                                    <input id="totalCompanyInpt" type="hidden" value="0" style="display:none;overflow:hidden" disabled />
+                                    <input id="totalDivisionInpt" type="hidden" value="0" style="display:none;overflow:hidden" disabled />
+                                    <input id="totalPersonalInpt" type="hidden" value="0" style="display:none;overflow:hidden" disabled />
+
+                                    @if ($designationWeightage)
+                                        <input id="designationWeightageTypeInpt" type="hidden" value="{{ $designationWeightage->weightage_type }}" style="display:none;overflow:hidden" disabled />
+                                        <input id="companyDesignationInpt" type="hidden" value="{{ $designationWeightage->company_kpi }}" style="display:none;overflow:hidden" disabled />
+                                        <input id="divisionDesignationInpt" type="hidden" value="{{ $designationWeightage->dept_kpi }}" style="display:none;overflow:hidden" disabled />
+                                        <input id="personalDesignationInpt" type="hidden" value="{{ $designationWeightage->dev_kpi }}" style="display:none;overflow:hidden" disabled />
+                                    @endif
+
                                     <hr class="my-1">
                                     <div><strong>Total: <span id="totalWeightage">0%</span></strong></div>
                                 </div>
@@ -237,7 +278,7 @@
                           <div class="col-md-auto">
                               <div class="mb-3 text-center">
                                   @if ($goal->form_status=='Draft')
-                                  <a id="submitButton" name="save_draft" class="btn btn-outline-info rounded save-draft me-1" data-id="save_draft" ><i class="fas fa-save d-sm-none"></i><span class="d-sm-inline d-none">Save as </span>Draft</a>  
+                                  <a id="submitButton" name="save_draft" class="btn btn-outline-info rounded save-draft me-1" data-id="save_draft" ><i class="fas fa-save d-sm-none"></i><span class="d-sm-inline d-none">Save as </span>Draft</a>
                                   @endif
                                   <a href="{{ url('goals') }}" class="btn btn-outline-secondary rounded px-3 me-1">{{ __('Cancel') }}</a>
                                   <a id="submitButton" data-id="submit_form" name="submit_form" class="btn btn-primary rounded px-3 shadow"><span class="spinner-border spinner-border-sm me-1 d-none" role="status" aria-hidden="true"></span>{{ __('Submit') }}</a>
