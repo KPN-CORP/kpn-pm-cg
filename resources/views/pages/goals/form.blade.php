@@ -147,7 +147,30 @@
                 <div class="card-body pb-0 px-2 px-md-3">
                     <div class="container-card">
                       @php $goalIndex = 0; @endphp
-                      @foreach(['company' => 'Company Goals', 'division' => 'Division Goals', 'personal' => 'Personal Goals'] as $cluster => $title)
+                      @php
+                            $titleCompanyGoal = "Company Goals";
+                            $titleDivisionGoal = "Division Goals";
+                            $titlePersonalGoal = "Personal Goals";
+
+                            if ($designationWeightage) {
+                                $weightTypeSymbol = "%";
+
+                                if ($designationWeightage->weightage_type && strtolower($designationWeightage->weightage_type) == "percentage") {
+                                    $weightTypeSymbol = "%";
+                                }
+
+                                if ($designationWeightage->company_kpi && $designationWeightage->company_kpi > 0) {
+                                    $titleCompanyGoal += " (" + $designationWeightage->company_kpi + $weightTypeSymbol + ")";
+                                }
+                                if ($designationWeightage->dept_kpi && $designationWeightage->dept_kpi > 0) {
+                                    $titleDivisionGoal += " (" + $designationWeightage->dept_kpi + $weightTypeSymbol + ")";
+                                }
+                                if ($designationWeightage->dev_kpi && $designationWeightage->dev_kpi > 0) {
+                                    $titlePersonalGoal += " (" + $designationWeightage->dev_kpi + $weightTypeSymbol + ")";
+                                }
+                            }
+                      @endphp
+                      @foreach(['company' => $titleCompanyGoal, 'division' => $titleDivisionGoal, 'personal' => $titlePersonalGoal] as $cluster => $title)
                         @if(!empty($clusterKPIs[$cluster]) || $cluster == 'personal' || $cluster == 'division')
                           <h5 class="mt-3">{{ $title }}</h5>
                           @php $clusterIndex = 0; @endphp
