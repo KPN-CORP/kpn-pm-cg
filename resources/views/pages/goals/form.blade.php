@@ -160,13 +160,13 @@
                                 }
 
                                 if ($designationWeightage->company_kpi && $designationWeightage->company_kpi > 0) {
-                                    $titleCompanyGoal .= " (" . $designationWeightage->company_kpi . $weightTypeSymbol + ")";
+                                    $titleCompanyGoal .= " (" . $designationWeightage->company_kpi . $weightTypeSymbol . ")";
                                 }
                                 if ($designationWeightage->dept_kpi && $designationWeightage->dept_kpi > 0) {
-                                    $titleDivisionGoal .= " (" . $designationWeightage->dept_kpi . $weightTypeSymbol + ")";
+                                    $titleDivisionGoal .= " (" . $designationWeightage->dept_kpi . $weightTypeSymbol . ")";
                                 }
                                 if ($designationWeightage->dev_kpi && $designationWeightage->dev_kpi > 0) {
-                                    $titlePersonalGoal .= " (" . $designationWeightage->dev_kpi . $weightTypeSymbol + ")";
+                                    $titlePersonalGoal .= " (" . $designationWeightage->dev_kpi . $weightTypeSymbol . ")";
                                 }
                             }
                       @endphp
