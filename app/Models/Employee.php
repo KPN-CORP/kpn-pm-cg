@@ -14,7 +14,7 @@ class Employee extends Model
 
     use HasFactory;
     // use SoftDeletes;
-    
+
     protected $fillable = [
         // Kolom-kolom lainnya,
         'access_menu','id','employee_id', 'fullname', 'gender', 'email', 'group_company',
@@ -22,7 +22,7 @@ class Employee extends Model
         'work_area_code', 'office_area', 'manager_l1_id', 'manager_l2_id',
         'employee_type', 'unit', 'date_of_joining', 'users_id'
     ];
-    
+
     public function user()
     {
         return $this->belongsTo(User::class, 'users_id', 'id');
@@ -31,7 +31,7 @@ class Employee extends Model
     {
         return $this->belongsTo(Goal::class, 'employee_id', 'employee_id');
     }
-    
+
     public function approvalRequest()
     {
         return $this->hasMany(ApprovalRequest::class, 'employee_id', 'employee_id');

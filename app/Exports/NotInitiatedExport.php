@@ -33,35 +33,80 @@ class NotInitiatedExport implements FromView, WithStyles
     {
         $user = $this->employeeId;
 
-        if(Auth()->user()->isApprover()){
+        if (auth()->user()->isApprover()) {
 
-            $this->data = ApprovalLayer::with('employee')
-            ->where('approver_id', $user)
-            ->whereHas('employee', fn($q) => $q->where('access_menu->doj', 1))
-            ->whereHas('employee', fn($q) => $q->whereNull('deleted_at'))
-            ->whereDoesntHave('subordinates', function ($query) use ($user) {
-                $query->where('period', $this->period)
-                    ->where('category', $this->category)
-                    ->where('approver_id', $user);
-            }) // Ensures subordinates with these criteria do NOT exist
-            ->get();
-    
-            $this->data->map(function($item) {
-                // Format created_at
-                $doj = Carbon::parse($item->employee->date_of_joining);
-    
+            // 1. Ambil employee valid dari DB kpncorp
+            $validEmployees = Employee::where('access_menu->doj', 1)
+                ->whereNull('deleted_at')
+                ->get()
+                ->keyBy('employee_id');
+
+            // 2. Query ApprovalLayer TANPA whereHas
+            $this->data = ApprovalLayer::where('approver_id', $user)
+                ->whereIn('employee_id', $validEmployees->keys())
+                ->whereDoesntHave('subordinates', function ($query) use ($user) {
+                    $query->where('period', $this->period)
+                        ->where('category', $this->category)
+                        ->where('approver_id', $user);
+                })
+                ->get();
+
+            // 3. Attach employee + formatting
+            $this->data->map(function ($item) use ($validEmployees) {
+
+                $employee = $validEmployees[$item->employee_id] ?? null;
+                $item->employee = $employee;
+
+                if ($employee && $employee->date_of_joining) {
+                    $doj = Carbon::parse($employee->date_of_joining);
                     $item->formatted_doj = $doj->format('d M Y');
-                    
+                } else {
+                    $item->formatted_doj = null;
+                }
+
                 return $item;
             });
-        
+
         } else {
-            $this->data = collect(); // Ensure it's always set
+            $this->data = collect();
         }
 
         return view('exports.notInitiated', ['data' => $this->data]);
-
     }
+
+    // public function view(): View
+    // {
+    //     $user = $this->employeeId;
+
+    //     if(Auth()->user()->isApprover()){
+
+    //         $this->data = ApprovalLayer::with('employee')
+    //         ->where('approver_id', $user)
+    //         ->whereHas('employee', fn($q) => $q->where('access_menu->doj', 1))
+    //         ->whereHas('employee', fn($q) => $q->whereNull('deleted_at'))
+    //         ->whereDoesntHave('subordinates', function ($query) use ($user) {
+    //             $query->where('period', $this->period)
+    //                 ->where('category', $this->category)
+    //                 ->where('approver_id', $user);
+    //         }) // Ensures subordinates with these criteria do NOT exist
+    //         ->get();
+
+    //         $this->data->map(function($item) {
+    //             // Format created_at
+    //             $doj = Carbon::parse($item->employee->date_of_joining);
+
+    //                 $item->formatted_doj = $doj->format('d M Y');
+
+    //             return $item;
+    //         });
+
+    //     } else {
+    //         $this->data = collect(); // Ensure it's always set
+    //     }
+
+    //     return view('exports.notInitiated', ['data' => $this->data]);
+
+    // }
 
     public function styles($sheet)
     {
