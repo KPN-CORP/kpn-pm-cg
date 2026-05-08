@@ -280,8 +280,9 @@ class MyGoalController extends Controller
 
         // Get Designation Weightage
 
-        $employeeJobCode = $employee->designation_code;
-        $designationWeightage = MasterDesignationWeightage::where("job_code", $employeeJobCode)
+        $designationWeightage = MasterDesignationWeightage::where("job_code", $employee->designation_code)
+            ->where("employee_id", $employee->employee_id)
+            ->where("job_level", $employee->job_level)
             ->whereNull("deleted_at")
             ->first();
 
@@ -398,8 +399,9 @@ class MyGoalController extends Controller
 
             // Get Designation Weightage
 
-            $employeeJobCode = $employee->designation_code;
-            $designationWeightage = MasterDesignationWeightage::where("job_code", $employeeJobCode)
+            $designationWeightage = MasterDesignationWeightage::where("job_code", $employee->designation_code)
+                ->where("employee_id", $employee->employee_id)
+                ->where("job_level", $employee->job_level)
                 ->whereNull("deleted_at")
                 ->first();
 
