@@ -576,7 +576,17 @@ function confirmSubmission(submitType) {
                 spinner.removeClass("d-none");
             }
 
+            // const formElem = document.getElementById("goalForm")
+
+            // const formData = new FormData(formElem);
+
+            // for (const [name, value] of formData.entries()) {
+            //       console.log("Field Name:", name);
+            //       console.log("Field Value:", value);
+            //     }
+
             document.getElementById("goalForm").submit();
+
             // Swal.fire({
             //     title: title2,
             //     icon: "success",
@@ -986,7 +996,6 @@ function reindexCardsPerCluster() {
 }
 
 $('#goalForm').on('submit', function () {
-
     $('.container-card .card').each(function () {
 
         const kpi = $(this).find('[name="kpi[]"]').val();

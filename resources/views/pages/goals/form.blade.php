@@ -309,7 +309,7 @@
                                                   {{ __('This field is mandatory') }}
                                               </div>
                                             </div>
-                                            <input type="text" class="form-control mt-2" name="target[]" id="target{{ $goalIndex }}" @style('display: none') value="{{ $kpi['target'] ?? '' }}" {{ $cluster == 'company' ? 'readonly' : '' }}>
+                                            {{-- <input type="text" class="form-control mt-2" name="target[]" id="target{{ $goalIndex }}" @style('display: none') value="{{ $kpi['target'] ?? '' }}" {{ $cluster == 'company' ? 'readonly' : '' }}> --}}
                                         </div>
                                         <div class="col-md">
                                             <div class="mb-3">

@@ -64,7 +64,7 @@
                                         <label class="form-label" for="filterYear">{{ __('Year') }}</label>
                                         <select name="filterYear" id="filterYear" onchange="yearGoal(this)" class="form-select">
                                             @if ($period)
-                                                <option value="{{ $period }}" {{ $period == $filterYear ? 'selected' : '' }}>{{ $period }}</option>  
+                                                <option value="{{ $period }}" {{ $period == $filterYear ? 'selected' : '' }}>{{ $period }}</option>
                                             @endif
                                             @foreach ($selectYear as $year)
                                                 <option value="{{ $year->period }}" {{ $year->period == $filterYear ? 'selected' : '' }}>{{ $year->period }}</option>
@@ -231,7 +231,7 @@
                                                 </div>
                                                 @endforelse
                                                 <!-- end task -->
-                                                
+
                                             </div> <!-- end card-body-->
                                         </div> <!-- end card -->
                                     </div> <!-- end .collapse-->
@@ -250,7 +250,7 @@
                                         <label class="form-label" for="filterYear">{{ __('Year') }}</label>
                                         <select name="filterYear" id="filterYear" onchange="yearGoal(this)" class="form-select">
                                             @if ($period)
-                                                <option value="{{ $period }}" {{ $period == $filterYear ? 'selected' : '' }}>{{ $period }}</option>  
+                                                <option value="{{ $period }}" {{ $period == $filterYear ? 'selected' : '' }}>{{ $period }}</option>
                                             @endif
                                             @foreach ($selectYear as $year)
                                                 <option value="{{ $year->period }}" {{ $year->period == $filterYear ? 'selected' : '' }}>{{ $year->period }}</option>
@@ -296,7 +296,7 @@
                                             </form>
                                         </div>
                                     </div>
-                                
+
                                     <div class="collapse show" id="noDataTasks">
                                         <div class="card mt-2 mb-0 d-flex border border-secondary">
                                             <div class="card-body py-1 align-items-center" id="task-container-2">
@@ -363,12 +363,12 @@
                                         </div> <!-- end card -->
                                     </div> <!-- end .collapse-->
                                 </div>
-                                
+
                             </div>
                         </div>
                     </div>
-                </div> 
-                
+                </div>
+
     </div>
     <!-- Modal Pop-Up -->
     <div class="modal fade" id="importModal" tabindex="-1" aria-labelledby="importModalLabel" aria-hidden="true">
@@ -378,7 +378,7 @@
                     <h5 class="modal-title" id="importModalLabel">Import Goals</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
-                
+
                 <form id="importGoal" action="{{ route('importgoalsmanager') }}" method="POST" enctype="multipart/form-data">
                     @csrf
                     <div class="modal-body">
