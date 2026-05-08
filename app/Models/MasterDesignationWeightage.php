@@ -27,6 +27,7 @@ class MasterDesignationWeightage extends Model {
         "updated_at",
         "deleted_at",
         "job_level",
-        "employee_id"
+        "employee_id",
+        "designation_name"
     ];
 }
