@@ -25,10 +25,10 @@ document.addEventListener("DOMContentLoaded", function () {
 $(document).ready(function() {
     $('.open-import-modal').on('click', function() {
         var importModal = document.getElementById('importModal');
-        
+
         // Initialize the Bootstrap modal
         var modal = new bootstrap.Modal(importModal);
-        
+
         modal.show();
     });
 });
@@ -67,7 +67,7 @@ function viewHistory(employeeId) {
         var viewModal = document.getElementById('viewModal');
         // Initialize the Bootstrap modal
         var modal = new bootstrap.Modal(viewModal);
-        
+
         modal.show();
     })
     .catch(error => {
@@ -100,15 +100,15 @@ table.column(10).search(locationId).draw(); // Adjust index based on your table 
 
 $(document).on('click', '.open-edit-modal', function() {
     var employeeId = $(this).data('bsEmployee-id');
-    
+
     var fullname = $(this).data('bsFullname');
     var app = $(this).data('bsApp');
     $('#employeeId').text(employeeId);
-    
-    
+
+
     var layer = $(this).data('bsLayer');
     var appname = $(this).data('bsApp-name');
-    
+
     // populateModal(employeeId, fullname, app, layer, appname);
     populateModal(employeeId, fullname, app, layer, appname, employeesData);
 });
@@ -124,7 +124,7 @@ function populateModal(employeeId, fullName, app, layer, appName, employees) {
     let appNames = [];
 
     // if (typeof app === 'string' && app.indexOf("|") !== -1) {
-    if (app.includes('|')) {
+    if (typeof app === 'string' && app.includes('|')) {
         // Jika nilai app mengandung karakter '|', lakukan pemisahan
         apps = app.split('|');
         layers = layer.split('|');
@@ -146,14 +146,17 @@ function populateModal(employeeId, fullName, app, layer, appName, employees) {
         var maxlayer = (apps.length+3);
     }
 
+    const employeeList = Object.values(employees);
+
     for (var i = 0; i < maxlayer; i++) {
         var selectOptions = "<option></option>";
-        for (var j = 0; j < employees.length; j++) {
-            var selected = (employees[j].employee_id == apps[i]) ? 'selected' : 'Select Employee';
-            selectOptions += '<option value="' + employees[j].employee_id + '" ' + selected + '>' + employees[j].fullname + ' - ' + employees[j].employee_id + '</option>';
+        for (var j = 0; j < employeeList.length; j++) {
+            var selected = (employeeList[j].employee_id == apps[i]) ? 'selected' : '';
+            selectOptions += '<option value="' + employeeList[j].employee_id + '" ' + selected + '>' + employeeList[j].fullname + ' - ' + employeeList[j].employee_id + '</option>';
         }
 
-        var disabled = (i > apps.length) ? 'disabled' : ''; // Disable additional layers initially
+        // var disabled = (i > apps.length) ? 'disabled' : ''; // Disable additional layers initially
+        var disabled = (i >= apps.length) ? 'disabled' : '';
         var required = (i == 0) ? 'required' : '';
         $('#viewlayer').append('<div class="row mb-2"><label class="col-md-2 col-form-label">Layer ' + layerIndex + '</label><div class="col"><select name="nik_app[]" class="form-select select2"' + disabled + ' ' + required + '>' + selectOptions + '</select></div></div>');
         layerIndex++;
@@ -188,10 +191,10 @@ function populateModal(employeeId, fullName, app, layer, appName, employees) {
     });
 
     var editModal = document.getElementById('editModal');
-    
+
     // Initialize the Bootstrap modal
     var modal = new bootstrap.Modal(editModal);
-    
+
     modal.show();
 }
 
@@ -206,12 +209,12 @@ $('#submitButton').on('click', function(e) {
         // Disable submit button
         submitButton.prop('disabled', true);
         submitButton.addClass("disabled");
-    
+
         // Remove d-none class from spinner if it exists
         if (spinner.length) {
             spinner.removeClass("d-none");
         }
-    
+
         // Submit form
         form.submit();
         } else {
@@ -231,12 +234,12 @@ $('#importButton').on('click', function(e) {
         // Disable submit button
         submitButton.prop('disabled', true);
         submitButton.addClass("disabled");
-    
+
         // Remove d-none class from spinner if it exists
         if (spinner.length) {
             spinner.removeClass("d-none");
         }
-    
+
         // Submit form
         form.submit();
         } else {
