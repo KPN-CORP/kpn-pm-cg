@@ -165,15 +165,15 @@ class ApprovalLayerImport implements
         $this->layer1Map = array_merge($this->layer1Map, $cached['layer1_map']);
     }
 
-    public function chunkSize(): int
-    {
-        return 200; // lower chunk size to reduce memory usage
-    }
+    // public function chunkSize(): int
+    // {
+    //     return 200; // lower chunk size to reduce memory usage
+    // }
 
-    public function batchSize(): int
-    {
-        return 200;
-    }
+    // public function batchSize(): int
+    // {
+    //     return 200;
+    // }
 
     // =========================
     // GETTER
