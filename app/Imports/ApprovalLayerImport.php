@@ -28,13 +28,14 @@ class ApprovalLayerImport implements
     protected $period;
     protected $invalidEmployees = [];
     protected $employeeIds = [];
+    protected $layer1Map = [];
 
     public function __construct($userId, $period)
     {
         $this->userId = $userId;
         $this->period = $period;
 
-        // cache employee
+        // cache employee ids
         $this->employeeIds = Employee::pluck('employee_id')->toArray();
     }
 
@@ -56,7 +57,10 @@ class ApprovalLayerImport implements
     public function model(array $row)
     {
         $employeeId = $row['employee_id'] ?? null;
-        if (!$employeeId) return null;
+
+        if (!$employeeId) {
+            return null;
+        }
 
         DB::beginTransaction();
 
@@ -65,16 +69,24 @@ class ApprovalLayerImport implements
             $layers = [];
 
             for ($i = 1; $i <= 5; $i++) {
+
                 $approverId = $row["layer_approval_id_$i"] ?? null;
 
-                if (!$approverId) continue;
-
-                if (!in_array($approverId, $this->employeeIds)) {
-                    $this->invalidEmployees[] = $employeeId;
+                if (!$approverId) {
                     continue;
                 }
 
-                $insertData[] = [
+                // validate approver exists
+                if (!in_array($approverId, $this->employeeIds)) {
+
+                    $this->invalidEmployees[] = $employeeId;
+
+                    DB::rollBack();
+
+                    return null;
+                }
+
+                $layers[] = [
                     'employee_id' => $employeeId,
                     'approver_id' => $approverId,
                     'layer' => $i,
@@ -83,22 +95,31 @@ class ApprovalLayerImport implements
                     'updated_at' => now(),
                 ];
 
-                // ambil layer 1 untuk update ApprovalRequest
-                if ($i == 1) {
-                    $cached['layer1_map'][$employeeId] = $approverId;
+                // cache layer 1
+                if ($i === 1) {
+                    $this->layer1Map[$employeeId] = $approverId;
                 }
             }
 
-            // unique check
-            if (collect($layers)->unique('approver_id')->count() !== count($layers)) {
+            // validate duplicate approver
+            $uniqueApprovers = collect($layers)
+                ->pluck('approver_id')
+                ->unique();
+
+            if ($uniqueApprovers->count() !== count($layers)) {
+
                 $this->invalidEmployees[] = $employeeId;
+
                 DB::rollBack();
+
                 return null;
             }
 
-            // backup
+            // backup existing layers
             $oldLayers = ApprovalLayer::where('employee_id', $employeeId)->get();
+
             foreach ($oldLayers as $layer) {
+
                 ApprovalLayerBackup::create([
                     'employee_id' => $layer->employee_id,
                     'approver_id' => $layer->approver_id,
@@ -109,18 +130,19 @@ class ApprovalLayerImport implements
                 ]);
             }
 
-            // delete old
+            // delete old layers
             ApprovalLayer::where('employee_id', $employeeId)->delete();
 
-            // insert new
+            // insert new layers
             if (!empty($layers)) {
                 ApprovalLayer::insert($layers);
             }
 
-            // update request + goal
-            $newApprover = $row['layer_approval_id_1'] ?? null;
+            // update approval request + goal
+            $newApprover = $this->layer1Map[$employeeId] ?? null;
 
             if ($newApprover) {
+
                 $requests = ApprovalRequest::where('employee_id', $employeeId)
                     ->where('category', 'Goals')
                     ->where('period', $this->period)
@@ -149,31 +171,19 @@ class ApprovalLayerImport implements
             DB::commit();
 
         } catch (\Throwable $e) {
+
             DB::rollBack();
 
-            Log::error('Import failed', [
+            Log::error('ApprovalLayerImport failed', [
                 'employee_id' => $employeeId,
-                'error' => $e->getMessage()
+                'error' => $e->getMessage(),
             ]);
 
             $this->invalidEmployees[] = $employeeId;
         }
 
-        // also keep in-memory copies for immediate synchronous reads
-        $this->employeeIds = array_merge($this->employeeIds, $cached['employee_ids']);
-        $this->invalidEmployees = array_merge($this->invalidEmployees, $cached['invalid']);
-        $this->layer1Map = array_merge($this->layer1Map, $cached['layer1_map']);
+        return null;
     }
-
-    // public function chunkSize(): int
-    // {
-    //     return 200; // lower chunk size to reduce memory usage
-    // }
-
-    // public function batchSize(): int
-    // {
-    //     return 200;
-    // }
 
     // =========================
     // GETTER
