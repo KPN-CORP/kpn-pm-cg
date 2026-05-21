@@ -43,12 +43,12 @@ class TeamGoalController extends Controller
     }
 
     function index(Request $request) {
-        
+
         $user = Auth::user()->employee_id;
 
         // Retrieve the selected year from the request
         $filterYear = $request->input('filterYear');
-        
+
         $datas = ApprovalLayer::with(['employee','subordinates' => function ($query) use ($user, $filterYear){
             $query->with(['goal', 'updatedBy', 'approval' => function ($query) {
                 $query->with('approverName');
@@ -62,7 +62,7 @@ class TeamGoalController extends Controller
                 $query->where('period', $this->period);
             })->where('category', $this->category);
         }])->where('approver_id', $user)->get();
-        
+
         $tasks = ApprovalLayer::with(['employee', 'subordinates' => function ($query) use ($user, $filterYear) {
             $query->with(['goal', 'updatedBy', 'initiated', 'approval' => function ($query) {
             $query->with('approverName');
@@ -96,7 +96,7 @@ class TeamGoalController extends Controller
             return $groupedTasks->sortByDesc('layer')->first();
         })
         ->values(); // Reset the indexing after grouping and sorting
-        
+
         $tasks->each(function($item) {
             $item->subordinates->map(function($subordinate) {
                 // Format created_at
@@ -106,7 +106,7 @@ class TeamGoalController extends Controller
                 } else {
                     $subordinate->formatted_created_at = $createdDate->format('d M Y');
                 }
-    
+
                 // Format updated_at
                 $updatedDate = Carbon::parse($subordinate->updated_at);
                 if ($updatedDate->isToday()) {
@@ -114,7 +114,7 @@ class TeamGoalController extends Controller
                 } else {
                     $subordinate->formatted_updated_at = $updatedDate->format('d M Y');
                 }
-                
+
                 // Determine name and approval layer
                 if ($subordinate->sendback_to == $subordinate->employee->employee_id) {
                     $subordinate->name = $subordinate->employee->fullname . ' (' . $subordinate->employee->employee_id . ')';
@@ -157,7 +157,7 @@ class TeamGoalController extends Controller
             if ($employee) {
                 $access_menu = json_decode($employee->access_menu, true) ?? [];
                 $doj = $access_menu['doj'] ?? 0;
-                
+
                 if ($doj != 1 || !is_null($employee->deleted_at)) {
                     return false; // Filter out employees that don't meet conditions
                 }
@@ -175,7 +175,7 @@ class TeamGoalController extends Controller
             }
 
             return true;
-        })->values();  
+        })->values();
 
         $notasks = $notasks->map(function($item) {
             // Format created_at
@@ -188,12 +188,12 @@ class TeamGoalController extends Controller
 
             $item->isManager = $isManager;
             $item->formatted_doj = $doj->format('d M Y');
-            
+
             return $item;
         })->values(); // Reset the indexing after mapping
 
         $notasks = $notasks->sortByDesc('isManager')->values(); // Reset the indexing after sorting
-        
+
         $data = [];
         $formData = [];
 
@@ -205,10 +205,10 @@ class TeamGoalController extends Controller
             // Check if subordinates is not empty and has elements
             if ($request->subordinates->isNotEmpty()) {
             $firstSubordinate = $request->subordinates->first();
-        
+
             // Check form status and created_by conditions
             if ($firstSubordinate->created_by != Auth::user()->id) {
-                
+
                 // Check if approval relation exists and has elements
                 if ($firstSubordinate->approval->isNotEmpty()) {
                 $approverName = $firstSubordinate->approval->first();
@@ -216,28 +216,28 @@ class TeamGoalController extends Controller
                 } else {
                 $dataApprover = '';
                 }
-        
+
                 // Create object to store request and approver fullname
                 $dataItem->approver_name = $dataApprover;
-        
+
                 // Add object to array $data
-                
+
                 $formData = json_decode($firstSubordinate->goal->form_data, true);
             }
             } else {
             // Handle case when subordinates is empty
             // Create object with empty or default values
             $dataItem->approver_name = ''; // or some default value
-            
+
             // Add object to array $data
             $data[] = $dataItem;
-            
+
             $formData = '';
             }
 
             $data[] = $dataItem;
         }
-        
+
         $path = base_path('resources/goal.json');
 
         // Check if the JSON file exists
@@ -264,9 +264,9 @@ class TeamGoalController extends Controller
         ->get();
 
         return view('pages.goals.team-goal', compact('data', 'tasks', 'notasks', 'link', 'parentLink', 'formData', 'uomOption', 'typeOption', 'selectYear', 'period'));
-       
+
     }
-    
+
     function create($id) {
 
         $id = decrypt($id);
@@ -306,7 +306,7 @@ class TeamGoalController extends Controller
 
         }
 
-        $datas = ApprovalLayer::with(['employee'])->where('employee_id', $id)->where('layer', 1)->get();  
+        $datas = ApprovalLayer::with(['employee'])->where('employee_id', $id)->where('layer', 1)->get();
         if (!$datas->first()) {
             Session::flash('error', [
                 'title' => 'Cannot create goal',
@@ -328,7 +328,7 @@ class TeamGoalController extends Controller
         $uomOptions = json_decode(File::get($path), true);
 
         $uomOption = $uomOptions['UoM'];
-        
+
         $parentLink = __('Goal');
         $link = 'Create';
 
@@ -365,7 +365,7 @@ class TeamGoalController extends Controller
                     'title' => 'Permission Denied',
                     'message' => "You do not have permission to edit this goal."
                 ]);
-    
+
                 if ($this->user != $goal->employee_id) {
                     return redirect('team-goals');
                 }
@@ -394,7 +394,7 @@ class TeamGoalController extends Controller
             $selectedType = [];
             $weightage = [];
             $totalWeightages = 0;
-            
+
             foreach ($formData as $index => $row) {
                 $selectedUoM[$index] = $row['uom'] ?? '';
                 $selectedType[$index] = $row['type'] ?? '';
@@ -403,7 +403,7 @@ class TeamGoalController extends Controller
             }
 
             $data = json_decode($goal->form_data, true);
-            
+
             return view('pages.goals.edit', compact('goal', 'formCount', 'link', 'data', 'uomOption', 'selectedUoM', 'typeOption', 'selectedType', 'approvalRequest', 'totalWeightages', 'parentLink'));
         }
 
@@ -417,7 +417,7 @@ class TeamGoalController extends Controller
         }])->where('form_id', $id)->get();
 
         $data = [];
-        
+
         foreach ($datas as $request) {
             // Memeriksa status form dan pembuatnya
             if ($request->goal->form_status != 'Draft' || $request->created_by == Auth::user()->id) {
@@ -428,20 +428,20 @@ class TeamGoalController extends Controller
                 }else{
                     $dataApprover = '';
                 }
-        
+
                 // Buat objek untuk menyimpan data request dan approver fullname
                 $dataItem = new stdClass();
 
                 $dataItem->request = $request;
                 $dataItem->approver_name = $dataApprover;
-              
+
 
                 // Tambahkan objek $dataItem ke dalam array $data
                 $data[] = $dataItem;
-                
+
             }
         }
-        
+
         $formData = [];
         if($datas->isNotEmpty()){
             $formData = json_decode($datas->first()->goal->form_data, true);
@@ -504,25 +504,25 @@ class TeamGoalController extends Controller
             $filePath = $request->file('file')->store($path='public/uploads');
             Log::info("File uploaded successfully: " . $filePath);
         } else {
-            Log::error("File upload failed."); 
+            Log::error("File upload failed.");
             return back()->with('error', "File upload failed.");
         }
         DB::enableQueryLog();
         // Jalankan proses impor
         try {
-            
+
             $import = new GoalsDataImportManager($filePath, $this->user, $this->period);
             Excel::import($import, $filePath);
-            
+
             // Simpan data ke database setelah semua baris diproses
             $import->saveToDatabase();
-            
+
             // Simpan transaksi
             $import->saveTransaction();
-            
+
             $invalidEmployees = $import->getInvalidEmployees();
             dd($invalidEmployees);
-            
+
             $message = 'Data imported successfully.';
 
             if (!empty($invalidEmployees)) {
@@ -532,7 +532,7 @@ class TeamGoalController extends Controller
             }
             return redirect()->back()->with('success', $message);
             Log::info(Auth::id() ." Goal import : Data imported successfully.");
-            
+
         } catch (ValidationException $e) {
             // Catch the validation exception and redirect back with a custom error message
             return redirect()->back()->with('error', $e->errors()['error'][0]);
