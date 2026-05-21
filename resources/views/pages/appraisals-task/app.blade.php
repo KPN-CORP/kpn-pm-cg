@@ -46,8 +46,28 @@
                                 </span>
                               </button>
                             </li>
-                          </ul>                          
+                          </ul>
                           <div class="tab-content" id="myTabContent">
+                            <form id="formAppraisalTaskGoal" action="{{ route('appraisals-task') }}" method="GET">
+                                @php
+                                    $filterYear = request('filterYear');
+                                @endphp
+                                <div class="row align-items-end justify-content-between">
+                                    <div class="col-md-3">
+                                        <div class="mb-2">
+                                            <label class="form-label" for="filterYear">{{ __('Year') }}</label>
+                                            <select name="filterYear" id="filterYear" onchange="yearAppraisalTask(this)" class="form-select">
+                                                @if ($period)
+                                                    <option value="{{ $period }}" {{ $period == $filterYear ? 'selected' : '' }}>{{ $period }}</option>
+                                                @endif
+                                                @foreach ($selectYear as $year)
+                                                    <option value="{{ $year->period }}" {{ $year->period == $filterYear ? 'selected' : '' }}>{{ $year->period }}</option>
+                                                @endforeach
+                                            </select>
+                                        </div>
+                                    </div>
+                                </div>
+                            </form>
                             <div class="tab-pane fade show active" id="team" role="tabpanel" aria-labelledby="team-tab">
                                 <div class="table-responsive">
                                     <table id="tableAppraisalTeam" class="table table-hover table-sm activate-select dataTables_scrollHeadInner">
@@ -92,7 +112,7 @@
     @push('scripts')
         @if(Session::has('error'))
         <script>
-            document.addEventListener('DOMContentLoaded', function () {                
+            document.addEventListener('DOMContentLoaded', function () {
                 Swal.fire({
                     icon: "error",
                     title: "Cannot initiate appraisal!",

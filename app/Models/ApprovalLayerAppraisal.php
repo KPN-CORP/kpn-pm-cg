@@ -10,14 +10,14 @@ class ApprovalLayerAppraisal extends Model
     use HasFactory;
 
     protected $fillable = [
-        'employee_id', 
+        'employee_id',
         'approver_id',
-        'layer_type', 
-        'layer', 
-        'created_by', 
-        'created_at', 
-        'updated_by', 
-        'updated_at', 
+        'layer_type',
+        'layer',
+        'created_by',
+        'created_at',
+        'updated_by',
+        'updated_at',
     ];
 
     public function employee()

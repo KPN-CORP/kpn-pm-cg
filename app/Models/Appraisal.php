@@ -38,5 +38,5 @@ class Appraisal extends Model
     {
         return $this->belongsTo(ApprovalSnapshots::class, 'id', 'form_id');
     }
-    
+
 }

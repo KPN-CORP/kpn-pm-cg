@@ -1,5 +1,16 @@
 import $ from 'jquery';
 
+function yearAppraisalTask(button) {
+    showLoader();
+    // Get the form
+    var form = $(button).closest('form');
+
+    // Submit the form
+    form.submit();
+}
+
+window.yearAppraisalTask = yearAppraisalTask;
+
 $(document).ready(function() {
     // Initialize DataTable for Team Appraisal
     var tableTeam = $('#tableAppraisalTeam').DataTable({
@@ -52,8 +63,8 @@ $(document).ready(function() {
 
                             csvRows[i] = rowColumns.map(value => {
 
-                                let stringValue = String(value); 
-                                stringValue = stringValue.replace(/\r/g, ''); 
+                                let stringValue = String(value);
+                                stringValue = stringValue.replace(/\r/g, '');
                                 if (stringValue.startsWith('"') && stringValue.endsWith('"')) {
                                     stringValue = stringValue.slice(1, -1);
                                 }
@@ -82,7 +93,7 @@ $(document).ready(function() {
             dataSrc: ''
         },
         columns: [
-            {   
+            {
                 className: 'dt-control',
                 orderable: false,
                 data: null,
@@ -121,7 +132,7 @@ $(document).ready(function() {
 
 
 $(document).ready(function() {
-    
+
     // Initialize DataTable for 360 Appraisal
     var table360 = $('#tableAppraisal360').DataTable({
         stateSave: true,
@@ -165,9 +176,9 @@ $(document).ready(function() {
 
                             csvRows[i] = rowColumns.map(value => {
 
-                                let stringValue = String(value); 
+                                let stringValue = String(value);
 
-                                stringValue = stringValue.replace(/\r/g, ''); 
+                                stringValue = stringValue.replace(/\r/g, '');
 
                                 if (stringValue.startsWith('"') && stringValue.endsWith('"')) {
                                     stringValue = stringValue.slice(1, -1);
@@ -184,7 +195,7 @@ $(document).ready(function() {
 
                     return csvRows.join('\n');
                 }
-                
+
             }
         ],
         fixedColumns: {
@@ -249,7 +260,7 @@ $(document).ready(function() {
             { data: 'action', className: 'sorting_1' }
         ]
     });
-    
+
     // Add event listener for both tables
     addChildRowToggle(table360, '#tableAppraisal360');
 
@@ -303,7 +314,7 @@ function addChildRowToggle(table, tableId, speed = 250) {
 // Function to format child row content
 function formatChildRow(rowData) {
     // console.log(rowData);
-    
+
     if (!rowData?.kpi || !rowData.kpi.kpi_status) {
         return '<div>No scores available</div>';
     }
@@ -353,7 +364,7 @@ $(document).ready(function() {
                 $(this).addClass('active');
             }
         });
-        
+
         $('.label').removeClass('active');
         $('.label').each(function(index) {
             if (index < step - 1) {
@@ -401,10 +412,10 @@ $(document).ready(function() {
     function validateStep(step) {
         let isValid = true;
         let firstInvalidElement = null;
-    
+
         $(`.form-step[data-step="${step}"] .form-select, .form-step[data-step="${step}"] .form-control`).each(function() {
             const inputVal = $(this).val();
-            
+
             // Use validateInput to validate the field's value
             if (!validateInput(inputVal)) {
                 // console.log(inputVal);
@@ -419,15 +430,15 @@ $(document).ready(function() {
                 $(this).siblings('.error-message').text('');
             }
         });
-    
+
         // Focus the first invalid element if any
         if (firstInvalidElement) {
             firstInvalidElement.focus();
         }
-    
+
         return isValid;
     }
-    
+
 
     $('.next-btn').click(function() {
         if (validateStep(currentStep)) {
@@ -438,15 +449,15 @@ $(document).ready(function() {
 
     // $('.submit-btn').click(function () {
     //     let submitType = $(this).data('id');
-    //     document.getElementById("submitType").value = submitType; 
+    //     document.getElementById("submitType").value = submitType;
     //     if (validateStep(currentStep)) {
     //         let title1;
     //         let title2;
     //         let text;
     //         let confirmText;
-    
+
     //         const spinner = $(this).find(".spinner-border");
-    
+
     //         if (submitType === "submit_form") {
     //             title1 = "Submit From?";
     //             text = "This can't be revert";
@@ -466,14 +477,14 @@ $(document).ready(function() {
     //                     // Disable submit button
     //                     $(this).prop("disabled", true);
     //                     $(this).addClass("disabled");
-        
+
     //                     // Show spinner if it exists
     //                     if (spinner.length) {
     //                         spinner.removeClass("d-none");
     //                     }
-        
+
     //                     document.getElementById("formAppraisalUser").submit();
-        
+
     //                     // Show success message
     //                     Swal.fire({
     //                         title: title2,
@@ -484,10 +495,10 @@ $(document).ready(function() {
     //                 }
     //             });
     //         }
-    
+
     //         return false; // Prevent default form submission
     //     }
-    // });    
+    // });
 
     $('.prev-btn').click(function() {
         currentStep--;
@@ -553,12 +564,12 @@ document.addEventListener('DOMContentLoaded', function() {
 document.addEventListener('DOMContentLoaded', function() {
     const teamTab = document.getElementById("teamTab");
     const reviewTab = document.getElementById('360-review-tab');
-    
+
     if (teamTab && reviewTab) {
         teamTab.addEventListener('shown.bs.tab', function () {
             teamTab.classList.remove('btn-outline-secondary');
             teamTab.classList.add('btn-outline-primary');
-    
+
             reviewTab.classList.remove('btn-outline-primary');
             reviewTab.classList.add('btn-outline-secondary');
         });
@@ -566,7 +577,7 @@ document.addEventListener('DOMContentLoaded', function() {
         reviewTab.addEventListener('shown.bs.tab', function () {
             reviewTab.classList.remove('btn-outline-secondary');
             reviewTab.classList.add('btn-outline-primary');
-    
+
             teamTab.classList.remove('btn-outline-primary');
             teamTab.classList.add('btn-outline-secondary');
         });
