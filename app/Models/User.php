@@ -35,7 +35,7 @@ class User extends Authenticatable implements JWTSubject
     {
         return [];
     }
-    
+
     use HasFactory, Notifiable, HasRoles;
 
     protected $primaryKey = 'id';
@@ -97,7 +97,7 @@ class User extends Authenticatable implements JWTSubject
     {
         return $this->approver_layers()->exists();
     }
-    
+
     public function approver_layers()
     {
         return $this->hasMany(ApprovalLayer::class, 'approver_id', 'employee_id');
