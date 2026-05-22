@@ -20,7 +20,7 @@
             <img src="{{ asset('storage/img/logo-sm.png') }}" alt="small logo">
         </span>
     </a>
-    
+
     <!-- Sidebar Hover Menu Toggle Button -->
     <div class="button-sm-hover" data-bs-toggle="tooltip" data-bs-placement="right" title="Show Full Sidebar">
         <i class="ri-checkbox-blank-circle-line align-middle"></i>
@@ -50,9 +50,9 @@
                     <i class="ri-focus-2-line"></i>
                     <span>{{ __('Goal') }}</span>
                     @if ($notificationGoal)
-                        <span class="badge bg-danger float-end">{{ $notificationGoal }}</span>    
+                        <span class="badge bg-danger float-end">{{ $notificationGoal }}</span>
                     @else
-                        <span class="menu-arrow"></span>  
+                        <span class="menu-arrow"></span>
                     @endif
                 </a>
                 <div class="collapse" id="sidebarGoals">
@@ -73,8 +73,8 @@
                     <a data-bs-toggle="collapse" href="#sidebarAppraisal" aria-expanded="false" aria-controls="sidebarAppraisal" class="side-nav-link">
                         <i class="ri-list-check-3"></i>
                         <span>{{ __('Appraisal') }}</span>
-                        <span class="badge bg-danger float-end {{ $notificationAppraisal ? '' : 'd-none' }}">{{ $notificationAppraisal }}</span>    
-                        <span class="menu-arrow {{ $notificationAppraisal ? 'd-none' : '' }}"></span>  
+                        <span class="badge bg-danger float-end {{ $notificationAppraisal ? '' : 'd-none' }}">{{ $notificationAppraisal }}</span>
+                        <span class="menu-arrow {{ $notificationAppraisal ? 'd-none' : '' }}"></span>
                     </a>
                     <div class="collapse" id="sidebarAppraisal">
                         <ul class="side-nav-second-level">

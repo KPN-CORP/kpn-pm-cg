@@ -72,9 +72,9 @@ class AppraisalTaskController extends Controller
             }])
             ->where('approver_id', $user)
             ->where('layer_type', 'manager')
-            ->whereHas('goal', function($query) use ($period) {
-                $query->where('period', $period);
-            })
+            // ->whereHas('goal', function($query) use ($period) {
+            //     $query->where('period', $period);
+            // })
             ->whereHas('employee', function ($query) {
                 $query->where(function($q) {
                     $q->whereRaw('json_valid(access_menu)')
@@ -98,9 +98,9 @@ class AppraisalTaskController extends Controller
             }])
             ->where('approver_id', $user)
             ->whereNotIn('layer_type', ['manager', 'calibrator'])
-            ->whereHas('appraisal', function($query) use ($period) {
-                $query->where('period', $period);
-            })
+            // ->whereHas('appraisal', function($query) use ($period) {
+            //     $query->where('period', $period);
+            // })
             ->whereHas('employee', function ($query) {
                 $query->where(function($q) {
                     $q->whereRaw('json_valid(access_menu)')
