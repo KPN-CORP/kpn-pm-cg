@@ -88,7 +88,7 @@ $(document).ready(function() {
         scrollX: true,
         paging: false,
         ajax: {
-            url: '/appraisals-task/teams-data',
+            url: '/appraisals-task/teams-data' + window.location.search,
             type: 'GET',
             dataSrc: ''
         },
@@ -206,7 +206,7 @@ $(document).ready(function() {
         scrollX: true,
         paging: false,
         ajax: {
-            url: '/appraisals-task/360-data',
+            url: '/appraisals-task/360-data' + window.location.search,
             type: 'GET',
             dataSrc: function (json) {
                 const rows = Array.isArray(json) ? json : json.data ?? [];

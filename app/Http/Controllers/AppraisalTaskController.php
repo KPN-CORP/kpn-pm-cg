@@ -147,6 +147,10 @@ public function getTeamData(Request $request)
         $period = $this->appService->appraisalPeriod();
         $filterYear = $request->input('filterYear');
 
+        if ($filterYear && $filterYear != '') {
+            $period = $filterYear;
+        }
+
         $datas = ApprovalLayerAppraisal::with([
             'employee' => function ($query) {
                 $query->whereRaw('json_valid(access_menu)')
@@ -260,6 +264,10 @@ public function getTeamData(Request $request)
         $user = $this->user;
         $period = $this->appService->appraisalPeriod();
         $filterYear = $request->input('filterYear');
+
+        if ($filterYear && $filterYear != '') {
+            $period = $filterYear;
+        }
 
         $datas = ApprovalLayerAppraisal::with([
             'employee' => function ($query) {
