@@ -172,11 +172,11 @@
                                                     </td>
                                                     <td class="{{ $loop->last ? 'border-0' : 'border-bottom-2 border-dashed' }}">
                                                         <p class="mt-1 mb-0 text-muted">{{ $data['target'] }}
-                                                            {{ is_null($data['custom_uom']) ? $data['uom'] : $data['custom_uom'] }}</p>
+                                                            {{ $data['uom'] === 'Other' ? $data['custom_uom'] : $data['uom'] }}</p>
                                                     </td>
                                                     <td class="{{ $loop->last ? 'border-0' : 'border-bottom-2 border-dashed' }}">
                                                         <p class="mt-1 mb-0 text-muted">{{ $data['achievement'] }}
-                                                            {{ is_null($data['custom_uom']) ? $data['uom'] : $data['custom_uom'] }}</p>
+                                                            {{ $data['uom'] === 'Other' ? $data['custom_uom'] : $data['uom'] }}</p>
                                                     </td>
                                                     <td class="{{ $loop->last ? 'border-0' : 'border-bottom-2 border-dashed' }}">
                                                         <p class="mt-1 mb-0 text-muted">{{ round($data['percentage']) }}%</p>

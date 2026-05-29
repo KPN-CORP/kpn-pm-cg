@@ -84,7 +84,7 @@
                                                             </div>
                                                             <div class="col-lg-3 mb-3">
                                                                 <div class="form-group">
-                                                                    <label class="form-label" for="target">{{ __('Target In UoM') }} {{ is_null($data['custom_uom']) ? $data['uom']: $data['custom_uom'] }}</label>
+                                                                    <label class="form-label" for="target">{{ __('Target In UoM') }} {{ $data['uom'] === 'Other' ? $data['custom_uom'] : $data['uom'] }}</label>
                                                                     <p class="mt-1 mb-0 text-muted" @style('white-space: pre-line')>{{ $data['target'] }}</p>
                                                                 </div>
                                                             </div>
@@ -132,7 +132,7 @@
                                                     </div>
                                                     <div class="col-lg-3 mb-3">
                                                         <div class="form-group">
-                                                            <label class="form-label" for="target">{{ __('Target In UoM') }} {{ is_null($data['custom_uom']) ? $data['uom']: $data['custom_uom'] }}</label>
+                                                            <label class="form-label" for="target">{{ __('Target In UoM') }} {{ $data['uom'] === 'Other' ? $data['custom_uom'] : $data['uom'] }}</label>
                                                             <p class="mt-1 mb-0 text-muted" @style('white-space: pre-line')>{{ $data['target'] }}</p>
                                                         </div>
                                                     </div>

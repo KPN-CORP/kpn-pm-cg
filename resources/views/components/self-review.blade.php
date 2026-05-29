@@ -31,21 +31,21 @@
                     </div>
                     <div class="col-lg-2 mb-3">
                         <div class="form-group">
-                            <label class="form-label" for="target">{{ __('Target In UoM') }} {{ is_null($data['custom_uom']) ? $data['uom']: $data['custom_uom'] }}</label>
+                            <label class="form-label" for="target">{{ __('Target In UoM') }} {{ $data['uom'] === 'Other' ? $data['custom_uom'] : $data['uom'] }}</label>
                             <p class="mt-1 mb-0 text-muted" @style('white-space: pre-line')>{{ $data['target'] }}</p>
                         </div>
                     </div>
                     <div class="col-lg-2 mb-3">
                         @if ((strtolower($data['cluster'] ?? '') != 'company' && !isset($data['actual'])) || strtolower($data['cluster'] ?? '') != 'company')
                             <div class="form-group">
-                                <label class="form-label" for="target">{{ __('Achievement In') }} {{ is_null($data['custom_uom']) ? $data['uom']: $data['custom_uom'] }}
+                                <label class="form-label" for="target">{{ __('Achievement In') }} {{ $data['uom'] === 'Other' ? $data['custom_uom'] : $data['uom'] }}
                                 </label>
                                 <input type="number" id="achievement-{{ $index + 1 }}" name="formData[{{ $formIndex }}][{{ $index }}][achievement]" placeholder="{{ __('Enter Achievement') }}.." value="{{ isset($data['actual']) ? $data['actual'] : "" }}" class="form-control achievement mt-1" />
                                 <div class="text-danger error-message"></div>
                             </div> 
                         @else
                             <div class="form-group">
-                                <label class="form-label {{ isset($data['actual']) ?? 'd-none' }}" for="target">{{ __('Achievement In') }} {{ is_null($data['custom_uom']) ? $data['uom']: $data['custom_uom'] }}
+                                <label class="form-label {{ isset($data['actual']) ?? 'd-none' }}" for="target">{{ __('Achievement In') }} {{ $data['uom'] === 'Other' ? $data['custom_uom'] : $data['uom'] }}
                                 </label>
                                 <input type="number" id="achievement-{{ $index + 1 }}" name="formData[{{ $formIndex }}][{{ $index }}][achievement]" placeholder="{{ __('Enter Achievement') }}.." value="{{ isset($data['actual']) ? $data['actual'] : "" }}" class="mt-1 d-none" />
                                 <div class="text-danger error-message"></div>

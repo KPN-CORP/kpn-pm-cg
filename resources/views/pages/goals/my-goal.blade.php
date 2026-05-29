@@ -256,7 +256,7 @@
                                                 <div class="col-lg col-sm-12 p-2">
                                                     <div class="form-group">
                                                         <h5>{{ __('Uom') }}</h5>
-                                                        <p class="mt-1 mb-0 text-muted">{{ is_null($data['custom_uom']) ? $data['uom'] : $data['custom_uom'] }}</p>
+                                                        <p class="mt-1 mb-0 text-muted">{{ $data['uom'] === 'Other' ? $data['custom_uom'] : $data['uom'] }}</p>
                                                     </div>
                                                 </div>
                                                 <div class="col-lg col-sm-12 p-2">
