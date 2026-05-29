@@ -32,12 +32,12 @@ class AdminTasksController extends Controller
         $this->period = $this->appService->appraisalPeriod();
 
         $this->roles = Auth::user()->roles;
-        
+
         $restrictionData = [];
         if(!is_null($this->roles)){
             $restrictionData = json_decode($this->roles->first()->restriction, true);
         }
-        
+
         $this->permissionGroupCompanies = $restrictionData['group_company'] ?? [];
         $this->permissionCompanies = $restrictionData['contribution_level_code'] ?? [];
         $this->permissionLocations = $restrictionData['work_area_code'] ?? [];
@@ -103,16 +103,16 @@ class AdminTasksController extends Controller
                 return $t;
 
             }
-            
+
             // CASE 2: flow role
             $roles = $this->getStepRoles($cur, $step);
-            
+
             $t->resolved_roles      = $roles;
             $t->approval_candidates = $this->buildRoleCandidatesMap($roles);
-            
+
             return $t;
         });
-        
+
         //=========== MAP EMPLOYEE ===========
         $empIds = $tasks->pluck('employee_id')->filter()->unique()->values()->all();
         $empMap = EmployeeAppraisal::select('employee_id','fullname','designation_name')
@@ -123,7 +123,7 @@ class AdminTasksController extends Controller
         $roleNamesUsed = array_values(array_unique($roleNamesUsed));
         $roleCandidates = $this->getRoleCandidatesLabels($roleNamesUsed);
 
-        $parentLink = __('Admin Tasks'); 
+        $parentLink = __('Admin Tasks');
         $link       = __('Tasks');
 
         if ($request->ajax()) {
@@ -414,7 +414,7 @@ class AdminTasksController extends Controller
         if (is_array($roles) && array_intersect($roles, $managerRoles)) {
             $roles = $req->current_approval_id ? [(string)$req->current_approval_id] : [];
         }
-        
+
         // Kandidat untuk role ini (tooltip/list)
         $candidates = $this->buildRoleCandidatesMap($roles) ?? [];
 
