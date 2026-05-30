@@ -59,7 +59,7 @@
                 <div class="col-auto">
                     <div class="mb-3">
                         <label class="form-label" for="filterYear">{{ __('Year') }}</label>
-                        <select name="filterYear" id="filterYear" onchange="filterGoals(this.value)" 
+                        <select name="filterYear" id="filterYear" onchange="filterGoals(this.value)"
                                 class="form-select border-secondary" style="width: 180px">
                         <option value="">{{ __('select all') }}</option>
                         @foreach ($selectYear as $year)
@@ -94,23 +94,23 @@
                     <div class="card-header bg-white py-3 d-flex align-items-center justify-content-between pb-0">
                         <h4 class="m-0 font-weight-bold text-primary">{{ __('Goal') }} {{ $row->request->period }}</h4>
                         @if ($period == $row->request->goal->period && !$row->request->appraisalCheck && $access)
-                            @if (Auth::user()->employee_id == $row->request->initiated->employee_id)
+                            @if (Auth::user()->employee_id == ($row->request->initiated ? $row->request->initiated->employee_id : ''))
                                 @if (
-                                    $row->request->goal->form_status != 'Draft' && 
+                                    $row->request->goal->form_status != 'Draft' &&
                                     $row->request->created_by == Auth::user()->id
                                 )
-                                    <a class="btn btn-outline-warning fw-semibold" 
-                                    href="{{ route('goals.edit', $row->request->goal->id) }}" 
+                                    <a class="btn btn-outline-warning fw-semibold"
+                                    href="{{ route('goals.edit', $row->request->goal->id) }}"
                                     onclick="showLoader()">
                                     {{ __('Revise Goals') }}
                                     </a>
                                 @elseif (
-                                    $row->request->goal->form_status == 'Draft' || 
-                                    ($row->request->status == 'Pending' && count($row->request->approval) == 0) || 
+                                    $row->request->goal->form_status == 'Draft' ||
+                                    ($row->request->status == 'Pending' && count($row->request->approval) == 0) ||
                                     $row->request->sendback_to == $row->request->employee_id
                                 )
-                                    <a class="btn btn-outline-warning fw-semibold" 
-                                    href="{{ route('goals.edit', $row->request->goal->id) }}" 
+                                    <a class="btn btn-outline-warning fw-semibold"
+                                    href="{{ route('goals.edit', $row->request->goal->id) }}"
                                     onclick="showLoader()">
                                     {{ $row->request->status === 'Sendback' ? __('Revise Goals') : __('Edit') }}
                                     </a>
@@ -139,7 +139,7 @@
                         <div class="row px-2">
                             <div class="col-lg col-sm-12 p-2">
                                 <h5>{{ __('Initiated By') }}</h5>
-                                <p class="mt-2 mb-0 text-muted">{{ $row->request->initiated->fullname.' ('.$row->request->initiated->employee_id.')' }}</p>
+                                <p class="mt-2 mb-0 text-muted">{{ $row->request->initiated ? $row->request->initiated->fullname.' ('.$row->request->initiated->employee_id.')' : '-'}}</p>
                             </div>
                             <div class="col-lg col-sm-12 p-2">
                                 <h5>{{ __('Initiated Date') }}</h5>
@@ -151,12 +151,12 @@
                             </div>
                             <div class="col-lg col-sm-12 p-2">
                                 <h5>{{ __('Adjusted By') }}</h5>
-                                <p class="mt-2 mb-0 text-muted">{{ $row->request->updatedBy ? $row->request->updatedBy->name.' '.$row->request->updatedBy->employee_id : '-' }}{{ $row->request->updated_by != auth()->user()->id && empty($adjustByManager) && auth()->check() && auth()->user()->roles->isNotEmpty() && $period == $row->request->goal->period && $row->request->initiated->employee_id != $row->request->employee_id ? ' (Admin)': '' }}</p>
+                                <p class="mt-2 mb-0 text-muted">{{ $row->request->updatedBy ? $row->request->updatedBy->name.' '.$row->request->updatedBy->employee_id : '-' }}{{ $row->request->updated_by != auth()->user()->id && empty($adjustByManager) && auth()->check() && auth()->user()->roles->isNotEmpty() && $period == $row->request->goal->period && ($row->request->initiated ? $row->request->initiated->employee_id : '') != $row->request->employee_id ? ' (Admin)': '' }}</p>
                             </div>
                             <div class="col-lg col-sm-12 p-2">
                                 <h5>Status</h5>
                                 <div>
-                                    <a href="javascript:void(0)" data-bs-id="{{ $row->request->employee_id }}" data-bs-toggle="popover" data-bs-trigger="hover focus" 
+                                    <a href="javascript:void(0)" data-bs-id="{{ $row->request->employee_id }}" data-bs-toggle="popover" data-bs-trigger="hover focus"
                                         data-bs-content="{{
                                             $row->request->goal->form_status == 'Draft'
                                                 ? 'Draft'
@@ -165,7 +165,7 @@
                                                     : ($row->approvalLayer && $row->request->status != 'Approved'
                                                         ? 'Manager L'.$row->approvalLayer.' : '.$row->name
                                                         : ($row->request->status === 'Sendback' ? $row->name : 'Approved')
-                                                    ) 
+                                                    )
                                                 )
                                         }}"
                                         class="badge {{ $row->request->goal->form_status == 'Draft' || $row->request->sendback_to == $row->request->employee_id ? 'bg-secondary' : ($row->request->appraisalCheck || $row->request->status == 'Pending' ? 'bg-warning' : ($row->request->status == 'Approved' ? 'bg-success' : 'text-bg-light'))}} rounded-pill py-1 px-2">
@@ -289,7 +289,7 @@
                                 <tr>
                                     <td colspan="5" class="text-center">No goals data available</td>
                                 </tr>
-                                @endif 
+                                @endif
                                 </tbody>
                             </table>
                         </div>
