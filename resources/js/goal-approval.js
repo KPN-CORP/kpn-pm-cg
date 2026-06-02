@@ -51,6 +51,8 @@ function validate() {
         sum += parseFloat(weight[i].value) || 0; // Parse input value to float, default to 0 if NaN
     }
 
+    sum = Math.trunc(sum * 100) / 100;
+
     if (sum != 90) {
         Swal.fire({
             title: "Submission failed",

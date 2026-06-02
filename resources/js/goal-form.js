@@ -403,6 +403,8 @@ function validate(submitType) {
         sum += isNaN(num) ? 0 : num; // Parse input value to integer, default to 0 if NaN
     }
 
+    sum = Math.trunc(sum * 100) / 100;
+
     // Skip total weightage validation for cluster forms
     if (sum != 90 && submitType === "submit_form") {
         Swal.fire({
