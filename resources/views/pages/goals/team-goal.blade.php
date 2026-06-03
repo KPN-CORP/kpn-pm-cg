@@ -305,9 +305,10 @@
                                                 @php
                                                     $subordinates = $notask->subordinates;
                                                     $firstSubordinate = $subordinates->isNotEmpty() ? $subordinates->first() : null;
-                                                    $formStatus = $firstSubordinate ? $firstSubordinate->goal->form_status : null;
-                                                    $goalId = $firstSubordinate ? $firstSubordinate->goal->id : null;
-                                                    $goalData = $firstSubordinate ? $firstSubordinate->goal['form_data'] : null;
+                                                    $goal = $firstSubordinate?->goal;
+                                                    $formStatus = $goal?->form_status;
+                                                    $goalId = $goal?->id;
+                                                    $goalData = $goal?->form_data;
                                                     $createdAt = $firstSubordinate ? $firstSubordinate->created_at : null;
                                                     $updatedAt = $firstSubordinate ? $firstSubordinate->updated_at : null;
                                                     $updatedBy = $firstSubordinate ? $firstSubordinate->updatedBy : null;
