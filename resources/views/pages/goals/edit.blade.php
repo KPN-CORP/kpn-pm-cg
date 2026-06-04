@@ -187,9 +187,6 @@
                                                 @endif
                                                 {{ in_array($cluster, ['personal', 'division']) ? '' : 'readonly' }}
                                             >
-                                            @if(!in_array($cluster, ['personal', 'division']))
-                                                <input type="hidden" name="custom_uom[]" value="{{ $row['custom_uom'] }}">
-                                            @endif
                                         </div>
                                       </div>
                                       <div class="col-md">
