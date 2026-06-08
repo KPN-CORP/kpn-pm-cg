@@ -43,56 +43,91 @@ class GoalExport implements FromView, WithStyles
     {
         $query = ApprovalRequest::query();
 
-        $query->where('category', 'Goals')->where('period', $this->period);
+        $query->where('category', 'Goals')
+            ->where('period', $this->period);
 
         if (!$this->admin) {
             $query->whereHas('approvalLayer', function ($query) {
-                $query->where('approver_id', Auth()->user()->employee_id)
-                ->orWhere('employee_id', Auth()->user()->employee_id);
+                $query->where('approver_id', auth()->user()->employee_id)
+                    ->orWhere('employee_id', auth()->user()->employee_id);
             });
         }
 
-        // Apply filters if they are provided
-        if ($this->groupCompany) {
-            $query->whereHas('employee', function ($query) {
-                $query->where('group_company', $this->groupCompany);
+        /*
+        |--------------------------------------------------------------------------
+        | User Filters (Multi Select)
+        |--------------------------------------------------------------------------
+        */
+
+        if (!empty($this->groupCompany)) {
+
+            $groupCompanies = is_array($this->groupCompany)
+                ? $this->groupCompany
+                : [$this->groupCompany];
+
+            $query->whereHas('employee', function ($query) use ($groupCompanies) {
+                $query->whereIn('group_company', $groupCompanies);
             });
         }
 
-        if ($this->location) {
-            $query->whereHas('employee', function ($query) {
-                $query->where('work_area_code', $this->location);
+        if (!empty($this->location)) {
+
+            $locations = is_array($this->location)
+                ? $this->location
+                : [$this->location];
+
+            $query->whereHas('employee', function ($query) use ($locations) {
+                $query->whereIn('work_area_code', $locations);
             });
         }
 
-        if ($this->company) {
-            $query->whereHas('employee', function ($query) {
-                $query->where('contribution_level_code', $this->company);
+        if (!empty($this->company)) {
+
+            $companies = is_array($this->company)
+                ? $this->company
+                : [$this->company];
+
+            $query->whereHas('employee', function ($query) use ($companies) {
+                $query->whereIn('contribution_level_code', $companies);
             });
         }
 
-        $permissionLocations = $this->permissionLocations;
-        $permissionCompanies = $this->permissionCompanies;
-        $permissionGroupCompanies = $this->permissionGroupCompanies;
+        /*
+        |--------------------------------------------------------------------------
+        | Permission Filters
+        |--------------------------------------------------------------------------
+        */
 
         $criteria = [
-            'work_area_code' => $permissionLocations,
-            'group_company' => $permissionGroupCompanies,
-            'contribution_level_code' => $permissionCompanies,
+            'work_area_code' => $this->permissionLocations,
+            'group_company' => $this->permissionGroupCompanies,
+            'contribution_level_code' => $this->permissionCompanies,
         ];
 
-        // Update query to include criteria
-        $query->where(function ($query) use ($criteria) {
-            foreach ($criteria as $key => $value) {
-                if ($value !== null && !empty($value)) {
-                    $query->orWhereHas('employee', function ($subquery) use ($key, $value) {
-                        $subquery->whereIn($key, $value);
-                    });
-                }
-            }
-        });
+        foreach ($criteria as $column => $values) {
 
-        $this->goals = $query->with(['employee', 'manager', 'goal', 'initiated', 'approvalLayer'])->get();
+            if (!empty($values)) {
+
+                $query->whereHas('employee', function ($subQuery) use ($column, $values) {
+
+                    $subQuery->whereIn(
+                        $column,
+                        is_array($values) ? $values : [$values]
+                    );
+
+                });
+            }
+        }
+
+        $this->goals = $query
+            ->with([
+                'employee',
+                'manager',
+                'goal',
+                'initiated',
+                'approvalLayer'
+            ])
+            ->get();
 
         return view('exports.goal', [
             'goals' => $this->goals
