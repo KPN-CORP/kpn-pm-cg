@@ -6,6 +6,7 @@ use App\Models\ApprovalRequest;
 use App\Models\Company;
 use App\Models\Location;
 use Illuminate\Contracts\View\View;
+use Illuminate\Support\Facades\Log;
 use Maatwebsite\Excel\Concerns\Exportable;
 use Maatwebsite\Excel\Concerns\FromView;
 use Maatwebsite\Excel\Concerns\WithStyles;
@@ -36,6 +37,17 @@ class GoalExport implements FromView, WithStyles
         $this->permissionLocations = $permissionLocations;
         $this->permissionCompanies = $permissionCompanies;
         $this->permissionGroupCompanies = $permissionGroupCompanies;
+
+        Log::debug('Goal Export Filters', [
+            'period' => $this->period,
+            'groupCompany' => $this->groupCompany,
+            'location' => $this->location,
+            'company' => $this->company,
+            'permissionLocations' => $this->permissionLocations,
+            'permissionCompanies' => $this->permissionCompanies,
+            'permissionGroupCompanies' => $this->permissionGroupCompanies,
+            'admin' => $this->admin,
+        ]);
   
     }
 
@@ -86,6 +98,10 @@ class GoalExport implements FromView, WithStyles
             $companies = is_array($this->company)
                 ? $this->company
                 : [$this->company];
+
+            Log::debug('Applying Company Filter', [
+                'values' => $companies,
+            ]);
 
             $query->whereHas('employee', function ($query) use ($companies) {
                 $query->whereIn('contribution_level_code', $companies);
