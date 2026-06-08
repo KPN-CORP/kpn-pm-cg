@@ -73,9 +73,7 @@ class GoalExport implements FromView, WithStyles
 
         if (!empty($this->groupCompany)) {
 
-            $groupCompanies = is_array($this->groupCompany)
-                ? $this->groupCompany
-                : [$this->groupCompany];
+            $groupCompanies = $this->normalizeFilter($this->groupCompany);
 
             $query->whereHas('employee', function ($query) use ($groupCompanies) {
                 $query->whereIn('group_company', $groupCompanies);
@@ -84,9 +82,7 @@ class GoalExport implements FromView, WithStyles
 
         if (!empty($this->location)) {
 
-            $locations = is_array($this->location)
-                ? $this->location
-                : [$this->location];
+            $locations = $this->normalizeFilter($this->location);
 
             $query->whereHas('employee', function ($query) use ($locations) {
                 $query->whereIn('work_area_code', $locations);
@@ -95,13 +91,7 @@ class GoalExport implements FromView, WithStyles
 
         if (!empty($this->company)) {
 
-            $companies = is_array($this->company)
-                ? $this->company
-                : [$this->company];
-
-            Log::debug('Applying Company Filter', [
-                'values' => $companies,
-            ]);
+            $companies = $this->normalizeFilter($this->company);
 
             $query->whereHas('employee', function ($query) use ($companies) {
                 $query->whereIn('contribution_level_code', $companies);
@@ -148,6 +138,21 @@ class GoalExport implements FromView, WithStyles
         return view('exports.goal', [
             'goals' => $this->goals
         ]);
+    }
+
+    private function normalizeFilter($value): array
+    {
+        if (empty($value)) {
+            return [];
+        }
+
+        if (is_array($value)) {
+            return $value;
+        }
+
+        return array_filter(
+            array_map('trim', explode(',', $value))
+        );
     }
 
     public function styles($sheet)
