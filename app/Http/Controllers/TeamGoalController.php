@@ -91,6 +91,9 @@ class TeamGoalController extends Controller
         })
         ->where('approver_id', $user)
         ->get()
+        ->filter(function ($task) {
+            return $task->employee !== null;
+        })
         ->groupBy('employee_id')
         ->map(function ($groupedTasks) {
             return $groupedTasks->sortByDesc('layer')->first();
