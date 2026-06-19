@@ -133,7 +133,7 @@
                                                     $sendbackMessages = $firstSubordinate ? $firstSubordinate->sendback_messages : null;
                                                     $employeeName = $firstSubordinate ? $firstSubordinate->name : null;
                                                     $approvalLayer = $firstSubordinate ? $firstSubordinate->approvalLayer : null;
-                                                    $accessMenu = json_decode($firstSubordinate->employee->access_menu, true);
+                                                    $accessMenu = json_decode($firstSubordinate->employee?->access_menu, true);
                                                     $goals = $accessMenu['goals'] ?? null;
                                                     $doj = $accessMenu['doj'] ?? null;
                                                 @endphp
@@ -149,17 +149,17 @@
                                                             <div class="col-auto p-2 d-none d-md-block text-end">
                                                                 <div class="mb-2">
                                                                     @if ($period == $goalPeriod && $formStatus != 'Draft' && $status != 'Sendback' && !$appraisalCheck && $goals)
-                                                                        <a class="btn btn-sm btn-outline-warning me-1 fw-semibold {{ Auth::user()->employee_id == $firstSubordinate->initiated->employee_id ? '' : 'd-none' }}" href="{{ route('goals.edit', $goalId) }}" onclick="showLoader()">{{ __('Revise Goals') }}</a>
+                                                                        <a class="btn btn-sm btn-outline-warning me-1 fw-semibold {{ Auth::user()->employee_id == $firstSubordinate->initiated?->employee_id ? '' : 'd-none' }}" href="{{ route('goals.edit', $goalId) }}" onclick="showLoader()">{{ __('Revise Goals') }}</a>
                                                                     @endif
                                                                     @if ($period == $goalPeriod && $task->employee->employee_id == Auth::user()->employee_id || !$subordinates->isNotEmpty() || $formStatus == 'Draft')
                                                                         @if ($formStatus == 'submitted' || $formStatus == 'Approved' || $appraisalCheck)
                                                                         <a href="javascript:void(0)" class="btn btn-outline-secondary btn-sm" data-bs-toggle="modal" data-bs-target="#modalDetail{{ $goalId }}"><i class="ri-file-text-line"></i></a>
                                                                         @endif
-                                                                        <a class="btn btn-sm me-1 btn-outline-warning fw-semibold {{ Auth::user()->employee_id == $firstSubordinate->initiated->employee_id ? '' : 'd-none' }}" href="{{ route('team-goals.edit', $goalId) }}" onclick="showLoader()">{{ __('Edit') }}</a>
+                                                                        <a class="btn btn-sm me-1 btn-outline-warning fw-semibold {{ Auth::user()->employee_id == $firstSubordinate->initiated?->employee_id ? '' : 'd-none' }}" href="{{ route('team-goals.edit', $goalId) }}" onclick="showLoader()">{{ __('Edit') }}</a>
                                                                     @else
-                                                                        @if ($period == $goalPeriod && $approverId == Auth::user()->employee_id && $status === 'Pending' || $sendbackTo == Auth::user()->employee_id && $status === 'Sendback' || !$subordinates->isNotEmpty() || Auth::user()->employee_id == $firstSubordinate->initiated->employee_id && $status === 'Sendback' && $task->employee->employee_id != Auth::user()->employee_id)
-                                                                            <a class="btn btn-sm me-1 btn-outline-warning fw-semibold {{ Auth::user()->employee_id == $firstSubordinate->initiated->employee_id ? '' : 'd-none' }}" href="{{ route('team-goals.edit', $goalId) }}" onclick="showLoader()">{{ $status === 'Sendback' ? __('Revise Goals') : __('Edit') }}</a>
-                                                                            @if ($status != 'Sendback' && Auth::user()->employee_id != $firstSubordinate->initiated->employee_id && !$appraisalCheck)
+                                                                        @if ($period == $goalPeriod && $approverId == Auth::user()->employee_id && $status === 'Pending' || $sendbackTo == Auth::user()->employee_id && $status === 'Sendback' || !$subordinates->isNotEmpty() || Auth::user()->employee_id == $firstSubordinate->initiated?->employee_id && $status === 'Sendback' && $task->employee->employee_id != Auth::user()->employee_id)
+                                                                            <a class="btn btn-sm me-1 btn-outline-warning fw-semibold {{ Auth::user()->employee_id == $firstSubordinate->initiated?->employee_id ? '' : 'd-none' }}" href="{{ route('team-goals.edit', $goalId) }}" onclick="showLoader()">{{ $status === 'Sendback' ? __('Revise Goals') : __('Edit') }}</a>
+                                                                            @if ($status != 'Sendback' && Auth::user()->employee_id != $firstSubordinate->initiated?->employee_id && !$appraisalCheck)
                                                                                 <a href="{{ route('team-goals.approval', $goalId) }}" class="btn btn-sm btn-outline-primary font-weight-medium" onclick="showLoader()">Act</a>
                                                                             @endif
                                                                         @else
@@ -172,7 +172,7 @@
                                                         <div class="row">
                                                             <div class="col-md-3 p-2">
                                                                 <h5>{{ __('Initiated By') }}</h5>
-                                                                <p class="mt-2 mb-0 text-muted">{{ $subordinates->isNotEmpty() ?$firstSubordinate->initiated->name .' ('.$firstSubordinate->initiated->employee_id.')' : '-' }}</p>
+                                                                <p class="mt-2 mb-0 text-muted">{{ $subordinates->isNotEmpty() ?$firstSubordinate->initiated?->name .' ('.$firstSubordinate->initiated?->employee_id.')' : '-' }}</p>
                                                             </div>
                                                             <div class="col-md-2 p-2">
                                                                 <h5>{{ __('Initiated Date') }}</h5>
@@ -197,17 +197,17 @@
                                                     <div class="col-md-auto d-md-none d-block">
                                                         <div class="align-items-center text-end py-2">
                                                             @if ($period == $goalPeriod && $formStatus != 'Draft' && $status != 'Sendback' && !$appraisalCheck && $goals)
-                                                                <a class="btn btn-sm btn-outline-warning me-1 fw-semibold {{ Auth::user()->employee_id == $firstSubordinate->initiated->employee_id ? '' : 'd-none' }}" href="{{ route('goals.edit', $goalId) }}" onclick="showLoader()">{{ __('Revise Goals') }}</a>
+                                                                <a class="btn btn-sm btn-outline-warning me-1 fw-semibold {{ Auth::user()->employee_id == $firstSubordinate->initiated?->employee_id ? '' : 'd-none' }}" href="{{ route('goals.edit', $goalId) }}" onclick="showLoader()">{{ __('Revise Goals') }}</a>
                                                             @endif
                                                             @if ($task->employee->employee_id == Auth::user()->employee_id || !$subordinates->isNotEmpty() || $formStatus == 'Draft')
                                                                 @if ($period == $goalPeriod && $formStatus == 'submitted' || $formStatus == 'Approved' || $appraisalCheck)
                                                                 <a href="javascript:void(0)" class="btn btn-outline-secondary btn-sm" data-bs-toggle="modal" data-bs-target="#modalDetail{{ $goalId }}"><i class="ri-file-text-line"></i></a>
                                                                 @endif
-                                                                <a class="btn btn-sm me-1 btn-outline-warning fw-semibold {{ Auth::user()->employee_id == $firstSubordinate->initiated->employee_id ? '' : 'd-none' }}" href="{{ route('team-goals.edit', $goalId) }}" onclick="showLoader()">{{ __('Edit') }}</a>
+                                                                <a class="btn btn-sm me-1 btn-outline-warning fw-semibold {{ Auth::user()->employee_id == $firstSubordinate->initiated?->employee_id ? '' : 'd-none' }}" href="{{ route('team-goals.edit', $goalId) }}" onclick="showLoader()">{{ __('Edit') }}</a>
                                                             @else
                                                                 @if ($period == $goalPeriod && $approverId == Auth::user()->employee_id && $status === 'Pending' || $sendbackTo == Auth::user()->employee_id && $status === 'Sendback' || !$subordinates->isNotEmpty())
-                                                                    <a class="btn btn-sm me-1 btn-outline-warning fw-semibold {{ Auth::user()->employee_id == $firstSubordinate->initiated->employee_id ? '' : 'd-none' }}" href="{{ route('team-goals.edit', $goalId) }}" onclick="showLoader()">{{ $status === 'Sendback' ? __('Revise Goals') : __('Edit') }}</a>
-                                                                    @if ($status != 'Sendback' && Auth::user()->employee_id != $firstSubordinate->initiated->employee_id && !$appraisalCheck)
+                                                                    <a class="btn btn-sm me-1 btn-outline-warning fw-semibold {{ Auth::user()->employee_id == $firstSubordinate->initiated?->employee_id ? '' : 'd-none' }}" href="{{ route('team-goals.edit', $goalId) }}" onclick="showLoader()">{{ $status === 'Sendback' ? __('Revise Goals') : __('Edit') }}</a>
+                                                                    @if ($status != 'Sendback' && Auth::user()->employee_id != $firstSubordinate->initiated?->employee_id && !$appraisalCheck)
                                                                         <a href="{{ route('team-goals.approval', $goalId) }}" class="btn btn-sm btn-outline-primary font-weight-medium" onclick="showLoader()">Act</a>
                                                                     @endif
                                                                 @else
@@ -337,7 +337,7 @@
                                                     <div class="col-auto d-flex align-items-center ms-auto">
                                                         @php
                                                             // Decode the JSON string to an array
-                                                            $accessMenu = json_decode($notask->employee->access_menu, true);
+                                                            $accessMenu = json_decode($notask->employee?->access_menu, true);
                                                             // Get the 'goals' and 'doj' values
                                                             $goals = $accessMenu['goals'] ?? null;
                                                             $doj = $accessMenu['doj'] ?? null;

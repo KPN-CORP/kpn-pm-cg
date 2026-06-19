@@ -15,6 +15,17 @@ function adminReportType(val) {
     const customsearch = $("#customsearch");
     const formData = reportForm.serialize();
 
+    const reportBtn = document.getElementById('existingReport');
+
+    reportBtn.classList.add('d-none');    
+
+    if (val === 'Goal') {
+
+        checkExistingGoalReport();
+        startGoalReportChecker();
+
+    }
+
     initializePopovers();
 
     showLoader();
@@ -77,6 +88,70 @@ function adminReportType(val) {
 }
 
 window.adminReportType = adminReportType;
+
+let goalReportInterval = null;
+
+function startGoalReportChecker() {
+
+    if (goalReportInterval) {
+        clearInterval(goalReportInterval);
+    }
+
+    goalReportInterval = setInterval(() => {
+
+        fetch('/admin-export/latest-goal-report', {
+                method: 'GET'
+            })
+            .then(response => response.json())
+            .then(data => {
+
+                if (!data.exists) {
+                    return;
+                }
+
+                const reportBtn = document.getElementById('existingReport');
+
+                reportBtn.href = data.file;
+                reportBtn.classList.remove('d-none');
+
+                clearInterval(goalReportInterval);
+                goalReportInterval = null;
+
+                Swal.fire({
+                    toast: true,
+                    position: 'top-end',
+                    icon: 'success',
+                    title: 'Report Ready',
+                    text: 'Your report is ready for download.',
+                    showConfirmButton: false,
+                    timer: 5000
+                });
+
+            });
+
+    }, 5000);
+}
+
+function checkExistingGoalReport() {
+
+    const reportBtn = document.getElementById('existingReport');
+
+    reportBtn.classList.add('d-none');
+
+    fetch('/admin-export/latest-goal-report', {
+                method: 'GET'
+            })
+            .then(response => response.json())
+            .then(data => {
+
+                if (data.exists) {
+                    reportBtn.href = data.file;
+                    reportBtn.classList.remove('d-none');
+                }
+
+            })
+            .catch(error => console.error(error));
+}
 
 document.addEventListener("DOMContentLoaded", function () {
     const reportForm = $("#admin_report_filter");

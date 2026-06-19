@@ -49,17 +49,30 @@
             </div>
         </div>
         <div class="col-lg-auto">
-          <div class="mb-2 text-end">
-            <form id="exportForm" action="{{ route('admin.export') }}" method="POST">
-              @csrf
-              <input type="hidden" name="export_report_type" id="export_report_type">
-              <input type="hidden" name="export_group_company" id="export_group_company">
-              <input type="hidden" name="export_company" id="export_company">
-              <input type="hidden" name="export_location" id="export_location">
-              <input type="hidden" name="export_period" id="export_period">
-              <a id="export" onclick="exportExcel()" class="btn btn-outline-secondary px-4 shadow disabled"><i class="ri-arrow-circle-down-line"></i> Download</a>
-            </form>
-          </div>
+            <div class="mb-2 text-end">
+
+                <a id="existingReport"
+                  href="#"
+                  class="btn btn-success px-4 shadow me-2 d-none">
+                    <i class="ri-file-excel-line"></i> Report
+                </a>
+
+                <form id="exportForm" action="{{ route('admin.export') }}" method="POST" class="d-inline">
+                    @csrf
+                    <input type="hidden" name="export_report_type" id="export_report_type">
+                    <input type="hidden" name="export_group_company" id="export_group_company">
+                    <input type="hidden" name="export_company" id="export_company">
+                    <input type="hidden" name="export_location" id="export_location">
+                    <input type="hidden" name="export_period" id="export_period">
+
+                    <a id="export"
+                      onclick="exportExcel()"
+                      class="btn btn-outline-secondary px-4 shadow disabled">
+                        <i class="ri-arrow-circle-down-line"></i> Download
+                    </a>
+                </form>
+
+            </div>
         </div>
       </div>
     </div>
@@ -150,18 +163,45 @@
     
 @endsection
 @push('scripts')
-@if(session('triggerFunction'))
-    <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            const reportSelect = document.getElementById('reportType');
-            const triggerValue = "{{ session('triggerFunction') }}";
 
-            // Set the select value to 'EmployeePA' and trigger the onchange event
-            if (triggerValue) {
-                reportSelect.value = triggerValue;
-                adminReportType(triggerValue);
-            }
-        });
-    </script>
+@if(session()->has('toast'))
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+
+    const toast = @json(session('toast'));
+
+    Swal.fire({
+        toast: true,
+        position: 'top-end',
+        icon: toast.type,
+        title: toast.title,
+        text: toast.message,
+        showConfirmButton: false,
+        timer: 5000,
+        timerProgressBar: true
+    });
+    startGoalReportChecker();
+
+});
+</script>
 @endif
+
+@if(session()->has('triggerFunction'))
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+
+    const reportSelect = document.getElementById('reportType');
+    const triggerValue = @json(session('triggerFunction'));
+
+    if (!reportSelect || !triggerValue) {
+        return;
+    }
+
+    reportSelect.value = triggerValue;
+    adminReportType(triggerValue);
+
+});
+</script>
+@endif
+
 @endpush

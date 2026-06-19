@@ -198,6 +198,10 @@ Route::middleware('auth', 'locale', 'notification', 'restrict_bu')->group(functi
 
     Route::post('/export', [ExportExcelController::class, 'export'])->name('export');
     Route::post('/admin-export', [ExportExcelController::class, 'exportAdmin'])->name('admin.export');
+    Route::get('/admin-export/latest-goal-report', [ExportExcelController::class, 'latestGoalReport'])
+    ->name('admin.export.latest-goal-report');
+    Route::get('/admin-export/download-existing/{file}', [ExportExcelController::class, 'downloadExisting'])
+    ->name('admin.export.download-existing');
     Route::post('/notInitiatedReport', [ExportExcelController::class, 'notInitiated'])->name('team-goals.notInitiated');
     Route::post('/initiatedReport', [ExportExcelController::class, 'initiated'])->name('team-goals.initiated');
     // Route::get('/export/goals', [ReportController::class, 'exportGoal'])->name('export.goal');

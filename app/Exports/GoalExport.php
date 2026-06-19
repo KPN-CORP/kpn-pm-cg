@@ -3,185 +3,301 @@
 namespace App\Exports;
 
 use App\Models\ApprovalRequest;
-use App\Models\Company;
-use App\Models\Location;
-use Illuminate\Contracts\View\View;
+use Illuminate\Contracts\Queue\ShouldQueue;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\Log;
 use Maatwebsite\Excel\Concerns\Exportable;
-use Maatwebsite\Excel\Concerns\FromView;
+use Maatwebsite\Excel\Concerns\FromQuery;
+use Maatwebsite\Excel\Concerns\ShouldAutoSize;
+use Maatwebsite\Excel\Concerns\WithChunkReading;
+use Maatwebsite\Excel\Concerns\WithHeadings;
+use Maatwebsite\Excel\Concerns\WithMapping;
 use Maatwebsite\Excel\Concerns\WithStyles;
 use PhpOffice\PhpSpreadsheet\Cell\DataValidation;
+use PhpOffice\PhpSpreadsheet\Style\NumberFormat;
 
-class GoalExport implements FromView, WithStyles
+class GoalExport implements FromQuery, WithChunkReading, WithHeadings, WithMapping, WithStyles, ShouldAutoSize, ShouldQueue
 {
     use Exportable;
 
-    protected $groupCompany;
-    protected $location;
-    protected $company;
-    protected $period;
-    protected $admin;
-    protected $permissionGroupCompanies;
-    protected $permissionCompanies;
-    protected $permissionLocations;
-    protected $goals;
-
-    public function __construct($period, $groupCompany, $location, $company, $admin, $permissionLocations, $permissionCompanies, $permissionGroupCompanies)
-    {
-        $this->groupCompany = $groupCompany;
-        $this->location = $location;
-        $this->company = $company;
-        $this->admin = $admin;
-        $this->period = $period;
-
-        $this->permissionLocations = $permissionLocations;
-        $this->permissionCompanies = $permissionCompanies;
-        $this->permissionGroupCompanies = $permissionGroupCompanies;
-
+    public function __construct(
+        protected readonly string $period,
+        protected readonly mixed  $groupCompany,
+        protected readonly mixed  $location,
+        protected readonly mixed  $company,
+        protected readonly bool   $admin,
+        protected readonly mixed  $permissionLocations,
+        protected readonly mixed  $permissionCompanies,
+        protected readonly mixed  $permissionGroupCompanies,
+    ) {
         Log::debug('Goal Export Filters', [
-            'period' => $this->period,
-            'groupCompany' => $this->groupCompany,
-            'location' => $this->location,
-            'company' => $this->company,
-            'permissionLocations' => $this->permissionLocations,
-            'permissionCompanies' => $this->permissionCompanies,
+            'period'                   => $this->period,
+            'groupCompany'             => $this->groupCompany,
+            'location'                 => $this->location,
+            'company'                  => $this->company,
+            'permissionLocations'      => $this->permissionLocations,
+            'permissionCompanies'      => $this->permissionCompanies,
             'permissionGroupCompanies' => $this->permissionGroupCompanies,
-            'admin' => $this->admin,
+            'admin'                    => $this->admin,
         ]);
-  
     }
 
-    public function view(): View
+    // -------------------------------------------------------------------------
+    // Query
+    // -------------------------------------------------------------------------
+
+    public function query(): Builder
+    {        
+        $query = ApprovalRequest::query()
+            ->where('category', 'Goals')
+            ->where('period', $this->period)
+            ->with([
+                'employee:id,employee_id,fullname,job_level,group_company,work_area_code,contribution_level_code',
+                'goal:id,form_data',
+                'initiated:id,employee_id,fullname',
+                'approvalLayer:id,approver_id,employee_id',
+                'approvalLayer.manager:id,employee_id',
+            ]);
+
+        if (! $this->admin) {
+            $employeeId = auth()->user()->employee_id;
+
+            $query->whereHas('approvalLayer', fn ($q) =>
+                $q->where('approver_id', $employeeId)
+                  ->orWhere('employee_id', $employeeId)
+            );
+        }
+
+        // User filters
+        $this->applyEmployeeFilter($query, 'group_company',           $this->groupCompany);
+        $this->applyEmployeeFilter($query, 'work_area_code',          $this->location);
+        $this->applyEmployeeFilter($query, 'contribution_level_code', $this->company);
+
+        // Permission filters
+        $this->applyEmployeeFilter($query, 'work_area_code',          $this->permissionLocations);
+        $this->applyEmployeeFilter($query, 'group_company',           $this->permissionGroupCompanies);
+        $this->applyEmployeeFilter($query, 'contribution_level_code', $this->permissionCompanies);
+
+        return $query;
+    }
+
+    // -------------------------------------------------------------------------
+    // Chunk size
+    // -------------------------------------------------------------------------
+
+    public function chunkSize(): int
     {
-        $query = ApprovalRequest::query();
+        return 500;
+    }
 
-        $query->where('category', 'Goals')
-            ->where('period', $this->period);
+    // -------------------------------------------------------------------------
+    // Headings
+    // -------------------------------------------------------------------------
 
-        if (!$this->admin) {
-            $query->whereHas('approvalLayer', function ($query) {
-                $query->where('approver_id', auth()->user()->employee_id)
-                    ->orWhere('employee_id', auth()->user()->employee_id);
-            });
-        }
+    public function headings(): array
+    {
+        return [
+            'Employee ID',
+            'Employee Name',
+            'Designation',
+            'Business Unit',
+            'Category',
+            'KPI',
+            'Target',
+            'Uom',
+            'Weightage',
+            'Type',
+            'Description',
+            'Form Status',
+            'Approval Status',
+            'Current Approver',
+            'Current Approver ID',
+            'Initiated By',
+            'Initiated By ID',
+            'Period',
+        ];
+    }
 
-        /*
-        |--------------------------------------------------------------------------
-        | User Filters (Multi Select)
-        |--------------------------------------------------------------------------
-        */
+    // -------------------------------------------------------------------------
+    // Map — expands one ApprovalRequest into N rows (one per KPI item)
+    // -------------------------------------------------------------------------
 
-        if (!empty($this->groupCompany)) {
+    public function map($row): array
+    {
+        $employee  = $row->employee;
+        $initiated = $row->initiated;
+        $approver  = $this->resolveCurrentApprover($row);
 
-            $groupCompanies = $this->normalizeFilter($this->groupCompany);
-
-            $query->whereHas('employee', function ($query) use ($groupCompanies) {
-                $query->whereIn('group_company', $groupCompanies);
-            });
-        }
-
-        if (!empty($this->location)) {
-
-            $locations = $this->normalizeFilter($this->location);
-
-            $query->whereHas('employee', function ($query) use ($locations) {
-                $query->whereIn('work_area_code', $locations);
-            });
-        }
-
-        if (!empty($this->company)) {
-
-            $companies = $this->normalizeFilter($this->company);
-
-            $query->whereHas('employee', function ($query) use ($companies) {
-                $query->whereIn('contribution_level_code', $companies);
-            });
-        }
-
-        /*
-        |--------------------------------------------------------------------------
-        | Permission Filters
-        |--------------------------------------------------------------------------
-        */
-
-        $criteria = [
-            'work_area_code' => $this->permissionLocations,
-            'group_company' => $this->permissionGroupCompanies,
-            'contribution_level_code' => $this->permissionCompanies,
+        $base = [
+            optional($employee)->employee_id,
+            optional($employee)->fullname,
+            optional($employee)->job_level,
+            optional($employee)->group_company,
+            $row->category,
+            null, // kpi
+            null, // target
+            null, // uom
+            null, // weightage
+            null, // type
+            null, // description
+            $row->form_status,
+            $row->status,
+            $approver['name'],
+            $approver['id'],
+            optional($initiated)->fullname,
+            optional($initiated)->employee_id ?? optional($employee)->employee_id,
+            $row->period,
         ];
 
-        foreach ($criteria as $column => $values) {
+        $goalItems = $this->parseGoalItems($row->goal);
 
-            if (!empty($values)) {
-
-                $query->whereHas('employee', function ($subQuery) use ($column, $values) {
-
-                    $subQuery->whereIn(
-                        $column,
-                        is_array($values) ? $values : [$values]
-                    );
-
-                });
-            }
+        if (empty($goalItems)) {
+            $base[5]  = '-';
+            $base[6]  = '-';
+            $base[7]  = '-';
+            $base[8]  = '-';
+            $base[9]  = '-';
+            $base[10] = '';
+            return [$base];
         }
 
-        $this->goals = $query
-            ->with([
-                'employee',
-                'manager',
-                'goal',
-                'initiated',
-                'approvalLayer'
-            ])
-            ->get();
+        $rows = [];
+        foreach ($goalItems as $item) {
+            $mapped     = $base;
+            $mapped[5]  = $item['kpi']         ?? '-';
+            $mapped[6]  = $item['target']       ?? '-';
+            $mapped[7]  = $this->resolveUom($item);
+            $mapped[8]  = $item['weightage']    ?? '-';
+            $mapped[9]  = $item['type']         ?? '-';
+            $mapped[10] = $item['description']  ?? '';
+            $rows[]     = $mapped;
+        }
 
-        return view('exports.goal', [
-            'goals' => $this->goals
-        ]);
+        return $rows;
     }
 
-    private function normalizeFilter($value): array
+    // -------------------------------------------------------------------------
+    // Styles
+    // -------------------------------------------------------------------------
+
+    public function styles($sheet): array
+    {
+        // Header row
+        $sheet->getStyle('A1:R1')->applyFromArray([
+            'font' => ['bold' => true],
+            'fill' => [
+                'fillType'   => 'solid',
+                'startColor' => ['rgb' => 'FFFF00'],
+            ],
+        ]);
+
+        // Percentage format on Weightage column (I)
+        $sheet->getStyle('I:I')
+            ->getNumberFormat()
+            ->setFormatCode(NumberFormat::FORMAT_PERCENTAGE);
+
+        // ✅ Apply ONE validation to the entire column range — no loop needed
+        $validation = $sheet->getCell('J2')->getDataValidation();
+        $validation->setType(DataValidation::TYPE_LIST);
+        $validation->setErrorStyle(DataValidation::STYLE_INFORMATION);
+        $validation->setAllowBlank(false);
+        $validation->setShowDropDown(true);
+        $validation->setFormula1('"Lower Better,Higher Better,Exact Value"');
+        $validation->setSqref('J2:J1048576'); // entire column in one shot
+
+        return [
+            1 => ['font' => ['bold' => true]],
+        ];
+    }
+
+    // -------------------------------------------------------------------------
+    // Private helpers
+    // -------------------------------------------------------------------------
+
+    /**
+     * Parse KPI line-items from goal.form_data JSON.
+     *
+     * Expected JSON shape (adjust keys to match your schema):
+     * [
+     *   {
+     *     "kpi": "% Productivity",
+     *     "target": "10000%",
+     *     "uom": "Percent (%)",
+     *     "weightage": 0.18,
+     *     "type": "Higher Better",
+     *     "description": ""
+     *   },
+     *   ...
+     * ]
+     */
+
+    private function resolveUom(array $item): string
+    {
+        $uom       = $item['uom']        ?? '';
+        $customUom = $item['custom_uom'] ?? '';
+
+        return ($uom === 'Other' && ! empty($customUom))
+            ? $customUom
+            : $uom;
+    }
+
+    private function parseGoalItems($goal): array
+    {
+        if (! $goal || empty($goal->form_data)) {
+            return [];
+        }
+
+        $data = is_array($goal->form_data)
+            ? $goal->form_data
+            : json_decode($goal->form_data, true);
+
+        if (json_last_error() !== JSON_ERROR_NONE || ! is_array($data)) {
+            return [];
+        }
+
+        // Top-level array of items — no wrapper key needed
+        return array_values(array_filter($data, 'is_array'));
+    }
+
+    /**
+     * Resolve current approver from approvalLayer.
+     *
+     * Status enum: 'Approved' | 'Pending' | 'Sendback'
+     * 'Pending' = waiting for approval (displayed as "Waiting for Approval" in UI
+     * but stored as 'Pending' in DB).
+     */
+    private function resolveCurrentApprover($row): array
+    {
+        $pending = $row->approvalLayer
+            ?->first(fn ($layer) => $layer->status === 'Pending');
+
+        if (! $pending) {
+            return ['name' => '-', 'id' => '-'];
+        }
+
+        return [
+            'name' => optional($pending->approver)->fullname ?? '-',
+            'id'   => $pending->approver_id ?? '-',
+        ];
+    }
+
+    private function applyEmployeeFilter(Builder $query, string $column, mixed $value): void
+    {
+        $values = $this->normalizeFilter($value);
+
+        if (! empty($values)) {
+            $query->whereHas('employee', fn ($q) => $q->whereIn($column, $values));
+        }
+    }
+
+    private function normalizeFilter(mixed $value): array
     {
         if (empty($value)) {
             return [];
         }
 
-        if (is_array($value)) {
-            return $value;
-        }
-
-        return array_filter(
-            array_map('trim', explode(',', $value))
-        );
-    }
-
-    public function styles($sheet)
-    {
-        $sheet->getStyle('A1:K1')->getFont()->setBold(true);
-
-        // Count total rows from $data and multiply by 10
-        $totalRows = isset($this->goals) ? count($this->goals) * 10 : 10; // Default to 10 if no data
-
-        // Apply dropdown selection (Lower Better, Higher Better, Exact Value) to column D
-        $validation = $sheet->getCell('H2')->getDataValidation(); // Start from row 2
-        $validation->setType(DataValidation::TYPE_LIST);
-        $validation->setErrorStyle(DataValidation::STYLE_INFORMATION);
-        $validation->setAllowBlank(false);
-        $validation->setShowDropDown(true);
-        $validation->setFormula1('"Lower Better,Higher Better,Exact Value"'); // Dropdown options
-
-        // Apply to all rows in column G (Adjust range as needed)
-        for ($row = 2; $row <= $totalRows; $row++) { // Adjust 100 based on data size
-            $sheet->getCell("H$row")->setDataValidation(clone $validation);
-        }
-
-        $sheet->getStyle('G:G')->getNumberFormat()->setFormatCode(\PhpOffice\PhpSpreadsheet\Style\NumberFormat::FORMAT_PERCENTAGE);
-
-        return [
-            1 => [
-                'font' => ['bold' => true],
-                'fill' => ['fillType' => 'solid', 'startColor' => ['rgb' => 'FFFF00']]
-            ],
-        ];
+        return is_array($value)
+            ? $value
+            : array_filter(array_map('trim', explode(',', $value)));
     }
 }

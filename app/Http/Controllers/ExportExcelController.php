@@ -10,8 +10,11 @@ use App\Exports\NotInitiatedExport;
 use Illuminate\Http\Request;
 use Maatwebsite\Excel\Facades\Excel;
 use App\Exports\EmployeepaExport;
+use App\Jobs\GoalExportJob;
 use App\Services\AppService;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Storage;
 
 class ExportExcelController extends Controller
 {
@@ -78,9 +81,29 @@ class ExportExcelController extends Controller
         
         $admin = 1;
 
-        if($reportType==='Goal'){
-            $goal = new GoalExport($period, $groupCompany, $location, $company, $admin, $permissionLocations, $permissionCompanies, $permissionGroupCompanies);
-            return Excel::download($goal, 'goals.xlsx');
+        if ($reportType === 'Goal') {
+            $exportKey = 'goal_' . auth()->id() . '_' . now()->timestamp;
+
+            GoalExportJob::dispatch(
+                period:                   $period,
+                groupCompany:             $groupCompany,
+                location:                 $location,
+                company:                  $company,
+                admin:                    $admin,
+                permissionLocations:      $permissionLocations,
+                permissionCompanies:      $permissionCompanies,
+                permissionGroupCompanies: $permissionGroupCompanies,
+                requestedBy:              auth()->id(),
+                exportKey:                $exportKey,
+            );
+
+            return redirect()
+            ->back()
+            ->with('toast', [
+                'type' => 'info',
+                'title' => 'Report Generation Started',
+                'message' => 'Your report is being prepared in the background. The Report button will be available once the file is ready.'
+            ]);
         }
         if($reportType==='Employee'){
             $employee = new EmployeeExport($groupCompany, $location, $company, $permissionLocations, $permissionCompanies, $permissionGroupCompanies);
@@ -92,6 +115,85 @@ class ExportExcelController extends Controller
         }
         return;
 
+    }
+
+    public function latestGoalReport()
+    {
+        $userId = Auth::id();
+
+        Log::debug('Latest Goal Report - Start', [
+            'user_id' => $userId,
+        ]);
+
+        $allFiles = Storage::files('public/exports/goal');
+
+        Log::debug('Latest Goal Report - All Files', [
+            'count' => count($allFiles),
+            'files' => $allFiles,
+        ]);
+
+        $files = collect($allFiles)
+            ->filter(function ($file) use ($userId) {
+
+                $matched = preg_match(
+                    "/^public\/exports\/goal\/goal_{$userId}_\d+\.xlsx$/",
+                    $file
+                );
+
+                Log::debug('Latest Goal Report - Checking File', [
+                    'file' => $file,
+                    'matched' => (bool) $matched,
+                ]);
+
+                return $matched;
+            })
+            ->sortDesc()
+            ->values();
+
+        Log::debug('Latest Goal Report - Filtered Files', [
+            'count' => $files->count(),
+            'files' => $files->toArray(),
+        ]);
+
+        if ($files->isEmpty()) {
+
+            Log::debug('Latest Goal Report - No File Found', [
+                'user_id' => $userId,
+            ]);
+
+            return response()->json([
+                'exists' => false
+            ]);
+        }
+
+        $file = $files->first();
+
+        Log::debug('Latest Goal Report - Selected File', [
+            'file' => $file,
+            'basename' => basename($file),
+        ]);
+
+        return response()->json([
+            'exists' => true,
+            'file' => route('admin.export.download-existing', [
+                'file' => basename($file)
+            ])
+        ]);
+    }
+
+    public function downloadExisting(string $file)
+    {
+        $userId = Auth::id();
+
+        if (!preg_match("/^goal_{$userId}_\d+\.xlsx$/", $file)) {
+            abort(403);
+        }
+
+        $path = "public/exports/goal/{$file}";
+
+        abort_unless(Storage::exists($path), 404);
+
+        return Storage::download($path);
     }
 
     public function notInitiated(Request $request) 

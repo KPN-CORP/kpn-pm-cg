@@ -91,9 +91,6 @@ class TeamGoalController extends Controller
         })
         ->where('approver_id', $user)
         ->get()
-        ->filter(function ($task) {
-            return $task->employee !== null;
-        })
         ->groupBy('employee_id')
         ->map(function ($groupedTasks) {
             return $groupedTasks->sortByDesc('layer')->first();
@@ -119,8 +116,8 @@ class TeamGoalController extends Controller
                 }
 
                 // Determine name and approval layer
-                if ($subordinate->sendback_to == $subordinate->employee->employee_id) {
-                    $subordinate->name = $subordinate->employee->fullname . ' (' . $subordinate->employee->employee_id . ')';
+                if ($subordinate->sendback_to == $subordinate->employee?->employee_id) {
+                    $subordinate->name = $subordinate->employee?->fullname . ' (' . $subordinate->employee?->employee_id . ')';
                     $subordinate->approvalLayer = '';
                 } else {
                     $subordinate->name = $subordinate->manager?->fullname . ' (' . $subordinate->current_approval_id . ')';
