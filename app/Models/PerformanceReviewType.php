@@ -5,22 +5,15 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
-class PerformanceReview extends Model
+class PerformanceReviewType extends Model
 {
     use HasFactory;
 
-    protected $table = 'performance_reviews';
+    protected $table = 'performance_review_types';
 
     protected $fillable = [
-        "manager_employee_id",
-        "employee_id",
-        "dialog_summary",
-        "development_plan",
-        "additional_notes",
-        "period",
-        "due_date",
-        "dialog_type_ids",
-        "status",
+        "name",
+        "is_active",
         "created_by",
         "created_at",
         "updated_by",
