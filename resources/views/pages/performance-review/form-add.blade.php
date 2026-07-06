@@ -109,7 +109,7 @@
     </div>
 
     <div class="mandatory-field"></div>
-        <form id="performanceReviewForm" action="{{ route('goals.submit') }}" class="needs-validation" method="POST">
+        <form id="performanceReviewForm" action="{{ route('performance-review.create') }}" class="needs-validation" method="POST">
         @csrf
         </form>
     </div>
