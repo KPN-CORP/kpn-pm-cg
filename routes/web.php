@@ -47,6 +47,7 @@ use App\Http\Controllers\FlowController;
 use App\Http\Controllers\FormAppraisalController;
 use App\Http\Controllers\FormGroupAppraisalController;
 use App\Http\Controllers\PaReminderController;
+use App\Http\Controllers\PerformanceReviewController;
 use App\Http\Controllers\Proposed360;
 use App\Http\Controllers\Proposed360Controller;
 
@@ -172,6 +173,13 @@ Route::middleware('auth', 'locale', 'notification', 'restrict_bu')->group(functi
 
     // Appraisal 360
     Route::get('/appraisals-task/review/{id}', [AppraisalTaskController::class, 'review'])->name('appraisals-360.review');
+
+    // Performance Review
+    Route::get('/performance-review/form/add', [PerformanceReviewController::class, 'formAdd'])->name('performance-review-form-add');
+    Route::get('/performance-review/form/edit/{id}', [PerformanceReviewController::class, 'formEdit'])->name('performance-review-form-edit');
+    Route::post('/performance-review/create', [PerformanceReviewController::class, 'create'])->name('performance-review-create');
+    Route::post('/performance-review/update', [PerformanceReviewController::class, 'update'])->name('performance-review-update');
+    Route::post('/performance-review/delete', [PerformanceReviewController::class, 'delete'])->name('performance-review-delete');
 
     // Rating | Calibration
     Route::get('/rating', [RatingController::class, 'index'])->name('rating');

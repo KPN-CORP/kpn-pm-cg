@@ -10,13 +10,13 @@ use App\Models\PerformanceReviewType;
 
 class PerformanceReviewController extends Controller
 {
-    public function form($id) {
+    public function formAdd($id) {
         try {
-            return view('pages.performance-review.form', [
+            return view('pages.performance-review.form-add', [
                 'data' => []
             ]);
         } catch (Exception $e) {
-            return view('pages.performance-review.form', [
+            return view('pages.performance-review.form-add', [
                 'data' => []
             ]);
         }
@@ -66,7 +66,7 @@ class PerformanceReviewController extends Controller
         }
     }
 
-    public function delete($id) {
+    public function delete(Request $request) {
         try {
             return response()->json([
                 'success' => true,
