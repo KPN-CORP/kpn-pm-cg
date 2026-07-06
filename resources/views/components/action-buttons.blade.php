@@ -6,7 +6,7 @@
         <a href="{{ route('appraisals-task.detail', encrypt($contributor->id)) }}" title="{{ __('Details') }}" type="button" class="btn btn-outline-secondary btn-sm m-1"><i class="ri-file-text-line"></i></a>
     @endif
     @if (strtolower($contributor->status) == 'approved')
-        <a href="{{ route('appraisals-task.detail', encrypt($contributor->id)) }}" title="{{ __('Performance Review') }}" type="button" class="btn btn-outline-warning btn-sm m-1"><i class="ri-clipboard-line"></i></a>
+        <a href="{{ route('performance-review-form-add', ["appraisal_id" => encrypt($contributor->id)]) }}" title="{{ __('Performance Review') }}" type="button" class="btn btn-outline-warning btn-sm m-1"><i class="ri-clipboard-line"></i></a>
     @endif
 @empty
     @if ($team->layer_type === 'manager' && empty(json_decode($team->approvalRequest, true)))
