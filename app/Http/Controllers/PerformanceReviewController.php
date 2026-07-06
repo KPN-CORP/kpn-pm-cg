@@ -3,10 +3,14 @@
 namespace App\Http\Controllers;
 
 use Exception;
+use Illuminate\Http\Request;
+
+use App\Models\PerformanceReview;
+use App\Models\PerformanceReviewType;
 
 class PerformanceReviewController extends Controller
 {
-    public function form() {
+    public function form($id) {
         try {
             return view('pages.performance-review.form', [
                 'data' => []
@@ -18,7 +22,7 @@ class PerformanceReviewController extends Controller
         }
     }
 
-    public function formEdit() {
+    public function formEdit($id) {
         try {
             return view('pages.performance-review.form-edit', [
                 'data' => []
@@ -30,7 +34,7 @@ class PerformanceReviewController extends Controller
         }
     }
 
-    public function create() {
+    public function create(Request $request) {
         try {
             return response()->json([
                 'success' => true,
@@ -46,7 +50,7 @@ class PerformanceReviewController extends Controller
         }
     }
 
-    public function update() {
+    public function update(Request $request) {
         try {
             return response()->json([
                 'success' => true,
@@ -62,7 +66,7 @@ class PerformanceReviewController extends Controller
         }
     }
 
-    public function delete() {
+    public function delete($id) {
         try {
             return response()->json([
                 'success' => true,
