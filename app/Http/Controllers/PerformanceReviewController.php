@@ -10,6 +10,7 @@ use Illuminate\Support\Facades\Session;
 use App\Models\PerformanceReview;
 use App\Models\PerformanceReviewType;
 use App\Models\Appraisal;
+use App\Models\AppraisalContributor;
 use App\Services\AppService;
 
 class PerformanceReviewController extends Controller
@@ -25,12 +26,21 @@ class PerformanceReviewController extends Controller
 
     public function formAdd(Request $request) {
         try {
-            $contributorID = decrypt($request->appraisal_id);
+            $contributorID = decrypt($request->contributor_id);
             $period = $this->appService->appraisalPeriod();
 
-            $appraisal = Appraisal::with(['employee', 'approvalRequest' => function($query) use ($period) {
-                $query->where('category', 'Appraisal')->where('period', $period);
-            }])->where('employee_id', $contributorID)->where('period', $period)->first();
+            if (!empty($request->period)) {
+                $period = $request->period;
+            }
+
+            $appraisalContributor = AppraisalContributor::where('id', $contributorID)->where('period', $period)->first();
+
+            if (empty($appraisalContributor)) {
+                Session::flash('error', "Appraisal contributor not found");
+                return redirect()->back();
+            }
+
+            $appraisal = Appraisal::with(['employee'])->where('id', $appraisalContributor->appraisal_id)->where('period', $period)->first();
 
             if (empty($appraisal)) {
                 Session::flash('error', "Appraisal not found");
@@ -51,6 +61,8 @@ class PerformanceReviewController extends Controller
             $employeeDesignationName = $employee->designation_name;
 
             return view('pages.performance-review.form-add', [
+                "parentLink" => "Appraisal",
+                "link" => "Performance Review",
                 "employee_id" => $employeeID,
                 "employee_name" => $employeeName,
                 "employee_job_level" => $employeeJobLevel,
@@ -67,7 +79,8 @@ class PerformanceReviewController extends Controller
     public function formEdit($id) {
         try {
             return view('pages.performance-review.form-edit', [
-                'data' => ""
+                "parentLink" => "Appraisal",
+                "link" => "Performance Review",
             ]);
         } catch (Exception $e) {
             return view('pages.performance-review.form-edit', [
