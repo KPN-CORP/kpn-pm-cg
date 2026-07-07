@@ -60,6 +60,8 @@ class PerformanceReviewController extends Controller
             $employeeUnit = $employee->unit;
             $employeeDesignationName = $employee->designation_name;
 
+            $performanceReviewTypes = PerformanceReviewType::where("is_active", true)->pluck("name");
+
             return view('pages.performance-review.form-add', [
                 "parentLink" => "Appraisal",
                 "link" => "Performance Review",
@@ -69,6 +71,7 @@ class PerformanceReviewController extends Controller
                 "employee_group_company" => $employeeGroupCompany,
                 "employee_unit" => $employeeUnit,
                 "employee_designation_name" => $employeeDesignationName,
+                "performance_review_types" => $performanceReviewTypes,
             ]);
         } catch (Exception $e) {
             Session::flash('error', "General error: " . $e->getMessage());

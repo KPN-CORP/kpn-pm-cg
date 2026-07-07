@@ -1,4 +1,4 @@
-@extends('layouts_.vertical', ['page_title' => 'Goals'])
+@extends('layouts_.vertical', ['page_title' => 'Performance Review'])
 
 @section('css')
 <style>
@@ -47,6 +47,11 @@
         background: rgba(255,255,255,.65); backdrop-filter: blur(2px);
         box-shadow:0 2px 8px rgba(0,0,0,.08);
     }
+
+    .select2-selection,
+    .select2-selection * {
+        cursor: pointer !important;
+    }
 </style>
 @endsection
 
@@ -62,7 +67,7 @@
     @endif
 
     <div class="detail-employee">
-        <div class="row">
+        <div class="row mb-2">
             <div class="col-12">
                 <div class="card shadow-sm">
                     <div class="card-body p-2 pb-0">
@@ -110,7 +115,50 @@
 
     <div class="mandatory-field"></div>
         <form id="performanceReviewForm" action="{{ route('performance-review.create') }}" class="needs-validation" method="POST">
-        @csrf
+            @csrf
+            <div class="row mb-2">
+                <div class="col-md-6">
+                    <label for="performance_review_type" class="form-label">Objectives</label>
+                    <select class="form-select form-select-sm select2" id="performance_review_type" name="performance_review_type[]" data-placeholder="Select Objectives" multiple required>
+                        <option></option>
+                        @foreach ($performance_review_types as $performance_review_type)
+                            <option value="{{ $performance_review_type }}">{{ $performance_review_type }}</option>
+                        @endforeach
+                        <option value="Others">Others</option>
+                    </select>
+                    <br>
+                    <div class="row">
+                        <div class="">
+                            <input type="text" name="others_performance_review_type" id="others_performance_review_type"
+                            class="form-control form-control-sm" placeholder="ex: Penilaian Kerja"
+                            value="" style="display: none;">
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6 mb-1">
+                    <label for="performance_review_due_date" class="form-label">Due Date</label>
+                    <input type="date" class="form-control form-control-sm" id="performance_review_due_date" name="performance_review_due_date" required>
+                </div>
+            </div>
+            <div class="row mb-2">
+                <div class="col-md-6 mt-2">
+                    <label for="" class="form-label">Summary</label>
+                    <textarea class="form-control form-control-sm" id="performance_review_summary" name="performance_review_summary" rows="4"
+                        placeholder="Please add more detail of summary ..."></textarea>
+                </div>
+                <div class="col-md-6 mt-2">
+                    <label for="" class="form-label">Development Plan</label>
+                    <textarea class="form-control form-control-sm" id="performance_development_plan" name="performance_development_plan" rows="4"
+                        placeholder="Please add more detail of development plan ..."></textarea>
+                </div>
+            </div>
+            <div class="row mb-2">
+                <div class="col-md-12 mt-2">
+                    <label for="" class="form-label">Additional Notes</label>
+                    <textarea class="form-control form-control-sm" id="performance_development_additional_notes" name="performance_development_additional_notes" rows="4"
+                        placeholder="Please add more detail of additional notes ..."></textarea>
+                </div>
+            </div>
         </form>
     </div>
 @endsection
