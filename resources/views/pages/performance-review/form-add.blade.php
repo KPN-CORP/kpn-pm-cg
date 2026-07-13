@@ -159,21 +159,17 @@
                         placeholder="Please add more detail of additional notes ..."></textarea>
                 </div>
             </div>
+            <div class="d-flex justify-content-end mt-4">
+                <button type="submit" class="btn btn-outline-primary rounded-pill me-2 draft-button"
+                    name="action_draft" id="save-draft" value="Draft" id="save-draft">Save as
+                    Draft</button>
+                <button type="submit" class="btn btn-primary rounded-pill submit-button"
+                    name="action_submit" value="Submitted" id="submit-btn">Submit</button>
+            </div>
         </form>
     </div>
 @endsection
 @push('scripts')
     <script>
-        const uom = '{{ __('Uom') }}';
-        const type = '{{ __('Type') }}';
-        const weightage = '{{ __('Weightage') }}';
-        const errorMessages = '{{ __('Error Messages') }}';
-        const errorAlertMessages = '{{ __('Error Alert Messages') }}';
-        const confirmTitle = '{{ __('Confirm Title') }}';
-        const confirmMessages = '{{ __('Confirm Messages') }}';
-        const errorConfirmMessages = '{{ __('Error Confirm Messages') }}';
-        const errorConfirmWeightageMessages1 = '{{ __('Error Confirm Weightage Messages_1') }}';
-        const errorConfirmWeightageMessages2 = '{{ __('Error Confirm Weightage Messages_2') }}';
-        const textMandatory = '{{ __('This field is mandatory') }}';
     </script>
 @endpush
