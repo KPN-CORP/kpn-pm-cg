@@ -16,7 +16,7 @@ document.addEventListener("DOMContentLoaded", function () {
     });
 
     $('#customsearch').val(layerAppraisalTable.search());
-    
+
     $("#customsearch").on("keyup", function () {
         layerAppraisalTable.search($(this).val()).draw();
     });
@@ -55,30 +55,30 @@ document.addEventListener("DOMContentLoaded", function () {
         let title2;
         let text;
         let confirmText;
-    
+
         const submitButton = $("#submit-btn");
         const spinner = submitButton.find(".spinner-border");
-    
+
         title1 = "Save layer?";
         text = "This can't be reverted";
         title2 = "Layer saved successfully!";
         confirmText = "Ok, save it";
-    
+
         // Get values of the select elements with ids containing sub
         let manager = $('#manager');
 
         let sub1 = $('#sub1');
         let sub2 = $('#sub2');
         let sub3 = $('#sub3');
-    
+
         // Get values of the select elements with ids containing peer
         let peer1 = $('#peer1');
         let peer2 = $('#peer2');
         let peer3 = $('#peer3');
-    
+
         // Get values of the select elements with ids containing calibrator
         let calibrators = $("select[name='calibrators[]']");
-    
+
         // Clear previous invalid classes and error messages
         sub1.removeClass('is-invalid');
         sub2.removeClass('is-invalid');
@@ -87,13 +87,13 @@ document.addEventListener("DOMContentLoaded", function () {
         peer2.removeClass('is-invalid');
         peer3.removeClass('is-invalid');
         calibrators.removeClass('is-invalid');
-        
+
         $('.error-message').text(''); // Clear all previous error messages
-    
+
         // Step 1: Check for duplicates in peer selections
         let peerValues = [peer1.val(), peer2.val(), peer3.val()].filter(Boolean); // Filter out empty values
         let hasPeerDuplicates = peerValues.some((value, index) => peerValues.indexOf(value) !== index);
-    
+
         if (!manager.val()) {
             Swal.fire({
                 title: "Error",
@@ -105,7 +105,7 @@ document.addEventListener("DOMContentLoaded", function () {
             manager.addClass('is-invalid')
             .siblings('.error-message')
             .text('Manager cannot be empty.');
-    
+
             return false; // Prevent form submission if peers have duplicates
         }
 
@@ -116,7 +116,7 @@ document.addEventListener("DOMContentLoaded", function () {
                 icon: "error",
                 confirmButtonColor: "#f15776"
             });
-    
+
             // Add is-invalid class and show error message to duplicate peer select elements
             [peer1, peer2, peer3].forEach(function (element) {
                 let value = element.val();
@@ -125,14 +125,14 @@ document.addEventListener("DOMContentLoaded", function () {
                     element.siblings('.error-message').text('Peers must be unique.');
                 }
             });
-    
+
             return false; // Prevent form submission if peers have duplicates
         }
-    
+
         // Step 2: Check for duplicates in subordinate selections (if peer validation passed)
         let subValues = [sub1.val(), sub2.val(), sub3.val()].filter(Boolean); // Filter out empty values
         let hasSubDuplicates = subValues.some((value, index) => subValues.indexOf(value) !== index);
-    
+
         if (hasSubDuplicates) {
             Swal.fire({
                 title: "Error",
@@ -140,7 +140,7 @@ document.addEventListener("DOMContentLoaded", function () {
                 icon: "error",
                 confirmButtonColor: "#f15776"
             });
-    
+
             // Add is-invalid class and show error message to duplicate subordinate select elements
             [sub1, sub2, sub3].forEach(function (element) {
                 let value = element.val();
@@ -149,7 +149,7 @@ document.addEventListener("DOMContentLoaded", function () {
                     element.siblings('.error-message').text('Subordinate must be unique.');
                 }
             });
-    
+
             return false; // Prevent form submission if subordinates have duplicates
         }
 
@@ -161,20 +161,20 @@ document.addEventListener("DOMContentLoaded", function () {
                 icon: "error",
                 confirmButtonColor: "#f15776"
             });
-            
+
             // Add is-invalid class and show error message on the first calibrator
             firstCalibrator.addClass('is-invalid');
             firstCalibrator.siblings('.error-message').text('Calibrator is required.');
 
             return false; // Stop execution if the first calibrator is not selected
         }
-    
+
         // Step 3: Check for duplicates in calibrator selections (if peer and sub validation passed)
         let calibratorValues = calibrators.map(function () {
             return $(this).val();
         }).get().filter(Boolean); // Filter out empty values
         let hasCalibratorDuplicates = calibratorValues.some((value, index) => calibratorValues.indexOf(value) !== index);
-    
+
         if (hasCalibratorDuplicates) {
             Swal.fire({
                 title: "Error",
@@ -182,7 +182,7 @@ document.addEventListener("DOMContentLoaded", function () {
                 icon: "error",
                 confirmButtonColor: "#f15776"
             });
-    
+
             // Add is-invalid class and show error message to duplicate calibrator select elements
             calibrators.each(function () {
                 let value = $(this).val();
@@ -191,10 +191,10 @@ document.addEventListener("DOMContentLoaded", function () {
                     $(this).siblings('.error-message').text('Calibrators must be unique.');
                 }
             });
-    
+
             return false; // Prevent form submission if calibrators have duplicates
         }
-    
+
         // Proceed with confirmation dialog if all validations passed
         Swal.fire({
             title: title1,
@@ -209,15 +209,15 @@ document.addEventListener("DOMContentLoaded", function () {
                 // Disable submit button
                 submitButton.prop("disabled", true);
                 submitButton.addClass("disabled");
-    
+
                 // Show spinner if it exists
                 if (spinner.length) {
                     spinner.removeClass("d-none");
                 }
-    
+
                 // Submit the form
                 document.getElementById("layer-appraisal").submit();
-    
+
                 // Show success message
                 Swal.fire({
                     title: title2,
@@ -227,9 +227,9 @@ document.addEventListener("DOMContentLoaded", function () {
                 });
             }
         });
-    
+
         return false; // Prevent default form submission
-    });    
+    });
 
     $(document).ready(function() {
         $('.selection2').select2({
@@ -261,7 +261,7 @@ document.addEventListener("DOMContentLoaded", function () {
                 cache: true
             }
         });
-    });    
+    });
 
 });
 
@@ -272,10 +272,10 @@ $(document).ready(function(){
         showLoader();
         if (calibratorCount < maxCalibrators) {
             calibratorCount++;
-            
+
             // Create the new calibrator row with dynamic employee options
             let options = '<option value="">- Please Select -</option>';
-    
+
             const newCalibrator = `
                 <div class="row mb-2" id="calibrator-row-${calibratorCount}">
                     <div class="col-10">
@@ -294,7 +294,7 @@ $(document).ready(function(){
                     </div>
                 </div>
             `;
-    
+
             $('#calibrator-container').append(newCalibrator);
 
             $('.selection2').select2({
@@ -347,11 +347,11 @@ $(document).ready(function(){
 
     $(document).on('click', '.remove-calibrator', function() {
         // Always remove the latest calibrator row
-        $(`#calibrator-row-${calibratorCount}`).remove(); 
+        $(`#calibrator-row-${calibratorCount}`).remove();
         calibratorCount--;
         updateRemoveButtons(); // Update buttons visibility
     });
-    
+
 });
 
 
@@ -359,32 +359,32 @@ $(document).ready(function(){
 $(document).ready(function() {
     $('.open-import-modal').on('click', function() {
         var importModal = document.getElementById('importModal');
-        
+
         // Initialize the Bootstrap modal
         var modal = new bootstrap.Modal(importModal);
-        
+
         modal.show();
     });
 });
 
 document.addEventListener('DOMContentLoaded', function () {
     const detailModal = document.getElementById('detailModal');
-    
+
     if (detailModal) {
         detailModal.addEventListener('show.bs.modal', async function (event) {
             const button = event.relatedTarget;
             const employeeId = button.getAttribute('data-bs-id');
-            
+
             // Show loading state before fetching data
             showLoadingState();
-    
+
             try {
                 // Fetch the employee details using async/await
                 const data = await fetchEmployeeDetails(employeeId);
-                
+
                 // Populate the modal with the retrieved data
                 populateModal(data);
-                
+
                 // Populate history table
                 populateHistoryTable(data.history);
             } catch (error) {
@@ -400,7 +400,7 @@ document.addEventListener('DOMContentLoaded', function () {
     // Function to fetch employee details from the backend
     async function fetchEmployeeDetails(employeeId) {
         const response = await fetch(`/employee-layer-appraisal/details/${employeeId}`);
-                
+
         if (!response.ok) {
             throw new Error('Network response was not ok');
         }

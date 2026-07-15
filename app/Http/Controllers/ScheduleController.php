@@ -26,17 +26,17 @@ class ScheduleController extends Controller
     protected $permissionCompanies;
     protected $permissionLocations;
     protected $roles;
-    
+
     public function __construct()
     {
         $this->roles = Auth::user()->roles;
-        
+
         $restrictionData = [];
 
         if(!$this->roles->isEmpty()){
             $restrictionData = json_decode($this->roles->first()->restriction, true);
         }
-        
+
         $this->permissionGroupCompanies = $restrictionData['group_company'] ?? [];
         $this->permissionCompanies = $restrictionData['contribution_level_code'] ?? [];
         $this->permissionLocations = $restrictionData['work_area_code'] ?? [];
@@ -60,7 +60,7 @@ class ScheduleController extends Controller
                             ->whereDate('end_date', '>=', $today)
                             ->orderBy('created_at')
                             ->first();
-                            
+
         $schedulegoals = collect([]); // Default: koleksi kosong jika $schedulemastergoals null
 
         if ($schedulemastergoals) {
@@ -71,9 +71,9 @@ class ScheduleController extends Controller
                 ->orderBy('created_at')
                 ->pluck('id');
         }
-        
+
         //buat validasi agar schedule goals yg bisa di edit hanya goals yg memiliki waktu $schedulemastergoals
-                            
+
         return view('pages.schedules.schedule', [
             'link' => $link,
             'parentLink' => $parentLink,
@@ -96,21 +96,21 @@ class ScheduleController extends Controller
         }
 
         $pcompanies = $this->permissionCompanies;
-        
+
         if (empty($pcompanies)) {
             $companies = Company::orderBy('contribution_level_code')->get();
         }else{
             $companies = Company::orderBy('contribution_level_code')->whereIn('contribution_level_code',$pcompanies)->get();
         }
-        
+
         $plocations = $this->permissionLocations;
-        
+
         if (empty($plocations)) {
             $locations = Location::orderBy('area')->get();
         }else{
             $locations = Location::orderBy('area')->whereIn('work_area',$plocations)->get();
         }
-        
+
         $today = Carbon::today();
         $schedulemasterpa = schedule::where('event_type','masterschedulepa')
                             ->whereDate('start_date', '<=', $today)
@@ -122,7 +122,7 @@ class ScheduleController extends Controller
                             ->whereDate('end_date', '>=', $today)
                             ->orderBy('created_at')
                             ->first();
-        
+
         return view('pages.schedules.form', [
             'sublink' => $sublink,
             'link' => $link,
@@ -164,11 +164,11 @@ class ScheduleController extends Controller
         $model->end_date            = $req->end_date;
         $model->checkbox_reminder   = isset($req->checkbox_reminder) ? $req->checkbox_reminder : 0;
         $model->created_by          = $userId;
-        
+
         if ($req->checkbox_reminder == 1) {
-            
+
             $model->inputState = $req->inputState;
-            
+
             if ($req->inputState == 'repeaton') {
             $model->repeat_days = $req->repeat_days_selected;
             $model->before_end_date = null;
@@ -176,7 +176,7 @@ class ScheduleController extends Controller
             $model->repeat_days = null;
             $model->before_end_date = $req->before_end_date;
             }
-            
+
             $model->messages = $req->messages;
         } else {
             $model->messages = null;
@@ -195,7 +195,7 @@ class ScheduleController extends Controller
 
             //cek di role has permission yg memiliki akses ke id 6 schedule
             $idroles = RoleHasPermission::where('permission_id', '6')->whereNotIn('role_id',['1','8'])->get();
-            
+
             //cek tanggal sesudah dan sebelum
             if($req->start_date <= $today && $req->end_date >= $today){
 
@@ -222,7 +222,7 @@ class ScheduleController extends Controller
 
             //cek di role has permission yg memiliki akses ke id 6 schedule
             $idroles = RoleHasPermission::where('permission_id', '6')->whereNotIn('role_id',['1','8'])->get();
-            
+
             //cek tanggal sesudah dan sebelum
             if($req->start_date <= $today && $req->end_date >= $today){
 
@@ -269,7 +269,7 @@ class ScheduleController extends Controller
             $employeesPAToUpdate = $querypa->get();
             // $employeesToUpdate = $query->where('date_of_joining', '<=', $model->last_join_date)->get();
 
-            
+
             if($model->start_date <= $today && $model->end_date >= $today){
                 $access_menu = 1;
                 $accesspa = 1;
@@ -294,10 +294,10 @@ class ScheduleController extends Controller
                 if($req->event_type=="goals"){
                     $accessMenuJson['goals'] = $access_menu;
                     $accessMenuJson['doj'] = $doj;
-                }                
-                
+                }
+
                 $updatedAccessMenu = json_encode($accessMenuJson);
-                
+
                 $employee->access_menu = $updatedAccessMenu;
                 $employee->save();
             }
@@ -319,14 +319,14 @@ class ScheduleController extends Controller
                     $accessMenuJson['createpa'] = $createpa;
                     $accessMenuJson['review360'] = $review360;
                 }
-                
+
                 $updatedAccessMenu = json_encode($accessMenuJson);
-                
+
                 $employee->access_menu = $updatedAccessMenu;
                 $employee->save();
             }
         }
-        
+
         Alert::success('Success');
         return redirect()->intended(route('schedules', absolute: false));
     }
@@ -354,7 +354,7 @@ class ScheduleController extends Controller
         }else{
             $hidediv=0;
         }
- 
+
         if(!$model)
             return redirect("schedules");
 
@@ -387,9 +387,9 @@ class ScheduleController extends Controller
         $model->checkbox_reminder   = isset($req->checkbox_reminder) ? $req->checkbox_reminder : 0;
 
         if ($req->checkbox_reminder == 1) {
-            
+
             $model->inputState = $req->inputState;
-            
+
             if ($req->inputState == 'repeaton') {
                 $model->repeat_days = $req->repeat_days_selected;
                 $model->before_end_date = null;
@@ -397,7 +397,7 @@ class ScheduleController extends Controller
                 $model->repeat_days = null;
                 $model->before_end_date = $req->before_end_date;
             }
-            
+
             $model->messages = $req->messages;
         } else {
             $model->messages = null;
@@ -407,7 +407,7 @@ class ScheduleController extends Controller
         }
 
         $model->save();
-        
+
         $today = date('Y-m-d');
         if($req->event_type=="Master Schedule PA"){
 
@@ -441,7 +441,7 @@ class ScheduleController extends Controller
                                      ->where('permission_id', $idschedulepa)
                                      ->delete();
                 }
-                
+
                 app()->make(PermissionRegistrar::class)->forgetCachedPermissions();
             }
         }else{
@@ -472,7 +472,7 @@ class ScheduleController extends Controller
             //$employeesToUpdate = $query->where('date_of_joining', '<=', $model->last_join_date)->get();
             $employeesToUpdate = $query->get();
             $employeesPAToUpdate = $querypa->get();
-            
+
             if($model->start_date <= $today && $model->end_date >= $today){
                 $access_menu = 1;
                 $accesspa = 1;
@@ -498,7 +498,7 @@ class ScheduleController extends Controller
                 }
 
                 $updatedAccessMenu = json_encode($accessMenuJson);
-                
+
                 $employee->access_menu = $updatedAccessMenu;
                 $employee->save();
             }
@@ -520,7 +520,7 @@ class ScheduleController extends Controller
                 }
 
                 $updatedAccessMenu = json_encode($accessMenuJson);
-                
+
                 $employee->access_menu = $updatedAccessMenu;
                 $employee->save();
             }
@@ -656,7 +656,7 @@ class ScheduleController extends Controller
             ->whereNull('deleted_at')
             ->whereIn('event_type', ['schedulepa', 'goals'])
             ->get();
-        
+
         foreach ($schedules as $schedule) {
 
             if($schedule->checkbox_reminder=='1'){
@@ -683,7 +683,7 @@ class ScheduleController extends Controller
                         $query->where(function ($q) {
                             // Kondisi pertama: karyawan yang tidak memiliki penilaian
                             $q->doesntHave('appraisalpa');
-                            
+
                             // Kondisi kedua: karyawan yang sudah memiliki penilaian tetapi statusnya masih draft
                             $q->orWhereHas('appraisalpa', function($q2) {
                                 $q2->where('form_status', 'draft');
@@ -756,7 +756,7 @@ class ScheduleController extends Controller
             }
 
             $scheduledata->end_date = Carbon::parse($scheduledata->end_date)->addDay()->format('Y-m-d');
-            if($scheduledata->end_date==$today){                
+            if($scheduledata->end_date==$today){
                 foreach ($idroles as $idrole) {
                     RoleHasPermission::where('role_id', $idrole->role_id)
                                     ->where('permission_id', $idschedulepa)

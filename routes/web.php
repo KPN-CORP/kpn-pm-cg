@@ -175,10 +175,11 @@ Route::middleware('auth', 'locale', 'notification', 'restrict_bu')->group(functi
     Route::get('/appraisals-task/review/{id}', [AppraisalTaskController::class, 'review'])->name('appraisals-360.review');
 
     // Performance Review
-    Route::get('/performance-review/form/add', [PerformanceReviewController::class, 'formAdd'])->name('performance-review.form-add');
-    Route::get('/performance-review/form/edit/{id}', [PerformanceReviewController::class, 'formEdit'])->name('performance-review.form-edit');
-    Route::post('/performance-review/create', [PerformanceReviewController::class, 'create'])->name('performance-review.create');
-    Route::post('/performance-review/update', [PerformanceReviewController::class, 'update'])->name('performance-review.update');
+    Route::get('/performance-review/form', [PerformanceReviewController::class, 'form'])->name('performance-review.form');
+    // Route::get('/performance-review/form/add', [PerformanceReviewController::class, 'formAdd'])->name('performance-review.form-add');
+    // Route::get('/performance-review/form/edit/{id}', [PerformanceReviewController::class, 'formEdit'])->name('performance-review.form-edit');
+    Route::post('/performance-review/create-or-update', [PerformanceReviewController::class, 'createOrUpdate'])->name('performance-review.create-or-update');
+    // Route::post('/performance-review/update', [PerformanceReviewController::class, 'createOrUpdate'])->name('performance-review.update');
     Route::post('/performance-review/delete', [PerformanceReviewController::class, 'delete'])->name('performance-review.delete');
 
     // Rating | Calibration

@@ -1,4 +1,4 @@
-{{-- @extends('layouts_.vertical', ['page_title' => 'Performance Review'])
+@extends('layouts_.vertical', ['page_title' => 'Performance Review'])
 
 @section('css')
 <style>
@@ -114,7 +114,8 @@
     </div>
 
     <div class="mandatory-field"></div>
-        <form id="performanceReviewForm" action="{{ route('performance-review.create') }}" class="needs-validation" method="POST">
+        <div id="form-alert" class="alert alert-danger d-none"></div>
+        <form id="performance-review-form" action="{{ route('performance-review.create-or-update') }}" class="needs-validation" method="POST">
             @csrf
             <input type="hidden" class="form-control" name="period" value="{{ $period }}">
             <input type="hidden" class="form-control" name="employee_id" value="{{ $employee_id }}">
@@ -124,50 +125,66 @@
                     <label for="performance_review_type" class="form-label">Objectives</label>
                     <select class="form-select form-select-sm select2" id="performance_review_type" name="performance_review_types[]" data-placeholder="Select Objectives" multiple required>
                         <option></option>
-                        @foreach ($performance_review_types as $performance_review_type)
-                            <option value="{{ $performance_review_type->id }}">{{ $performance_review_type->name }}</option>
+                        @foreach ($master_performance_review_types as $master_performance_review_type)
+                            @php
+                                $isSelected = false;
+
+                                if ($performance_review_types) {
+                                    foreach ($performance_review_types as $performance_review_type) {
+                                        if ($master_performance_review_type == $performance_review_type->name) {
+                                            $isSelected = true;
+                                            break;
+                                        }
+                                    }
+                                }
+                            @endphp
+                            <option value="{{ $master_performance_review_type->id }}" {{ $isSelected ? "selected" : "" }}>{{ $master_performance_review_type->name }}</option>
                         @endforeach
-                        <option value="0">Others</option>
+                        @if (!empty($performance_review_others_type_name))
+                            <option value="0" selected>Others</option>
+                        @else
+                            <option value="0">Others</option>
+                        @endif
                     </select>
                     <br>
                     <div class="row">
                         <div class="">
                             <input type="text" name="others_performance_review_type" id="others_performance_review_type"
                             class="form-control form-control-sm" placeholder="ex: Penilaian Kerja"
-                            value="" style="display: none;">
+                            value="" style="{{ empty($performance_review_others_type_name) ? "display: none;" : "" }}">
                         </div>
                     </div>
                 </div>
                 <div class="col-md-6 mb-1">
                     <label for="performance_review_due_date" class="form-label">Due Date</label>
-                    <input type="date" class="form-control form-control-sm" id="performance_review_due_date" name="performance_review_due_date" required>
+                    <input type="date" class="form-control form-control-sm" id="performance_review_due_date" name="performance_review_due_date" value="{{ $formatted_performance_review_due_date }}" required>
                 </div>
             </div>
             <div class="row mb-2">
                 <div class="col-md-6 mt-2">
                     <label for="" class="form-label">Summary</label>
                     <textarea class="form-control form-control-sm" id="performance_review_summary" name="performance_review_summary" rows="4"
-                        placeholder="Please add more detail of summary ..."></textarea>
+                        placeholder="Please add more detail of summary ..." value="{{ $performance_review_summary }}"></textarea>
                 </div>
                 <div class="col-md-6 mt-2">
                     <label for="" class="form-label">Development Plan</label>
                     <textarea class="form-control form-control-sm" id="performance_review_development_plan" name="performance_review_development_plan" rows="4"
-                        placeholder="Please add more detail of development plan ..."></textarea>
+                        placeholder="Please add more detail of development plan ..." value="{{ $performance_review_development_plan }}"></textarea>
                 </div>
             </div>
             <div class="row mb-2">
                 <div class="col-md-12 mt-2">
                     <label for="" class="form-label">Additional Notes</label>
                     <textarea class="form-control form-control-sm" id="performance_review_additional_notes" name="performance_review_additional_notes" rows="4"
-                        placeholder="Please add more detail of additional notes ..."></textarea>
+                        placeholder="Please add more detail of additional notes ..." value="{{ $performance_review_additional_notes }}"></textarea>
                 </div>
             </div>
-            <div class="d-flex justify-content-end mt-4">
+            <div class="d-flex justify-content-end mt-4 mb-4">
                 <button type="submit" class="btn btn-outline-primary rounded-pill me-2 draft-button"
-                    name="action_draft" id="save-draft" value="Draft" id="save-draft">Save as
+                    name="action_draft" value="Draft" id="performance-review-save-draft">Save as
                     Draft</button>
                 <button type="submit" class="btn btn-primary rounded-pill submit-button"
-                    name="action_submit" value="Submitted" id="submit-btn">Submit</button>
+                    name="action_submit" value="Submitted" id="performance-review-submit">Submit</button>
             </div>
         </form>
     </div>
@@ -175,4 +192,4 @@
 @push('scripts')
     <script>
     </script>
-@endpush --}}
+@endpush

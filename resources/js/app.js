@@ -58,6 +58,7 @@ import './assignment.js';
 import './approval-flow.js';
 import './flows.js';
 import './proposed360.js';
+import './performance-review.js';
 
 function googleTranslateElementInit() {
     new google.translate.TranslateElement({
