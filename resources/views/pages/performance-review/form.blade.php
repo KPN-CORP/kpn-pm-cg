@@ -131,7 +131,7 @@
 
                                 if ($performance_review_types) {
                                     foreach ($performance_review_types as $performance_review_type) {
-                                        if ($master_performance_review_type == $performance_review_type->name) {
+                                        if ($master_performance_review_type->name == $performance_review_type["name"]) {
                                             $isSelected = true;
                                             break;
                                         }
@@ -164,19 +164,19 @@
                 <div class="col-md-6 mt-2">
                     <label for="" class="form-label">Summary</label>
                     <textarea class="form-control form-control-sm" id="performance_review_summary" name="performance_review_summary" rows="4"
-                        placeholder="Please add more detail of summary ..." value="{{ $performance_review_summary }}"></textarea>
+                        placeholder="Please add more detail of summary ...">{{ $performance_review_summary }}</textarea>
                 </div>
                 <div class="col-md-6 mt-2">
                     <label for="" class="form-label">Development Plan</label>
                     <textarea class="form-control form-control-sm" id="performance_review_development_plan" name="performance_review_development_plan" rows="4"
-                        placeholder="Please add more detail of development plan ..." value="{{ $performance_review_development_plan }}"></textarea>
+                        placeholder="Please add more detail of development plan ...">{{ $performance_review_development_plan }}</textarea>
                 </div>
             </div>
             <div class="row mb-2">
                 <div class="col-md-12 mt-2">
                     <label for="" class="form-label">Additional Notes</label>
                     <textarea class="form-control form-control-sm" id="performance_review_additional_notes" name="performance_review_additional_notes" rows="4"
-                        placeholder="Please add more detail of additional notes ..." value="{{ $performance_review_additional_notes }}"></textarea>
+                        placeholder="Please add more detail of additional notes ...">{{ $performance_review_additional_notes }}</textarea>
                 </div>
             </div>
             <div class="d-flex justify-content-end mt-4 mb-4">

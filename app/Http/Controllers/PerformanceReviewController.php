@@ -230,7 +230,7 @@ class PerformanceReviewController extends Controller
             $dueDate = $request->performance_review_due_date;
             $summary = $request->performance_review_summary;
             $developmentPlan = $request->performance_review_development_plan;
-            $additionalNotes = $request->performance_review_development_additional_notes;
+            $additionalNotes = $request->performance_review_additional_notes;
             $actionDraft = $request->has('action_draft');
             $actionSubmit = $request->has('action_submit');
 
