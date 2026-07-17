@@ -60,6 +60,11 @@ class ScheduleController extends Controller
                             ->whereDate('end_date', '>=', $today)
                             ->orderBy('created_at')
                             ->first();
+        $schedulemasterpr = schedule::where('event_type','masterschedulepr')
+                            ->whereDate('start_date', '<=', $today)
+                            ->whereDate('end_date', '>=', $today)
+                            ->orderBy('created_at')
+                            ->first();
 
         $schedulegoals = collect([]); // Default: koleksi kosong jika $schedulemastergoals null
 
@@ -83,6 +88,7 @@ class ScheduleController extends Controller
             'schedulemasterpa' => $schedulemasterpa,
             'schedulemastergoals' => $schedulemastergoals,
             'schedulegoals' => $schedulegoals,
+            'schedulemasterpr' => $schedulemasterpr,
         ]);
     }
     function form() {
@@ -122,6 +128,11 @@ class ScheduleController extends Controller
                             ->whereDate('end_date', '>=', $today)
                             ->orderBy('created_at')
                             ->first();
+        $schedulemasterpr = schedule::where('event_type','masterschedulepr')
+                            ->whereDate('start_date', '<=', $today)
+                            ->whereDate('end_date', '>=', $today)
+                            ->orderBy('created_at')
+                            ->first();
 
         return view('pages.schedules.form', [
             'sublink' => $sublink,
@@ -132,6 +143,7 @@ class ScheduleController extends Controller
             'allowedGroupCompanies' => $allowedGroupCompanies,
             'schedulemasterpa' => $schedulemasterpa,
             'schedulemastergoals' => $schedulemastergoals,
+            'schedulemasterpr' => $schedulemasterpr,
         ]);
     }
     function save(Request $req) {
@@ -140,7 +152,7 @@ class ScheduleController extends Controller
         $userId = Auth::id();
         $review360 = isset($req->review_360) ? $req->review_360 : 0;
         // Delete previous same event_type if it exists
-        if ($req->event_type == 'masterschedulepa' || $req->event_type == 'masterschedulegoals') {
+        if ($req->event_type == 'masterschedulepa' || $req->event_type == 'masterschedulegoals' || $req->event_type == 'masterschedulepr') {
             Schedule::where('event_type', $req->event_type)->delete();
         } else {
             Schedule::where('event_type', $req->event_type)
@@ -236,6 +248,33 @@ class ScheduleController extends Controller
                         RoleHasPermission::create([
                             'role_id' => $idrole->role_id,
                             'permission_id' => $idschedulepa,
+                        ]);
+                    }
+                }
+                app()->make(PermissionRegistrar::class)->forgetCachedPermissions();
+            }
+        } else if ($req->event_type=="masterschedulepr"){
+
+            //cek id di permission untuk schedulepr & masterschedulepr
+            $idpermissions = Permission::where('name','schedulepr')->first();
+            $idschedulepr = $idpermissions->id;
+
+            //cek di role has permission yg memiliki akses ke id 6 schedule
+            $idroles = RoleHasPermission::where('permission_id', '6')->whereNotIn('role_id',['1','8'])->get();
+
+            //cek tanggal sesudah dan sebelum
+            if($req->start_date <= $today && $req->end_date >= $today){
+
+                foreach($idroles as $idrole){
+                    //input data di RoleHasPermission dengan permission_id $idschedulepr untuk user yg memiliki akses permission_id=6
+                    $existingPermission = RoleHasPermission::where('role_id', $idrole->role_id)
+                                               ->where('permission_id', $idschedulepr)
+                                               ->first();
+
+                    if (!$existingPermission) {
+                        RoleHasPermission::create([
+                            'role_id' => $idrole->role_id,
+                            'permission_id' => $idschedulepr,
                         ]);
                     }
                 }
@@ -348,8 +387,13 @@ class ScheduleController extends Controller
                             ->whereDate('end_date', '>=', $today)
                             ->orderBy('created_at')
                             ->first();
+        $schedulemasterpr = Schedule::where('event_type','masterschedulepr')
+                            ->whereDate('start_date', '<=', $today)
+                            ->whereDate('end_date', '>=', $today)
+                            ->orderBy('created_at')
+                            ->first();
         $hidediv=0;
-        if($model->event_type=='masterschedulepa' || $model->event_type=='masterschedulegoals'){
+        if($model->event_type=='masterschedulepa' || $model->event_type=='masterschedulegoals' || $model->event_type=='masterschedulepr'){
             $hidediv=1;
         }else{
             $hidediv=0;
@@ -366,6 +410,7 @@ class ScheduleController extends Controller
                 'schedulemasterpa' => $schedulemasterpa,
                 'schedulemastergoals' => $schedulemastergoals,
                 'hidediv' => $hidediv,
+                'schedulemasterpr' => $schedulemasterpr,
             ]);
     }
     function update(Request $req) {
@@ -439,6 +484,41 @@ class ScheduleController extends Controller
                 foreach ($idroles as $idrole) {
                     RoleHasPermission::where('role_id', $idrole->role_id)
                                      ->where('permission_id', $idschedulepa)
+                                     ->delete();
+                }
+
+                app()->make(PermissionRegistrar::class)->forgetCachedPermissions();
+            }
+        } else if ($req->event_type=="Master Schedule PR"){
+
+            //cek id di permission untuk schedulepr & masterschedulepr
+            $idpermissions = Permission::where('name','schedulepr')->first();
+            $idschedulepr = $idpermissions->id;
+
+            //cek di role has permission yg memiliki akses ke id 6 schedule
+            $idroles = RoleHasPermission::where('permission_id', '6')->whereNotIn('role_id',['1','8'])->get();
+
+            //cek tanggal sesudah dan sebelum
+            if($req->start_date <= $today && $req->end_date >= $today){
+
+                foreach($idroles as $idrole){
+                    //input data di RoleHasPermission dengan permission_id $idschedulepr untuk user yg memiliki akses permission_id=6
+                    $existingPermission = RoleHasPermission::where('role_id', $idrole->role_id)
+                                               ->where('permission_id', $idschedulepr)
+                                               ->first();
+
+                    if (!$existingPermission) {
+                        RoleHasPermission::create([
+                            'role_id' => $idrole->role_id,
+                            'permission_id' => $idschedulepr,
+                        ]);
+                    }
+                }
+                app()->make(PermissionRegistrar::class)->forgetCachedPermissions();
+            }else{
+                foreach ($idroles as $idrole) {
+                    RoleHasPermission::where('role_id', $idrole->role_id)
+                                     ->where('permission_id', $idschedulepr)
                                      ->delete();
                 }
 
@@ -560,6 +640,21 @@ class ScheduleController extends Controller
             foreach ($idroles as $idrole) {
                 RoleHasPermission::where('role_id', $idrole->role_id)
                                 ->where('permission_id', $idschedulegoals)
+                                ->delete();
+            }
+
+            app()->make(PermissionRegistrar::class)->forgetCachedPermissions();
+        } else if ($schedule->event_type == "masterschedulepr") {
+            // Handle master schedule deletion
+            $idpermissions = Permission::where('name', 'schedulepr')->first();
+            $idschedulepr = $idpermissions->id;
+
+            $idroles = RoleHasPermission::where('permission_id', '6')
+                                        ->whereNotIn('role_id', ['1', '8'])->get();
+
+            foreach ($idroles as $idrole) {
+                RoleHasPermission::where('role_id', $idrole->role_id)
+                                ->where('permission_id', $idschedulepr)
                                 ->delete();
             }
 
@@ -760,6 +855,46 @@ class ScheduleController extends Controller
                 foreach ($idroles as $idrole) {
                     RoleHasPermission::where('role_id', $idrole->role_id)
                                     ->where('permission_id', $idschedulepa)
+                                    ->delete();
+                }
+                app()->make(PermissionRegistrar::class)->forgetCachedPermissions();
+            }
+        }
+    }
+
+    function DailyUpdateSchedulePR() {
+        $today = date('Y-m-d');
+        $scheduledatas = schedule::where('event_type','masterschedulepr')->get();
+
+        foreach($scheduledatas as $scheduledata){
+
+            $idpermissions = Permission::where('name','schedulepr')->first();
+            $idschedulepr = $idpermissions->id;
+
+            //cek di role has permission yg memiliki akses ke id 6 schedule
+            $idroles = RoleHasPermission::where('permission_id', '6')->whereNotIn('role_id',['1','8'])->get();
+
+            if($scheduledata->start_date==$today){
+                foreach($idroles as $idrole){
+                    //input data di RoleHasPermission dengan permission_id $idschedulepr untuk user yg memiliki akses permission_id=6
+                    $existingPermission = RoleHasPermission::where('role_id', $idrole->role_id)
+                                            ->where('permission_id', $idschedulepr)
+                                            ->first();
+                    if (!$existingPermission) {
+                        RoleHasPermission::create([
+                            'role_id' => $idrole->role_id,
+                            'permission_id' => $idschedulepr,
+                        ]);
+                    }
+                }
+                app()->make(PermissionRegistrar::class)->forgetCachedPermissions();
+            }
+
+            $scheduledata->end_date = Carbon::parse($scheduledata->end_date)->addDay()->format('Y-m-d');
+            if($scheduledata->end_date==$today){
+                foreach ($idroles as $idrole) {
+                    RoleHasPermission::where('role_id', $idrole->role_id)
+                                    ->where('permission_id', $idschedulepr)
                                     ->delete();
                 }
                 app()->make(PermissionRegistrar::class)->forgetCachedPermissions();

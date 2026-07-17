@@ -16,7 +16,7 @@
                         <li class="breadcrumb-item active">{{ $sublink }}</li>
                     </ol>
                 </div>
-                
+
             </div>
         </div>
     </div>
@@ -38,11 +38,13 @@
                                 </div>
                                 <div class="mb-3 col-md-6">
                                     <label class="form-label" for="type">Event Type</label>
-                                    <input type="text" class="form-control bg-light" id="event_type" name="event_type" 
+                                    <input type="text" class="form-control bg-light" id="event_type" name="event_type"
                                     value="@if($model->event_type=='goals')Goals
                                     @elseif($model->event_type=='schedulepa')Schedule PA
+                                    @elseif($model->event_type=='schedulepr')Schedule PR
                                     @elseif($model->event_type=='masterschedulepa')Master Schedule PA
                                     @elseif($model->event_type=='masterschedulegoals')Master Schedule Goal Settings
+                                    @elseif($model->event_type=='masterschedulepr')Master Schedule PR
                                     @endif" readonly>
                                 </div>
                             </div>
@@ -87,7 +89,7 @@
                                         </div>
                                     </div>
                                 </div>
-                                
+
                                 @if($schedulemasterpa)
                                 <div class="row my-2">
                                     <div class="col-md-5">
@@ -222,9 +224,9 @@
     var repeatDaysButtons = document.getElementsByName('repeat_days[]');
     var repeatDaysSelected = [];
 
-    
+
     document.getElementById('scheduleForm').addEventListener('submit', function(e) {
-        
+
         var messageContent = quill.root.innerHTML.trim();
         // set ke textarea hidden
         document.getElementById('messages').value = messageContent;
@@ -252,7 +254,7 @@
         var selectBox = document.getElementById("inputState");
         var repeatOnDiv = document.getElementById("repeaton");
         var beforeEndDateDiv = document.getElementById("beforeenddate");
-        
+
         if (selectBox.value === "repeaton") {
             repeatOnDiv.style.display = "block";
             beforeEndDateDiv.style.display = "none";
@@ -262,13 +264,13 @@
         }
     }
     function toggleMaster() {
-        
+
         var event_type = document.getElementById("event_type_s");
         const startInput = document.getElementById('start');
         const endInput = document.getElementById('end');
         const startJoinInput = document.getElementById('start_join_date');
         const endJoinInput = document.getElementById('last_join_date');
-        
+
         // console.log(startInput);
         if (event_type.value === 'schedulepa') {
             // Set min and max from the server-rendered values
@@ -286,7 +288,7 @@
                 startJoinInput.min = startJoinDateFromDB;
                 endJoinInput.min = startJoinDateFromDB;
                 startJoinInput.setAttribute("required", true);
-            }            
+            }
 
             if (lastJoinDateFromDB) {
                 startJoinInput.max = lastJoinDateFromDB;
@@ -319,7 +321,30 @@
                 endJoinInput.max = lastJoinDateFromDB;
                 endJoinInput.setAttribute("required", true);
             }
-        }else {
+        } else if (event_type.value === 'schedulepr') {
+            // Set min and max from the server-rendered values
+            const startDate = "{{ optional($schedulemasterpr)->start_date ? \Carbon\Carbon::parse(optional($schedulemasterpr)->start_date)->format('Y-m-d') : '' }}";
+            const endDate = "{{ optional($schedulemasterpr)->end_date ? \Carbon\Carbon::parse(optional($schedulemasterpr)->end_date)->format('Y-m-d') : '' }}";
+            startInput.min = startDate;
+            startInput.max = endDate;
+            endInput.min = startDate;
+            endInput.max = endDate;
+
+            const startJoinDateFromDB = "{{ optional($schedulemasterpr)->start_join_date ? \Carbon\Carbon::parse(optional($schedulemasterpr)->start_join_date)->format('Y-m-d') : '' }}";
+            const lastJoinDateFromDB = "{{ optional($schedulemasterpr)->last_join_date ? \Carbon\Carbon::parse(optional($schedulemasterpr)->last_join_date)->format('Y-m-d') : '' }}";
+
+            if (startJoinDateFromDB) {
+                startJoinInput.min = startJoinDateFromDB;
+                endJoinInput.min = startJoinDateFromDB;
+                startJoinInput.setAttribute("required", true);
+            }
+
+            if (lastJoinDateFromDB) {
+                startJoinInput.max = lastJoinDateFromDB;
+                endJoinInput.max = lastJoinDateFromDB;
+                endJoinInput.setAttribute("required", true);
+            }
+        } else {
             // Clear min and max if event_type is not 'schedulepa'
             startInput.min = '';
             startInput.max = '';

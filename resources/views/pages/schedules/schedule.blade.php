@@ -5,7 +5,7 @@
 @endsection
 
 @section('content')
-    
+
     <!-- Begin Page Content -->
     <div class="container-fluid">
         @if (session('success'))
@@ -26,7 +26,7 @@
         <!-- Page Heading -->
         <div class="pt-1 row">
         </div>
-        
+
         <div class="row justify-content-between">
             <div class="col-md-4 order-2 order-md-0">
                 <div class="mb-3">
@@ -36,15 +36,15 @@
                                 <i class="ri-search-line"></i>
                             </span>
                         </div>
-                        <input type="text" name="customsearch" id="customsearch" 
-                               class="form-control border-dark-subtle border-left-0" 
+                        <input type="text" name="customsearch" id="customsearch"
+                               class="form-control border-dark-subtle border-left-0"
                                placeholder="search.." aria-label="search">
                     </div>
                 </div>
             </div>
             <div class="col-md-2 order-1 order-md-0 text-md-end">
                 <div class="mb-3">
-                    <a href="{{ route('schedules.form') }}" 
+                    <a href="{{ route('schedules.form') }}"
                        class="btn btn-primary shadow">Create Schedule</a>
                 </div>
             </div>
@@ -84,7 +84,7 @@
                                     </tr>
                                 </thead>
                                 <tbody>
-        
+
                                     @foreach($schedules as $schedule)
                                     <tr>
                                         <td>{{ $loop->index + 1 }}</td>
@@ -92,8 +92,10 @@
                                         <td>
                                             @if($schedule->event_type == 'goals'){{ 'Goal Setting' }}
                                             @elseif($schedule->event_type == 'schedulepa'){{ 'PA '.$schedule->schedule_periode }}
+                                            @elseif($schedule->event_type == 'schedulepr'){{ 'PR '.$schedule->schedule_periode }}
                                             @elseif($schedule->event_type == 'masterschedulepa'){{ 'Master PA '.$schedule->schedule_periode }}
                                             @elseif($schedule->event_type == 'masterschedulegoals'){{ 'Master Goal Settings '.$schedule->schedule_periode }}
+                                            @elseif($schedule->event_type == 'masterschedulepr'){{ 'Master PR '.$schedule->schedule_periode }}
                                             @endif
                                         </td>
                                         <td>{{ $schedule->start_date }}</td>
@@ -119,6 +121,12 @@
                                                 @elseif($schedule->event_type == 'goals')
                                                     @if($schedulemastergoals)
                                                         <a href="{{ route('edit-schedule', \Crypt::encrypt($schedule->id)) }}" class="btn btn-sm btn-outline-warning" title="Edit"><i class="ri-edit-box-line"></i></a>
+                                                        <a class="btn btn-sm btn-danger" title="Delete" onclick="confirmDelete({{ $schedule->id }})" data-id="{{ $schedule->id }}"><i class="ri-delete-bin-line"></i></a>
+                                                    @endif
+                                                @elseif($schedule->event_type == 'schedulepr')
+                                                    @if($schedulemasterpr)
+                                                        <a href="{{ route('edit-schedule', \Crypt::encrypt($schedule->id)) }}" class="btn btn-sm btn-outline-warning" title="Edit"><i class="ri-edit-box-line"></i></a>
+                                                        {{-- <a class="btn btn-sm btn-danger" title="Delete" onclick="handleDelete(this)" data-id="{{ $schedule->id }}"><i class="ri-delete-bin-line"></i></a> --}}
                                                         <a class="btn btn-sm btn-danger" title="Delete" onclick="confirmDelete({{ $schedule->id }})" data-id="{{ $schedule->id }}"><i class="ri-delete-bin-line"></i></a>
                                                     @endif
                                                 @else
@@ -149,7 +157,7 @@
                                     </tr>
                                 </thead>
                                 <tbody>
-        
+
                                     @foreach($inactiveSchedules as $index => $inactiveSchedule)
                                     <tr>
                                         <td>{{ $index + 1 }}</td>
@@ -157,8 +165,10 @@
                                         <td>
                                             @if($inactiveSchedule->event_type == 'goals'){{ 'Goal Setting' }}
                                             @elseif($inactiveSchedule->event_type == 'schedulepa'){{ 'PA '.$inactiveSchedule->schedule_periode }}
+                                            @elseif($inactiveSchedule->event_type == 'schedulepr'){{ 'PR '.$inactiveSchedule->schedule_periode }}
                                             @elseif($inactiveSchedule->event_type == 'masterschedulepa'){{ 'Master PA '.$inactiveSchedule->schedule_periode }}
                                             @elseif($inactiveSchedule->event_type == 'masterschedulegoals'){{ 'Master Goal Settings '.$inactiveSchedule->schedule_periode }}
+                                            @elseif($inactiveSchedule->event_type == 'masterschedulepr'){{ 'Master PR '.$inactiveSchedule->schedule_periode }}
                                             @endif
                                         </td>
                                         <td>{{ $inactiveSchedule->start_date }}</td>
@@ -189,7 +199,7 @@
         @csrf
         @method('DELETE')
     </form>
-    
+
 @endsection
 @push('scripts')
 <script>
