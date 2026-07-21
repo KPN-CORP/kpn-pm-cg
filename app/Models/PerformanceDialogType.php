@@ -5,11 +5,11 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
-class PerformanceReviewType extends Model
+class PerformanceDialogType extends Model
 {
     use HasFactory;
 
-    protected $table = 'performance_review_types';
+    protected $table = 'performance_dialog_types';
 
     protected $fillable = [
         "name",

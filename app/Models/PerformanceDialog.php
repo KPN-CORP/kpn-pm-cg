@@ -5,11 +5,11 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
-class PerformanceReview extends Model
+class PerformanceDialog extends Model
 {
     use HasFactory;
 
-    protected $table = 'performance_reviews';
+    protected $table = 'performance_dialogs';
 
     protected $fillable = [
         "manager_employee_id",
@@ -18,6 +18,8 @@ class PerformanceReview extends Model
         "development_plan",
         "additional_notes",
         "period",
+        "start_date",
+        "end_date",
         "due_date",
         "type_ids",
         "others_type_name",
@@ -38,7 +40,17 @@ class PerformanceReview extends Model
         'type_datas',
     ];
 
-    protected static $performanceReviewTypes = null;
+    protected static $performanceDialogTypes = null;
+
+    public function createdByEmployee()
+    {
+        return $this->belongsTo(Employee::class, 'created_by','id');
+    }
+
+    public function updatedByEmployee()
+    {
+        return $this->belongsTo(Employee::class, 'updated_by','id');
+    }
 
     public function getTypeDatasAttribute()
     {
@@ -46,17 +58,17 @@ class PerformanceReview extends Model
             return collect();
         }
 
-        if (self::$performanceReviewTypes === null) {
-            self::$performanceReviewTypes = PerformanceReviewType::select('id', 'name')
+        if (self::$performanceDialogTypes === null) {
+            self::$performanceDialogTypes = PerformanceDialogType::select('id', 'name')
                 ->get()
                 ->keyBy('id');
         }
 
         return collect($this->type_ids)
-            ->filter(fn ($id) => isset(self::$performanceReviewTypes[$id]))
+            ->filter(fn ($id) => isset(self::$performanceDialogTypes[$id]))
             ->map(fn ($id) => [
-                'id' => self::$performanceReviewTypes[$id]->id,
-                'name' => self::$performanceReviewTypes[$id]->name,
+                'id' => self::$performanceDialogTypes[$id]->id,
+                'name' => self::$performanceDialogTypes[$id]->name,
             ])
             ->values();
     }

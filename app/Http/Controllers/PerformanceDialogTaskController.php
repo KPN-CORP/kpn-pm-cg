@@ -14,7 +14,7 @@ use App\Models\Appraisal;
 use App\Models\AppraisalContributor;
 use App\Services\AppService;
 
-class PerformanceReviewController extends Controller
+class PerformanceDialogTaskController extends Controller
 {
     protected $loggedInUser;
     protected $appService;
@@ -24,6 +24,8 @@ class PerformanceReviewController extends Controller
         $this->loggedInUser = Auth::user();
         $this->appService = $appService;
     }
+
+    public function index() {}
 
     public function form(Request $request) {
         try {

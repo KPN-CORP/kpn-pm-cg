@@ -115,11 +115,11 @@
 
     <div class="mandatory-field"></div>
         <div id="form-alert" class="alert alert-danger d-none"></div>
-        <form id="performance-review-form" action="{{ route('performance-review.create-or-update') }}" class="needs-validation" method="POST">
+        <form id="performance-review-form" action="{{ route('performance-dialog.create-or-update') }}" class="needs-validation" method="POST">
             @csrf
             <input type="hidden" class="form-control" name="period" value="{{ $period }}">
             <input type="hidden" class="form-control" name="employee_id" value="{{ $employee_id }}">
-            <input type="hidden" class="form-control" name="contributor_id" value="{{ $contributor_id }}">
+            <input type="hidden" class="form-control" name="manager_employee_id" value="{{ $manager_employee_id }}">
             <div class="row mb-2">
                 <div class="col-md-6">
                     <label for="performance_review_type" class="form-label">Objectives</label>
