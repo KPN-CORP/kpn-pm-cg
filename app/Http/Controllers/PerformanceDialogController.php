@@ -53,7 +53,7 @@ class PerformanceDialogController extends Controller
 
         return view('pages.performance-dialog.my-performance-dialog', [
             "parentLink" => "Performance Dialog",
-            "link" => "Performance Dialogs",
+            "link" => "My History",
             "period" => $period,
             "user_id" => $userID,
             "employee_id" => $employeeID,
@@ -67,7 +67,16 @@ class PerformanceDialogController extends Controller
             $id = null;
             $period = now()->year;
 
-            $employee = $this->loggedInUser;
+            $employee = $this->loggedInUser->employee;
+            if (!$employee) {
+                Session::flash('error', [
+                    'title' => 'Cannot create or edit performance dialog',
+                    'message' => "Employee not found"
+                ]);
+
+                return redirect()->back();
+            }
+
             $employeeID = $employee->employee_id;
             $employeeName = $employee->fullname;
             $employeeJobLevel = $employee->job_level;
@@ -91,11 +100,19 @@ class PerformanceDialogController extends Controller
                 $id = $request->id;
             }
 
-            $directApprovalLayer = ApprovalLayer::with(['employee'])->where('employee_id', $employeeID)->where('layer', 1)->first();
+            $directApprovalLayer = ApprovalLayer::with(['employeeManager'])->where('employee_id', $employeeID)->where('layer', 1)->first();
             if (!$directApprovalLayer) {
                 Session::flash('error', [
                     'title' => 'Cannot create or edit performance dialog',
                     'message' => "There is no direct manager assigned in your position!"
+                ]);
+
+                return redirect()->back();
+            }
+            if (!$directApprovalLayer->employeeManager) {
+                Session::flash('error', [
+                    'title' => 'Cannot create or edit performance dialog',
+                    'message' => "Manager not found!"
                 ]);
 
                 return redirect()->back();
@@ -121,6 +138,15 @@ class PerformanceDialogController extends Controller
                 $period = $PerformanceDialog->period;
 
                 $employee = $PerformanceDialog->employee;
+                if (!$employee) {
+                    Session::flash('error', [
+                        'title' => 'Cannot create or edit performance dialog',
+                        'message' => "Employee not found"
+                    ]);
+
+                    return redirect()->back();
+                }
+
                 $employeeID = $employee->employee_id;
                 $employeeName = $employee->fullname;
                 $employeeJobLevel = $employee->job_level;
@@ -147,7 +173,7 @@ class PerformanceDialogController extends Controller
 
             return view('pages.performance-dialog.form', [
                 "parentLink" => "Performance Dialog",
-                "link" => "Performance Dialog",
+                "link" => "Form",
                 "period" => $period,
                 "employee_id" => $employeeID,
                 "employee_name" => $employeeName,
@@ -215,6 +241,14 @@ class PerformanceDialogController extends Controller
                 $status = "Submitted";
             }
 
+            if (!empty($startDate)) {
+                $startDateYear = Carbon::parse($startDate)->year;
+
+                if ($startDateYear) {
+                    $period = $startDateYear;
+                }
+            }
+
             $employee = Employee::where("employee_id", $employeeID)
                 ->where("id", $userID)
                 ->first();
@@ -264,6 +298,7 @@ class PerformanceDialogController extends Controller
                     'development_plan' => $developmentPlan,
                     'additional_notes' => $additionalNotes,
                     'start_date' => $startDate,
+                    'period' => $period,
                     'end_date' => $endDate,
                     'due_date' => $dueDate,
                     'type_ids' => $typeIDs,
