@@ -51,9 +51,45 @@ class PerformanceDialogController extends Controller
             $performanceDialogYears = [$period];
         }
 
-        return view('pages.performance-dialog.my-performance-dialog', [
+        return view('pages.performance-dialog.my-history', [
             "parentLink" => "Performance Dialog",
             "link" => "My History",
+            "period" => $period,
+            "user_id" => $userID,
+            "employee_id" => $employeeID,
+            "performance_dialogs" => $performanceDialogs,
+            "performance_dialog_years" => $performanceDialogYears,
+        ]);
+    }
+
+    public function taskBox(Request $request) {
+        $userID = $this->loggedInUser->id;
+        $employeeID = $this->loggedInUser->employee_id;
+        $period = $this->appService->appraisalPeriod();
+
+        if (!empty($request->period)) {
+            $period = $request->period;
+        }
+
+        $performanceDialogs = PerformanceDialog::with(['employeeCreatedBy', 'employeeUpdatedBy'])
+            ->where('manager_employee_id', $employeeID)
+            ->where('period', $period)
+            ->where('deleted_at', null)
+            ->get();
+
+        $performanceDialogYears = PerformanceDialog::select('period')
+            ->where('manager_employee_id', $employeeID)
+            ->distinct()
+            ->orderBy('period')
+            ->pluck('period');
+
+        if (empty($performanceDialogYears)) {
+            $performanceDialogYears = [$period];
+        }
+
+        return view('pages.performance-dialog.task-box', [
+            "parentLink" => "Performance Dialog",
+            "link" => "Task Box",
             "period" => $period,
             "user_id" => $userID,
             "employee_id" => $employeeID,

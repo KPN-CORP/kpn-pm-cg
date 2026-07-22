@@ -1,4 +1,4 @@
-@extends('layouts_.vertical', ['page_title' => 'Performance Dialogs'])
+@extends('layouts_.vertical', ['page_title' => 'My History'])
 
 @section('css')
     <style>
