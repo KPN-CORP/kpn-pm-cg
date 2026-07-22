@@ -101,7 +101,7 @@
                         <div class="row px-2">
                             <div class="col-lg col-sm-12 p-2">
                                 <h5>{{ __('Initiated By') }}</h5>
-                                <p class="mt-2 mb-0 text-muted">{{ $row->createdByEmployee ? $row->createdByEmployee->fullname.' ('.$row->createdByEmployee->employee_id.')' : '-'}}</p>
+                                <p class="mt-2 mb-0 text-muted">{{ $row->employeeCreatedBy ? $row->employeeCreatedBy->fullname.' ('.$row->employeeCreatedBy->employee_id.')' : '-'}}</p>
                             </div>
                             <div class="col-lg col-sm-12 p-2">
                                 <h5>{{ __('Initiated Date') }}</h5>
@@ -113,7 +113,7 @@
                             </div>
                             <div class="col-lg col-sm-12 p-2">
                                 <h5>{{ __('Adjusted By') }}</h5>
-                                <p class="mt-2 mb-0 text-muted">{{ $row->updatedByEmployee ? $row->updatedByEmployee->fullname.' ('.$row->updatedByEmployee->employee_id.')' : '-' }}</p>
+                                <p class="mt-2 mb-0 text-muted">{{ $row->employeeUpdatedBy ? $row->employeeUpdatedBy->fullname.' ('.$row->employeeUpdatedBy->employee_id.')' : '-' }}</p>
                             </div>
                             <div class="col-lg col-sm-12 p-2">
                                 <h5>Status</h5>

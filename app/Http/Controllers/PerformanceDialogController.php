@@ -11,6 +11,7 @@ use Illuminate\Support\Facades\Session;
 use App\Models\PerformanceDialog;
 use App\Models\PerformanceDialogType;
 use App\Models\ApprovalLayer;
+use App\Models\Employee;
 
 use App\Services\AppService;
 
@@ -34,7 +35,7 @@ class PerformanceDialogController extends Controller
             $period = $request->period;
         }
 
-        $performanceDialogs = PerformanceDialog::with(['createdByEmployee', 'updatedByEmployee'])
+        $performanceDialogs = PerformanceDialog::with(['employeeCreatedBy', 'employeeUpdatedBy'])
             ->where('employee_id', $employeeID)
             ->where('period', $period)
             ->where('deleted_at', null)
@@ -63,75 +64,106 @@ class PerformanceDialogController extends Controller
 
     public function form(Request $request) {
         try {
-            $ = null;
-            $employee_id = $this->loggedInUser;
-            $employee_id = $employee_id->employee_id;
-            $employeeName = $employee_id->fullname;
-            $employeeJobLevel = $employee_id->job_level;
-            $employeeGroupCompany = $employee_id->group_company;
-            $employeeUnit = $employee_id->unit;
-            $employeeDesignationName = $employee_id->designation_name;
+            $id = null;
+            $period = now()->year;
 
-            $managerEmployeeID = "";
+            $employee = $this->loggedInUser;
+            $employeeID = $employee->employee_id;
+            $employeeName = $employee->fullname;
+            $employeeJobLevel = $employee->job_level;
+            $employeeGroupCompany = $employee->group_company;
+            $employeeUnit = $employee->unit;
+            $employeeDesignationName = $employee->designation_name;
 
             $PerformanceDialogTypes = [];
             $PerformanceDialogOthersTypeName = "";
+            $PerformanceDialogStartDate = "";
+            $PerformanceDialogEndDate = "";
             $PerformanceDialogDueDate = "";
+            $formattedPerformanceDialogStartDate = "";
+            $formattedPerformanceDialogEndDate = "";
             $formattedPerformanceDialogDueDate = "";
             $PerformanceDialogSummary = "";
             $PerformanceDialogDevelopmentPlan = "";
             $PerformanceDialogAdditionalNotes = "";
 
-            if ($request->id) {
-                $ = $request->id;
+            if (!empty($request->id)) {
+                $id = $request->id;
             }
 
-            $approvalLayers = ApprovalLayer::with(['employee'])->where('employee_id', $employee_id)->where('layer', 1)->get();
-            if (!$datas->first()) {
+            $directApprovalLayer = ApprovalLayer::with(['employee'])->where('employee_id', $employeeID)->where('layer', 1)->first();
+            if (!$directApprovalLayer) {
                 Session::flash('error', [
-                    'title' => 'Cannot create goal',
+                    'title' => 'Cannot create or edit performance dialog',
                     'message' => "There is no direct manager assigned in your position!"
                 ]);
 
-                if ($this->user != $) {
-                    return redirect('team-goals');
-                }
-                return redirect('goals');
+                return redirect()->back();
             }
 
-            $PerformanceDialog = PerformanceDialog::where('id', $)
+            $managerEmployeeID = $directApprovalLayer->approver_id;
+
+            $PerformanceDialog = PerformanceDialog::with(['employee'])
+                ->where('id', $id)
                 ->where('deleted_at', null)
                 ->first();
 
             if ($PerformanceDialog) {
+                if (!$PerformanceDialog->employee) {
+                    Session::flash('error', [
+                        'title' => 'Cannot create or edit performance dialog',
+                        'message' => "Employee data nor found!"
+                    ]);
+
+                    return redirect()->back();
+                }
+
+                $period = $PerformanceDialog->period;
+
+                $employee = $PerformanceDialog->employee;
+                $employeeID = $employee->employee_id;
+                $employeeName = $employee->fullname;
+                $employeeJobLevel = $employee->job_level;
+                $employeeGroupCompany = $employee->group_company;
+                $employeeUnit = $employee->unit;
+                $employeeDesignationName = $employee->designation_name;
+
                 $managerEmployeeID = $PerformanceDialog->manager_employee_id;
 
                 $PerformanceDialogTypes = $PerformanceDialog->type_datas;
                 $PerformanceDialogOthersTypeName = $PerformanceDialog->others_type_name;
+                $PerformanceDialogStartDate = $PerformanceDialog->start_date;
+                $PerformanceDialogEndDate = $PerformanceDialog->end_date;
                 $PerformanceDialogDueDate = $PerformanceDialog->due_date;
                 $PerformanceDialogSummary = $PerformanceDialog->summary;
                 $PerformanceDialogDevelopmentPlan = $PerformanceDialog->development_plan;
                 $PerformanceDialogAdditionalNotes = $PerformanceDialog->additional_notes;
+                $formattedPerformanceDialogStartDate = Carbon::parse($PerformanceDialogStartDate)->format('Y-m-d');
+                $formattedPerformanceDialogEndDate = Carbon::parse($PerformanceDialogEndDate)->format('Y-m-d');
                 $formattedPerformanceDialogDueDate = Carbon::parse($PerformanceDialogDueDate)->format('Y-m-d');
             }
 
             $masterPerformanceDialogTypes = PerformanceDialogType::where("is_active", true)->where("deleted_at", null)->get();
 
             return view('pages.performance-dialog.form', [
-                "parentLink" => "Appraisal",
-                "link" => "Performance Review",
-                "period" => $,
-                "employee_id" => $,
+                "parentLink" => "Performance Dialog",
+                "link" => "Performance Dialog",
+                "period" => $period,
+                "employee_id" => $employeeID,
                 "employee_name" => $employeeName,
                 "employee_job_level" => $employeeJobLevel,
                 "employee_group_company" => $employeeGroupCompany,
                 "employee_unit" => $employeeUnit,
                 "employee_designation_name" => $employeeDesignationName,
-                "manager_employee_id" => $,
+                "manager_employee_id" => $managerEmployeeID,
                 "master_performance_review_types" => $masterPerformanceDialogTypes,
                 "performance_review_types" => $PerformanceDialogTypes,
                 "performance_review_others_type_name" => $PerformanceDialogOthersTypeName,
+                "performance_review_start_date" => $PerformanceDialogStartDate,
+                "performance_review_end_date" => $PerformanceDialogEndDate,
                 "performance_review_due_date" => $PerformanceDialogDueDate,
+                "formatted_performance_review_start_date" => $formattedPerformanceDialogStartDate,
+                "formatted_performance_review_end_date" => $formattedPerformanceDialogEndDate,
                 "formatted_performance_review_due_date" => $formattedPerformanceDialogDueDate,
                 "performance_review_summary" => $PerformanceDialogSummary,
                 "performance_review_development_plan" => $PerformanceDialogDevelopmentPlan,
@@ -142,29 +174,30 @@ class PerformanceDialogController extends Controller
                 'title' => 'Error',
                 'message' => "General error: " . $e->getMessage()
             ]);
+
             return redirect()->back();
         }
     }
 
     public function createOrUpdate(Request $request) {
         try {
-            $loggedInUserID = $this->loggedInUser->id;
-            $contributorID = $request->contributor_id;
-            $period = $this->appService->appraisalPeriod();
+            $loggedInUser = $this->loggedInUser;
+            $userID = $loggedInUser->id;
+
             $id = $request->id;
+            $period = $request->period;
             $employeeID = $request->employee_id;
+            $managerEmployeeID = $request->manager_employee_id;
             $typeIDs = $request->performance_review_types;
             $othersType = $request->others_performance_review_type;
+            $startDate = $request->performance_review_start_date;
+            $endDate = $request->performance_review_end_date;
             $dueDate = $request->performance_review_due_date;
             $summary = $request->performance_review_summary;
             $developmentPlan = $request->performance_review_development_plan;
             $additionalNotes = $request->performance_review_additional_notes;
             $actionDraft = $request->has('action_draft');
             $actionSubmit = $request->has('action_submit');
-
-            if (!empty($request->period)) {
-                $period = $request->period;
-            }
 
             if (!$actionDraft && !$actionSubmit) {
                 return response()->json([
@@ -182,37 +215,33 @@ class PerformanceDialogController extends Controller
                 $status = "Submitted";
             }
 
-            $appraisalContributor = AppraisalContributor::where('id', $contributorID)->where('period', $period)->first();
-            if (empty($appraisalContributor)) {
+            $employee = Employee::where("employee_id", $employeeID)
+                ->where("id", $userID)
+                ->first();
+            if (!$employee) {
                 return response()->json([
                     'status' => false,
-                    'message' => 'Appraisal contributor not found',
+                    'message' => "Employee not found",
                     'errors' => []
                 ]);
             }
 
-            $appraisal = Appraisal::with(['employee'])->where('id', $appraisalContributor->appraisal_id)->where('period', $period)->first();
-            if (empty($appraisal)) {
+            $employeeManager = Employee::where("employee_id", $managerEmployeeID)
+                ->where("id", $userID)
+                ->first();
+            if (!$managerEmployeeID) {
                 return response()->json([
                     'status' => false,
-                    'message' => 'Appraisal not found',
-                    'errors' => []
-                ]);
-            }
-            if (empty($appraisal->employee)) {
-                return response()->json([
-                    'status' => false,
-                    'message' => 'Employee not found',
+                    'message' => "Employee manager not found",
                     'errors' => []
                 ]);
             }
 
-            $employee = $appraisal->employee;
-
-            if ($employeeID != $employee->employee_id) {
+            $directApprovalLayer = ApprovalLayer::with(['employee'])->where('employee_id', $employeeID)->where('layer', 1)->first();
+            if (!$directApprovalLayer) {
                 return response()->json([
                     'status' => false,
-                    'message' => "Employee doesn't match",
+                    'message' => "There is no direct manager assigned in your position!",
                     'errors' => []
                 ]);
             }
@@ -222,7 +251,7 @@ class PerformanceDialogController extends Controller
                     ->where('deleted_at', null)
                     ->first();
             } else {
-                $PerformanceDialog = PerformanceDialog::where('manager_employee_id', $contributorID)
+                $PerformanceDialog = PerformanceDialog::where('manager_employee_id', $managerEmployeeID)
                     ->where('employee_id', $employeeID)
                     ->where('period', $period)
                     ->where('deleted_at', null)
@@ -234,28 +263,32 @@ class PerformanceDialogController extends Controller
                     'summary' => $summary,
                     'development_plan' => $developmentPlan,
                     'additional_notes' => $additionalNotes,
+                    'start_date' => $startDate,
+                    'end_date' => $endDate,
                     'due_date' => $dueDate,
                     'type_ids' => $typeIDs,
                     'others_type_name' => $othersType,
                     'status' => $status,
-                    'updated_by' => $loggedInUserID,
+                    'updated_by' => $userID,
                     'updated_at' => Carbon::now(),
                 ]);
             } else {
                 PerformanceDialog::create([
-                    'manager_employee_id' => $contributorID,
+                    'manager_employee_id' => $managerEmployeeID,
                     'employee_id' => $employeeID,
                     'period' => $period,
                     'summary' => $summary,
                     'development_plan' => $developmentPlan,
                     'additional_notes' => $additionalNotes,
+                    'start_date' => $startDate,
+                    'end_date' => $endDate,
                     'due_date' => $dueDate,
                     'type_ids' => $typeIDs,
                     'others_type_name' => $othersType,
                     'status' => $status,
-                    'created_by' => $loggedInUserID,
+                    'created_by' => $userID,
                     'created_at' => Carbon::now(),
-                    'updated_by' => $loggedInUserID,
+                    'updated_by' => $userID,
                     'updated_at' => Carbon::now(),
                 ]);
             }

@@ -156,6 +156,14 @@
                     </div>
                 </div>
                 <div class="col-md-6 mb-1">
+                    <label for="performance_review_start_date" class="form-label">Start Date</label>
+                    <input type="date" class="form-control form-control-sm" id="performance_review_start_date" name="performance_review_start_date" value="{{ $formatted_performance_review_start_date }}" required>
+                </div>
+                <div class="col-md-6 mb-1">
+                    <label for="performance_review_end_date" class="form-label">End Date</label>
+                    <input type="date" class="form-control form-control-sm" id="performance_review_end_date" name="performance_review_end_date" value="{{ $formatted_performance_review_end_date }}" required>
+                </div>
+                <div class="col-md-6 mb-1">
                     <label for="performance_review_due_date" class="form-label">Due Date</label>
                     <input type="date" class="form-control form-control-sm" id="performance_review_due_date" name="performance_review_due_date" value="{{ $formatted_performance_review_due_date }}" required>
                 </div>

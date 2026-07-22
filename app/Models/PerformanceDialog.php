@@ -42,12 +42,22 @@ class PerformanceDialog extends Model
 
     protected static $performanceDialogTypes = null;
 
-    public function createdByEmployee()
+    public function employee()
+    {
+        return $this->belongsTo(Employee::class, 'employee_id','employee_id');
+    }
+
+    public function employeeManager()
+    {
+        return $this->belongsTo(Employee::class, 'manager_employee_id','employee_id');
+    }
+
+    public function employeeCreatedBy()
     {
         return $this->belongsTo(Employee::class, 'created_by','id');
     }
 
-    public function updatedByEmployee()
+    public function employeeUpdatedBy()
     {
         return $this->belongsTo(Employee::class, 'updated_by','id');
     }
