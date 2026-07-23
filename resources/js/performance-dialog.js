@@ -2,17 +2,17 @@ import { log } from 'handlebars';
 import $ from 'jquery';
 
 document.addEventListener("DOMContentLoaded", function () {
-    $('#performance-review-submit').click(function (e) {
+    $('#performance-dialog-submit').click(function (e) {
         e.preventDefault();
 
         let button = $(this);
         let spinner = button.find('.spinner-border');
-        let form = $('#performance-review-form');
+        let form = $('#performance-dialog-form');
 
         $('#form-alert').addClass('d-none').empty();
 
         Swal.fire({
-            title: "Submit performance review?",
+            title: "Submit performance dialog?",
             text: "This can't be reverted",
             icon: "question",
             showCancelButton: true,
@@ -75,17 +75,17 @@ document.addEventListener("DOMContentLoaded", function () {
         });
     });
 
-    $('#performance-review-save-draft').click(function (e) {
+    $('#performance-dialog-save-draft').click(function (e) {
         e.preventDefault();
 
         let button = $(this);
         let spinner = button.find('.spinner-border');
-        let form = $('#performance-review-form');
+        let form = $('#performance-dialog-form');
 
         $('#form-alert').addClass('d-none').empty();
 
         Swal.fire({
-            title: "Save as draft this performance review?",
+            title: "Save as draft this performance dialog?",
             text: "This can't be reverted",
             icon: "question",
             showCancelButton: true,

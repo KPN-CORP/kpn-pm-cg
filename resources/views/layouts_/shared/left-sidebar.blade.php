@@ -116,10 +116,10 @@
                 <div class="collapse" id="sidebarPerformanceDialog">
                     <ul class="side-nav-second-level">
                         <li>
-                            <a href="{{ route('performance-dialog') }}">{{ __('My History') }}</a>
+                            <a href="{{ route('performance-dialog.my-history') }}">{{ __('My History') }}</a>
                         </li>
                         <li>
-                            <a href="{{ route('performance-dialog-task') }}">{{ __('Task Box') }}</a>
+                            <a href="{{ route('performance-dialog.task-box') }}">{{ __('Task Box') }}</a>
                         </li>
                     </ul>
                 </div>

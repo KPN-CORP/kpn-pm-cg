@@ -367,7 +367,7 @@ class PerformanceDialogController extends Controller
             return response()->json([
                 'status' => true,
                 'message' => 'Success',
-                'redirect' => route('appraisals-task'),
+                'redirect' => route('performance-dialog.my-history'),
                 'data' => []
             ]);
         } catch (Exception $e) {

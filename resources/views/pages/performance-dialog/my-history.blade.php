@@ -49,7 +49,7 @@
                 <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
             </div>
         </div>
-        <form id="form-filter-performance-dialog" action="{{ route('performance-dialog') }}" method="GET">
+        <form id="form-filter-performance-dialog" action="{{ route('performance-dialog.my-history') }}" method="GET">
             <div class="row align-items-end">
                 <div class="col-auto">
                     <div class="mb-3">
@@ -145,19 +145,19 @@
                                     <tr>
                                         <td scope="row">
                                             <div class="row p-2">
-                                                <div class="col-lg col-sm-12 p-2">
+                                                <div class="col-lg col-sm-12 mb-2">
                                                     <div class="form-group">
                                                         <h5>Start Date</h5>
                                                         <p class="mt-1 mb-0 text-muted">{{ $row->start_date ?? "-" }}</p>
                                                     </div>
                                                 </div>
-                                                <div class="col-lg col-sm-12 p-2">
+                                                <div class="col-lg col-sm-12 mb-2">
                                                     <div class="form-group">
                                                         <h5>End Date</h5>
                                                         <p class="mt-1 mb-0 text-muted">{{ $row->end_date ?? "-" }}</p>
                                                     </div>
                                                 </div>
-                                                <div class="col-lg col-sm-12 p-2">
+                                                <div class="col-lg col-sm-12 mb-2">
                                                     <div class="form-group">
                                                         <h5>Due Date</h5>
                                                         <p class="mt-1 mb-0 text-muted">{{ $row->due_date ?? "-" }}</p>
@@ -165,19 +165,19 @@
                                                 </div>
                                             </div>
                                             <div class="row p-2">
-                                                <div class="col-md-12">
+                                                <div class="col-lg col-sm-12 mb-2">
                                                     <div class="form-group">
                                                         <h5>Summary</h5>
                                                         <p class="mt-1 mb-0 text-muted" @style('white-space: pre-line')>{{ $row->summary ?? '-' }}</p>
                                                     </div>
                                                 </div>
-                                                <div class="col-md-12">
+                                                <div class="col-lg col-sm-12 mb-2">
                                                     <div class="form-group">
                                                         <h5>Development Plan</h5>
                                                         <p class="mt-1 mb-0 text-muted" @style('white-space: pre-line')>{{ $row->development_plan ?? '-' }}</p>
                                                     </div>
                                                 </div>
-                                                <div class="col-md-12">
+                                                <div class="col-lg col-sm-12 mb-2">
                                                     <div class="form-group">
                                                         <h5>Additional Notes</h5>
                                                         <p class="mt-1 mb-0 text-muted" @style('white-space: pre-line')>{{ $row->additional_notes ?? '-' }}</p>

@@ -115,7 +115,7 @@
 
     <div class="mandatory-field"></div>
         <div id="form-alert" class="alert alert-danger d-none"></div>
-        <form id="performance-review-form" action="{{ route('performance-dialog.create-or-update') }}" class="needs-validation" method="POST">
+        <form id="performance-dialog-form" action="{{ route('performance-dialog.create-or-update') }}" class="needs-validation" method="POST">
             @csrf
             <input type="hidden" class="form-control" name="period" value="{{ $period }}">
             <input type="hidden" class="form-control" name="employee_id" value="{{ $employee_id }}">
@@ -189,10 +189,10 @@
             </div>
             <div class="d-flex justify-content-end mt-4 mb-4">
                 <button type="submit" class="btn btn-outline-primary rounded-pill me-2 draft-button"
-                    name="action_draft" value="Draft" id="performance-review-save-draft">Save as
+                    name="action_draft" value="Draft" id="performance-dialog-save-draft">Save as
                     Draft</button>
                 <button type="submit" class="btn btn-primary rounded-pill submit-button"
-                    name="action_submit" value="Submitted" id="performance-review-submit">Submit</button>
+                    name="action_submit" value="Submitted" id="performance-dialog-submit">Submit</button>
             </div>
         </form>
     </div>
