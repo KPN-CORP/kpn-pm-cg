@@ -85,9 +85,28 @@ class GoalsDataImport implements ToModel, WithValidation, WithHeadingRow
                 $period = now()->year;
             }
 
+            if (empty($status)) {
+                $status = "Pending";
+            }
+
             $employeeExist = Employee::where('employee_id', $employeeID)->exists();
             if (!$employeeExist) {
-                $message = "Employee : " . $row['employee_name'] . " with ID " . $employeeId . " not exist.";
+                $message = "Employee : " . $row['employee_name'] . " with ID " . $employeeID . " not exist.";
+
+                Log::info($message);
+
+                $this->detailError[] = [
+                    'employee_id' => $employeeID,
+                    'message' => $message,
+                ];
+
+                $this->errorCount++;
+                return;
+            }
+
+            $currentApproverExist = Employee::where('employee_id', $currentApproverID)->exists();
+            if (!$currentApproverExist) {
+                $message = "Current approver with ID " . $currentApproverID . " not exist.";
 
                 Log::info($message);
 
@@ -108,8 +127,8 @@ class GoalsDataImport implements ToModel, WithValidation, WithHeadingRow
             }
 
             $this->data[] = [
-                "manager_employee_id" => $currentApproverID,
                 "employee_id" => $employeeID,
+                "manager_employee_id" => $currentApproverID,
                 "summary" => $summary,
                 "development_plan" => $developmentPlan,
                 "additional_notes" => $additionalNotes,
