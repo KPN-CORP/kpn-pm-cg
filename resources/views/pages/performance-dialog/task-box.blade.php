@@ -49,7 +49,7 @@
                 <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
             </div>
         </div>
-        <form id="form-filter-task-box" action="{{ route('performance-dialog') }}" method="GET">
+        <form id="form-filter-task-box" action="{{ route('performance-dialog.task-box') }}" method="GET">
             <div class="row align-items-end">
                 <div class="col-auto">
                     <div class="mb-3">
