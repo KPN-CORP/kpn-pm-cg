@@ -179,8 +179,8 @@ class GoalsDataImport implements ToModel, WithValidation, WithHeadingRow
             DB::beginTransaction();
 
             try {
-                Log::info("Preparing to insert data for Employee ID: " . $employeeId, [
-                    'form_data' => $data['form_data'],
+                Log::info("Preparing to insert data for Employee ID: " . $data->employee_id, [
+                    'data' => $data,
                 ]);
 
                 Log::info("Starting transaction for Employee ID: " . $employeeId);
