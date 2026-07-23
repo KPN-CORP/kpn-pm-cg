@@ -183,7 +183,7 @@ class GoalsDataImport implements ToModel, WithValidation, WithHeadingRow
                     'data' => $data,
                 ]);
 
-                Log::info("Starting transaction for Employee ID: " . $employeeId);
+                Log::info("Starting transaction for Employee ID: " . $data->employee_id);
 
                 Log::info("Deleting old data for Employee ID: " . $employeeId);
                 DB::table('goals')
