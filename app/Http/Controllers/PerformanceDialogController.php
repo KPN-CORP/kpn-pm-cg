@@ -316,14 +316,10 @@ class PerformanceDialogController extends Controller
                 ]);
             }
 
+            $PerformanceDialog = null;
+
             if (!empty($id)) {
                 $PerformanceDialog = PerformanceDialog::where('id', $id)
-                    ->where('deleted_at', null)
-                    ->first();
-            } else {
-                $PerformanceDialog = PerformanceDialog::where('manager_employee_id', $managerEmployeeID)
-                    ->where('employee_id', $employeeID)
-                    ->where('period', $period)
                     ->where('deleted_at', null)
                     ->first();
             }

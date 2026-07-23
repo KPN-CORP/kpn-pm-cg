@@ -53,8 +53,8 @@
             <div class="row align-items-end">
                 <div class="col-auto">
                     <div class="mb-3">
-                        <label class="form-label" for="period">{{ __('Year') }}</label>
-                        <select name="period" id="period" onchange="filterPerformanceDialogYears(this.value)" class="form-select border-secondary" style="width: 180px">
+                        <label class="form-label" for="period-year">{{ __('Year') }}</label>
+                        <select name="period" id="period-year" onchange="filterPerformanceDialogYears(this.value)" class="form-select border-secondary" style="width: 180px;cursor:pointer">
                             <option value="">{{ __('select all') }}</option>
                             @foreach ($performance_dialog_years as $year)
                                 <option value="{{ $year }}" {{ $year == $period ? 'selected' : '' }}>
@@ -76,7 +76,6 @@
                 <div class="col-md-12">
                 <div class="card shadow p-0 performance-dialog-card" data-year="{{ $row->period }}">
                     <div class="card-header bg-white py-3 d-flex align-items-center justify-content-between pb-0">
-                        <h4 class="m-0 font-weight-bold text-primary">{{ __('Performance Dialog') }} {{ $row->period }}</h4>
                         @if ($row->status == 'Draft')
                             <a class="btn btn-outline-warning fw-semibold" href="{{ route('performance-dialog.form-edit', $row->id) }}" onclick="showLoader()">
                                 {{ __('Edit') }}
