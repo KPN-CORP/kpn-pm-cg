@@ -119,7 +119,7 @@
                             <a href="{{ route('performance-dialog.my-history') }}">{{ __('My History') }}</a>
                         </li>
                         <li>
-                            <a href="{{ route('performance-dialog.task-box') }}">{{ __('Task Box') }}</a>
+                            <a href="{{ route('performance-dialog-task') }}">{{ __('Task Box') }}</a>
                         </li>
                     </ul>
                 </div>

@@ -20,17 +20,24 @@ use App\Models\Employee;
 use App\Models\PerformanceDialog;
 use App\Models\PerformanceDialogType;
 
-class PerformanceDialogImport implements ToModel, WithValidation, WithHeadingRow
+class PerformanceDialogManagerImport implements ToModel, WithValidation, WithHeadingRow
 {
     public $successCount = 0;
     public $errorCount = 0;
+    public $userID;
     public $filePath;
     public $data = [];
     public $detailError = [];
+    protected $invalidEmployees = [];
 
-    public function __construct($filePath)
+    public function __construct($filePath, $userID)
     {
         $this->filePath = $filePath;
+        $this->userID = $userID;
+
+        if (empty($this->userID)) {
+            $this->userID = Auth::id();
+        }
     }
 
     public function model(array $row)
@@ -63,6 +70,10 @@ class PerformanceDialogImport implements ToModel, WithValidation, WithHeadingRow
 
                 if ($errors->has('employee_id')) {
                     $this->detailError[] = [
+                        'employee_id' => $row['employee_id'],
+                        'message' => "Employee ID must contain 11 digits.",
+                    ];
+                    $this->invalidEmployees[] = [
                         'employee_id' => $row['employee_id'],
                         'message' => "Employee ID must contain 11 digits.",
                     ];
@@ -101,6 +112,10 @@ class PerformanceDialogImport implements ToModel, WithValidation, WithHeadingRow
                     'employee_id' => $employeeID,
                     'message' => $message,
                 ];
+                $this->invalidEmployees[] = [
+                    'employee_id' => $employeeID,
+                    'message' => $message,
+                ];
 
                 $this->errorCount++;
                 return;
@@ -117,6 +132,10 @@ class PerformanceDialogImport implements ToModel, WithValidation, WithHeadingRow
                     'current_approver_id' => $currentApproverID,
                     'message' => $message,
                 ];
+                $this->invalidEmployees[] = [
+                    'employee_id' => $employeeID,
+                    'message' => $message,
+                ];
 
                 $this->errorCount++;
                 return;
@@ -129,6 +148,10 @@ class PerformanceDialogImport implements ToModel, WithValidation, WithHeadingRow
                 Log::info($message);
 
                 $this->detailError[] = [
+                    'employee_id' => $employeeID,
+                    'message' => $message,
+                ];
+                $this->invalidEmployees[] = [
                     'employee_id' => $employeeID,
                     'message' => $message,
                 ];
@@ -157,15 +180,19 @@ class PerformanceDialogImport implements ToModel, WithValidation, WithHeadingRow
                 "type_ids" => $typeIDs,
                 "others_type_name" => $othersTypeName,
                 "status" => $status,
-                "created_by" => Auth::id(),
+                "created_by" => $this->userID,
                 "created_at" => Carbon::now(),
-                "updated_by" => Auth::id(),
+                "updated_by" => $this->userID,
                 "updated_at" => Carbon::now()
             ];
         } catch (\Exception $e) {
             Log::error("Error processing row: " . $e->getMessage());
 
             $this->detailError[] = [
+                'employee_id' => $row['employee_id'] ?? 'Unknown',
+                'message' => "Error during import: " . $e->getMessage(),
+            ];
+            $this->invalidEmployees[] = [
                 'employee_id' => $row['employee_id'] ?? 'Unknown',
                 'message' => "Error during import: " . $e->getMessage(),
             ];
@@ -253,6 +280,10 @@ class PerformanceDialogImport implements ToModel, WithValidation, WithHeadingRow
                     'employee_id' => $data->employee_id,
                     'message' => "Error during import: " . $e->getMessage(),
                 ];
+                $this->invalidEmployees[] = [
+                    'employee_id' => $data->employee_id,
+                    'message' => "Error during import: " . $e->getMessage(),
+                ];
 
                 $this->errorCount++;
             }
@@ -281,9 +312,14 @@ class PerformanceDialogImport implements ToModel, WithValidation, WithHeadingRow
             'error' => $this->errorCount,
             'detail_error' => $this->detailError ? json_encode($this->detailError) : null,
             'file_uploads' => $filePathWithoutPublic,
-            'submit_by' => Auth::id(),
+            'submit_by' => $this->userID,
             'created_at' => now(),
             'updated_at' => now(),
         ]);
+    }
+
+    public function getInvalidEmployees()
+    {
+        return $this->invalidEmployees;
     }
 }

@@ -187,13 +187,13 @@ Route::middleware('auth', 'locale', 'notification', 'restrict_bu')->group(functi
 
     // Performance Dialog
     Route::get('/performance-dialogs', [PerformanceDialogController::class, 'index'])->name('performance-dialog.my-history');
-    Route::get('/performance-dialog/task-box', [PerformanceDialogController::class, 'taskBox'])->name('performance-dialog.task-box');
     Route::get('/performance-dialog/form/add', [PerformanceDialogController::class, 'form'])->name('performance-dialog.form');
     Route::get('/performance-dialog/form/edit/{id}', [PerformanceDialogController::class, 'formEdit'])->name('performance-dialog.form-edit');
     Route::post('/performance-dialog/create-or-update', [PerformanceDialogController::class, 'createOrUpdate'])->name('performance-dialog.create-or-update');
 
     // Performance Dialog Task
     Route::get('/performance-dialog/tasks', [PerformanceDialogTaskController::class, 'index'])->name('performance-dialog-task');
+    Route::post('/performance-dialog/task/import', [PerformanceDialogTaskController::class, 'import'])->name('performance-dialog-task.import');
 
     // Rating | Calibration
     Route::get('/rating', [RatingController::class, 'index'])->name('rating');
