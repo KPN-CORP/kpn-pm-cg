@@ -3,6 +3,7 @@
 namespace App\Imports;
 
 use Exception;
+use Carbon\Carbon;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -16,9 +17,10 @@ use Illuminate\Validation\ValidationException;
 
 use App\Models\ApprovalLayer;
 use App\Models\Employee;
+use App\Models\PerformanceDialog;
 use App\Models\PerformanceDialogType;
 
-class GoalsDataImport implements ToModel, WithValidation, WithHeadingRow
+class PerformanceDialogImport implements ToModel, WithValidation, WithHeadingRow
 {
     public $successCount = 0;
     public $errorCount = 0;
@@ -111,7 +113,8 @@ class GoalsDataImport implements ToModel, WithValidation, WithHeadingRow
                 Log::info($message);
 
                 $this->detailError[] = [
-                    'employee_id' => $employeeId,
+                    'employee_id' => $employeeID,
+                    'current_approver_id' => $currentApproverID,
                     'message' => $message,
                 ];
 
@@ -154,9 +157,9 @@ class GoalsDataImport implements ToModel, WithValidation, WithHeadingRow
                 "type_ids" => $typeIDs,
                 "others_type_name" => $othersTypeName,
                 "status" => $status,
-                "created_by" => "",
+                "created_by" => Auth::id(),
                 "created_at" => Carbon::now(),
-                "updated_by" => "",
+                "updated_by" => Auth::id(),
                 "updated_at" => Carbon::now()
             ];
         } catch (\Exception $e) {
@@ -185,90 +188,73 @@ class GoalsDataImport implements ToModel, WithValidation, WithHeadingRow
 
                 Log::info("Starting transaction for Employee ID: " . $data->employee_id);
 
-                Log::info("Deleting old data for Employee ID: " . $employeeId);
-                DB::table('goals')
-                    ->where('employee_id', $employeeId)
-                    ->where('category', $data['category'])
-                    ->where('period', $data['period'])
-                    ->update(['deleted_at' => now()]);
-                Log::info("Old data deleted for Employee ID: " . $employeeId);
+                $PerformanceDialog = DB::table('performance_dialogs')
+                    ->where('employee_id', $data->employee_id)
+                    ->where('manager_employee_id', $data->manager_employee_id)
+                    ->where('period', $data->period)
+                    ->where('start_date', $data->start_date)
+                    ->where('end_date', $data->end_date)
+                    ->where('due_date', $data->due_date)
+                    ->where('deleted_at', null)
+                    ->first();
 
-                Log::info("Data for Employee ID: " . $employeeId, $data);
-                DB::table('goals')->insert([
-                    'id' => $formId,
-                    'employee_id' => $employeeId,
-                    'category' => $data['category'],
-                    'form_data' => json_encode($data['form_data']),
-                    'form_status' => 'Approved',
-                    'period' => $data['period'],
-                    'created_at' => now(),
-                    'updated_at' => now(),
-                ]);
-                Log::info("Old goals updated for Employee ID: " . $employeeId);
-
-
-                $approvalRequests = DB::table('approval_requests')
-                    ->where('employee_id', $employeeId)
-                    ->where('category', $data['category'])
-                    ->where('period', $data['period'])
-                    ->pluck('id'); // Get the list of IDs
-
-                // Soft delete approvals linked to these requests
-                DB::table('approvals')
-                    ->whereIn('request_id', $approvalRequests) // Use the retrieved IDs
-                    ->update(['deleted_at' => now()]);
-
-                // Soft delete approval_requests
-                DB::table('approval_requests')
-                    ->whereIn('id', $approvalRequests)
-                    ->update(['deleted_at' => now()]);
-
-                $empId = Employee::where('employee_id', $employeeId)->pluck('id')->first();
-
-                if ($empId) {
-                    Log::info("EmployeeAppraisal ID found for Employee ID: " . $employeeId . ". EmpId: " . $empId);
+                if ($PerformanceDialog) {
+                    DB::table('performance_dialogs')
+                        ->where('employee_id', $data->employee_id)
+                        ->where('manager_employee_id', $data->manager_employee_id)
+                        ->where('period', $data->period)
+                        ->where('start_date', $data->start_date)
+                        ->where('end_date', $data->end_date)
+                        ->where('due_date', $data->due_date)
+                        ->where('deleted_at', null)
+                        ->update([
+                            'summary' => $data->summary,
+                            'development_plan' => $data->development_plan,
+                            'additional_notes' => $data->additional_notes,
+                            'type_ids' => $data->type_ids,
+                            'others_type_name' => $data->others_type_name,
+                            'status' => $data->status,
+                            'updated_by' => $data->updated_by,
+                            'updated_at' => $data->updated_at,
+                        ]);
                 } else {
-                    Log::error("No EmployeeAppraisal record found for Employee ID: " . $employeeId);
+                    DB::table('performance_dialogs')->insert([
+                        'manager_employee_id' => $data->manager_employee_id,
+                        'employee_id' => $data->employee_id,
+                        'period' => $data->period,
+                        'summary' => $data->summary,
+                        'development_plan' => $data->development_plan,
+                        'additional_notes' => $data->additional_notes,
+                        'start_date' => $data->start_date,
+                        'end_date' => $data->end_date,
+                        'due_date' => $data->due_date,
+                        'type_ids' => $data->type_ids,
+                        'others_type_name' => $data->others_type_name,
+                        'status' => $data->status,
+                        'created_by' => $data->created_by,
+                        'created_at' => $data->created_at,
+                        'updated_by' => $data->updated_by,
+                        'updated_at' => $data->updated_at,
+                    ]);
                 }
-
-                $requestId = DB::table('approval_requests')->insertGetId([
-                    'form_id' => $formId,  // Gunakan UUID yang sama
-                    'category' => 'Goals',
-                    'current_approval_id' => $data['current_approval_id'],
-                    'employee_id' => $employeeId,
-                    'status' => 'Approved',
-                    'messages' => 'import by admin',
-                    'period' => $data['period'],
-                    'created_by' => $empId,
-                    'created_at' => now(),
-                    'updated_at' => now(),
-                ]);
-
-                // Use the request ID in the approvals table
-                DB::table('approvals')->insert([
-                    'request_id' => $requestId,  // Use the stored ID
-                    'approver_id' => $data['current_approval_id'],
-                    'status' => 'Approved',
-                    'created_by' => $empId,
-                    'created_at' => now(),
-                    'updated_at' => now(),
-                ]);
 
                 DB::commit();
 
                 $this->successCount++;
-                Log::info("Data inserted for Employee ID: " . $employeeId);
+
+                Log::info("Data inserted for Employee ID: " . $data->employee_id);
 
             } catch (\Exception $e) {
                 DB::rollBack();
 
-                Log::error("Error inserting data for Employee ID: " . $employeeId . ". Error: " . $e->getMessage());
+                Log::error("Error inserting data for Employee ID: " . $data->employee_id . ". Error: " . $e->getMessage());
 
-                $this->errorCount++;
                 $this->detailError[] = [
-                    'employee_id' => $employeeId,
+                    'employee_id' => $data->employee_id,
                     'message' => "Error during import: " . $e->getMessage(),
                 ];
+
+                $this->errorCount++;
             }
         }
     }
@@ -276,22 +262,21 @@ class GoalsDataImport implements ToModel, WithValidation, WithHeadingRow
     public function rules(): array
     {
         Log::info("Validating Excel data 2...");
+
         return [
             'employee_id' => 'required|string',
             'employee_name' => 'required|string',
-            'category' => 'required|string',
-            'kpi' => 'required|string',
-            'target' => 'required|numeric',
-            'uom' => 'required|string',
-            'weightage' => 'required|numeric',
-            'type' => 'required|string',
+            'current_approver_id' => 'required|string',
+            'type_name' => 'required|string',
+            'status' => 'required|string',
         ];
     }
 
     public function saveTransaction()
     {
         $filePathWithoutPublic = str_replace('public/', '', $this->filePath);
-        DB::table('goals_import_transactions')->insert([
+
+        DB::table('performance_dialog_import_transactions')->insert([
             'success' => $this->successCount,
             'error' => $this->errorCount,
             'detail_error' => $this->detailError ? json_encode($this->detailError) : null,
