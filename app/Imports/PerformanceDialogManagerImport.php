@@ -209,59 +209,59 @@ class PerformanceDialogManagerImport implements ToModel, WithValidation, WithHea
             DB::beginTransaction();
 
             try {
-                Log::info("Preparing to insert data for Employee ID: " . $data->employee_id, [
+                Log::info("Preparing to insert data for Employee ID: " . $data['employee_id'], [
                     'data' => $data,
                 ]);
 
-                Log::info("Starting transaction for Employee ID: " . $data->employee_id);
+                Log::info("Starting transaction for Employee ID: " . $data['employee_id']);
 
                 $PerformanceDialog = DB::table('performance_dialogs')
-                    ->where('employee_id', $data->employee_id)
-                    ->where('manager_employee_id', $data->manager_employee_id)
-                    ->where('period', $data->period)
-                    ->where('start_date', $data->start_date)
-                    ->where('end_date', $data->end_date)
-                    ->where('due_date', $data->due_date)
+                    ->where('employee_id', $data['employee_id'])
+                    ->where('manager_employee_id', $data['manager_employee_id'])
+                    ->where('period', $data['period'])
+                    ->where('start_date', $data['start_date'])
+                    ->where('end_date', $data['end_date'])
+                    ->where('due_date', $data['due_date'])
                     ->where('deleted_at', null)
                     ->first();
 
                 if ($PerformanceDialog) {
                     DB::table('performance_dialogs')
-                        ->where('employee_id', $data->employee_id)
-                        ->where('manager_employee_id', $data->manager_employee_id)
-                        ->where('period', $data->period)
-                        ->where('start_date', $data->start_date)
-                        ->where('end_date', $data->end_date)
-                        ->where('due_date', $data->due_date)
+                        ->where('employee_id', $data['employee_id'])
+                        ->where('manager_employee_id', $data['manager_employee_id'])
+                        ->where('period', $data['period'])
+                        ->where('start_date', $data['start_date'])
+                        ->where('end_date', $data['end_date'])
+                        ->where('due_date', $data['due_date'])
                         ->where('deleted_at', null)
                         ->update([
-                            'summary' => $data->summary,
-                            'development_plan' => $data->development_plan,
-                            'additional_notes' => $data->additional_notes,
-                            'type_ids' => $data->type_ids,
-                            'others_type_name' => $data->others_type_name,
-                            'status' => $data->status,
-                            'updated_by' => $data->updated_by,
-                            'updated_at' => $data->updated_at,
+                            'summary' => $data['summary'],
+                            'development_plan' => $data['development_plan'],
+                            'additional_notes' => $data['additional_notes'],
+                            'type_ids' => $data['type_ids'] ? json_encode($data['type_ids']) : null,
+                            'others_type_name' => $data['others_type_name'],
+                            'status' => $data['status'],
+                            'updated_by' => $data['updated_by'],
+                            'updated_at' => $data['updated_at'],
                         ]);
                 } else {
                     DB::table('performance_dialogs')->insert([
-                        'manager_employee_id' => $data->manager_employee_id,
-                        'employee_id' => $data->employee_id,
-                        'period' => $data->period,
-                        'summary' => $data->summary,
-                        'development_plan' => $data->development_plan,
-                        'additional_notes' => $data->additional_notes,
-                        'start_date' => $data->start_date,
-                        'end_date' => $data->end_date,
-                        'due_date' => $data->due_date,
-                        'type_ids' => $data->type_ids,
-                        'others_type_name' => $data->others_type_name,
-                        'status' => $data->status,
-                        'created_by' => $data->created_by,
-                        'created_at' => $data->created_at,
-                        'updated_by' => $data->updated_by,
-                        'updated_at' => $data->updated_at,
+                        'manager_employee_id' => $data['manager_employee_id'],
+                        'employee_id' => $data['employee_id'],
+                        'period' => $data['period'],
+                        'summary' => $data['summary'],
+                        'development_plan' => $data['development_plan'],
+                        'additional_notes' => $data['additional_notes'],
+                        'start_date' => $data['start_date'],
+                        'end_date' => $data['end_date'],
+                        'due_date' => $data['due_date'],
+                        'type_ids' => $data['type_ids'] ? json_encode($data['type_ids']) : null,
+                        'others_type_name' => $data['others_type_name'],
+                        'status' => $data['status'],
+                        'created_by' => $data['created_by'],
+                        'created_at' => $data['created_at'],
+                        'updated_by' => $data['updated_by'],
+                        'updated_at' => $data['updated_at'],
                     ]);
                 }
 
@@ -269,19 +269,19 @@ class PerformanceDialogManagerImport implements ToModel, WithValidation, WithHea
 
                 $this->successCount++;
 
-                Log::info("Data inserted for Employee ID: " . $data->employee_id);
+                Log::info("Data inserted for Employee ID: " . $data['employee_id']);
 
             } catch (\Exception $e) {
                 DB::rollBack();
 
-                Log::error("Error inserting data for Employee ID: " . $data->employee_id . ". Error: " . $e->getMessage());
+                Log::error("Error inserting data for Employee ID: " . $data['employee_id'] . ". Error: " . $e->getMessage());
 
                 $this->detailError[] = [
-                    'employee_id' => $data->employee_id,
+                    'employee_id' => $data['employee_id'],
                     'message' => "Error during import: " . $e->getMessage(),
                 ];
                 $this->invalidEmployees[] = [
-                    'employee_id' => $data->employee_id,
+                    'employee_id' => $data['employee_id'],
                     'message' => "Error during import: " . $e->getMessage(),
                 ];
 

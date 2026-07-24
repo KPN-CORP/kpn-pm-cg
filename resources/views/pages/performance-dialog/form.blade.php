@@ -52,6 +52,15 @@
     .select2-selection * {
         cursor: pointer !important;
     }
+
+    .form-control[readonly],
+    .form-select[readonly],
+    textarea.form-control[readonly] {
+        background-color: #e9ecef;
+        opacity: 1;
+        color: #6c757d;
+        cursor: not-allowed;
+    }
 </style>
 @endsection
 
@@ -117,13 +126,13 @@
         <div id="form-alert" class="alert alert-danger d-none"></div>
         <form id="performance-dialog-form" action="{{ route('performance-dialog.create-or-update') }}" class="needs-validation" method="POST">
             @csrf
-            <input type="hidden" class="form-control" name="period" value="{{ $period }}">
-            <input type="hidden" class="form-control" name="employee_id" value="{{ $employee_id }}">
-            <input type="hidden" class="form-control" name="manager_employee_id" value="{{ $manager_employee_id }}">
+            <input type="hidden" class="form-control" name="period" value="{{ $period }}" readonly>
+            <input type="hidden" class="form-control" name="employee_id" value="{{ $employee_id }}" readonly>
+            <input type="hidden" class="form-control" name="manager_employee_id" value="{{ $manager_employee_id }}" readonly>
             <div class="row mb-2">
                 <div class="col-md-6">
                     <label for="performance_review_type" class="form-label">Objectives</label>
-                    <select class="form-select form-select-sm select2" id="performance_review_type" name="performance_review_types[]" data-placeholder="Select Objectives" multiple required>
+                    <select class="form-select form-select-sm select2" id="performance_review_type" name="performance_review_types[]" data-placeholder="Select Objectives" multiple required {{ $is_performance_review_types_readonly ? 'readonly' : '' }}>
                         <option></option>
                         @foreach ($master_performance_review_types as $master_performance_review_type)
                             @php
@@ -151,53 +160,65 @@
                         <div class="">
                             <input type="text" name="others_performance_review_type" id="others_performance_review_type"
                             class="form-control form-control-sm" placeholder="ex: Penilaian Kerja"
-                            value="" style="{{ empty($performance_review_others_type_name) ? "display: none;" : "" }}">
+                            value="" style="{{ empty($performance_review_others_type_name) ? "display: none;" : "" }}" {{ $is_others_performance_review_type_readonly ? 'readonly' : '' }}>
                         </div>
                     </div>
                 </div>
                 <div class="col-md-6 mb-1">
                     <label for="performance_review_start_date" class="form-label">Start Date</label>
-                    <input type="date" class="form-control form-control-sm" id="performance_review_start_date" name="performance_review_start_date" value="{{ $formatted_performance_review_start_date }}" required>
+                    <input type="date" class="form-control form-control-sm" id="performance_review_start_date" name="performance_review_start_date" value="{{ $formatted_performance_review_start_date }}" required {{ $is_performance_review_start_date_readonly ? 'readonly' : '' }}>
                 </div>
                 <div class="col-md-6 mb-1">
                     <label for="performance_review_end_date" class="form-label">End Date</label>
-                    <input type="date" class="form-control form-control-sm" id="performance_review_end_date" name="performance_review_end_date" value="{{ $formatted_performance_review_end_date }}" required>
+                    <input type="date" class="form-control form-control-sm" id="performance_review_end_date" name="performance_review_end_date" value="{{ $formatted_performance_review_end_date }}" required {{ $is_performance_review_end_date_readonly ? 'readonly' : '' }}>
                 </div>
                 <div class="col-md-6 mb-1">
                     <label for="performance_review_due_date" class="form-label">Due Date</label>
-                    <input type="date" class="form-control form-control-sm" id="performance_review_due_date" name="performance_review_due_date" value="{{ $formatted_performance_review_due_date }}" required>
+                    <input type="date" class="form-control form-control-sm" id="performance_review_due_date" name="performance_review_due_date" value="{{ $formatted_performance_review_due_date }}" required {{ $is_performance_review_due_date_readonly ? 'readonly' : '' }}>
                 </div>
             </div>
             <div class="row mb-2">
                 <div class="col-md-6 mt-2">
                     <label for="" class="form-label">Summary</label>
                     <textarea class="form-control form-control-sm" id="performance_review_summary" name="performance_review_summary" rows="4"
-                        placeholder="Please add more detail of summary ...">{{ $performance_review_summary }}</textarea>
+                        placeholder="Please add more detail of summary ..." {{ $is_performance_review_summary_readonly ? 'readonly' : '' }}>{{ $performance_review_summary }}</textarea>
                 </div>
                 <div class="col-md-6 mt-2">
                     <label for="" class="form-label">Development Plan</label>
                     <textarea class="form-control form-control-sm" id="performance_review_development_plan" name="performance_review_development_plan" rows="4"
-                        placeholder="Please add more detail of development plan ...">{{ $performance_review_development_plan }}</textarea>
+                        placeholder="Please add more detail of development plan ..." {{ $is_performance_review_development_plan_readonly ? 'readonly' : '' }}>{{ $performance_review_development_plan }}</textarea>
                 </div>
             </div>
             <div class="row mb-2">
                 <div class="col-md-12 mt-2">
                     <label for="" class="form-label">Additional Notes</label>
                     <textarea class="form-control form-control-sm" id="performance_review_additional_notes" name="performance_review_additional_notes" rows="4"
-                        placeholder="Please add more detail of additional notes ...">{{ $performance_review_additional_notes }}</textarea>
+                        placeholder="Please add more detail of additional notes ..." {{ $is_performance_review_additional_notes_readonly ? 'readonly' : '' }}>{{ $performance_review_additional_notes }}</textarea>
                 </div>
             </div>
             <div class="d-flex justify-content-end mt-4 mb-4">
-                <button type="submit" class="btn btn-outline-primary rounded-pill me-2 draft-button"
-                    name="action_draft" value="Draft" id="performance-dialog-save-draft">Save as
-                    Draft</button>
-                <button type="submit" class="btn btn-primary rounded-pill submit-button"
-                    name="action_submit" value="Submitted" id="performance-dialog-submit">Submit</button>
+                @if ($is_form_approval)
+                    <button type="submit" class="btn btn-primary rounded-pill submit-button"
+                        name="action_submit" value="Approve" id="performance-dialog-approve">Approve</button>
+                @elseif ($is_form_view)
+                    <a class="btn btn-primary rounded-pill submit-button" href="{{ $redirect_back }}">Back</a>
+                @else
+                    <button type="submit" class="btn btn-outline-primary rounded-pill me-2 draft-button"
+                        name="action_draft" value="Draft" id="performance-dialog-save-draft">Save as
+                        Draft</button>
+                    <button type="submit" class="btn btn-primary rounded-pill submit-button"
+                        name="action_submit" value="Submitted" id="performance-dialog-submit">Submit</button>
+                @endif
             </div>
         </form>
     </div>
 @endsection
 @push('scripts')
-    <script>
-    </script>
+    @if($is_performance_review_types_readonly)
+        <script>
+            $('#performance_review_type').on('select2:opening', function (e) {
+                e.preventDefault();
+            });
+        </script>
+    @endif
 @endpush

@@ -16,6 +16,7 @@ use Maatwebsite\Excel\Facades\Excel;
 use App\Models\PerformanceDialog;
 use App\Services\AppService;
 use App\Imports\PerformanceDialogManagerImport;
+use App\Exports\InvalidPerformanceDialogManagerImport;
 
 class PerformanceDialogTaskController extends Controller
 {
@@ -31,10 +32,14 @@ class PerformanceDialogTaskController extends Controller
     public function index(Request $request) {
         $userID = $this->loggedInUser->id;
         $employeeID = $this->loggedInUser->employee_id;
-        $period = $this->appService->appraisalPeriod();
+        $period = now()->year;
 
         if (!empty($request->period)) {
             $period = $request->period;
+        }
+
+        if (!empty($request->filterYear)) {
+            $period = $request->filterYear;
         }
 
         $performanceDialogs = PerformanceDialog::with(['employeeCreatedBy', 'employeeUpdatedBy'])
@@ -51,6 +56,14 @@ class PerformanceDialogTaskController extends Controller
 
         if (empty($performanceDialogYears)) {
             $performanceDialogYears = [$period];
+        }
+
+        foreach($performanceDialogs as $row) {
+            $row->formatted_start_date = $row->start_date ? Carbon::parse($row->start_date)->format('d M Y') : '-';
+            $row->formatted_end_date = $row->end_date ? Carbon::parse($row->end_date)->format('d M Y') : '-';
+            $row->formatted_due_date = $row->due_date ? Carbon::parse($row->due_date)->format('d M Y') : '-';
+            $row->formatted_created_at = $row->created_at ? Carbon::parse($row->created_at)->format('d M Y') : '-';
+            $row->formatted_updated_at = $row->updated_at ? Carbon::parse($row->updated_at)->format('d M Y') : '-';
         }
 
         return view('pages.performance-dialog.task-box', [
@@ -97,9 +110,9 @@ class PerformanceDialogTaskController extends Controller
             if (!empty($invalidEmployees)) {
                 session()->put('invalid_employees', $invalidEmployees);
 
-                $message = 'Some of import data failed! <a href="' . route('performance-dialog-task.export-invalid') . '"><u>Click here to download the list of errors.</u></a>';
+                $message = 'Some of import data failed! <a href="' . route('performance-dialog-task.invalid-export') . '"><u>Click here to download the list of errors.</u></a>';
 
-                return redirect()->back()->with('error', $message);
+                return redirect()->back()->with('error', $message)->with('error_client', 'Some of import data failed!');
             }
 
             $queries = DB::getQueryLog();
@@ -109,7 +122,7 @@ class PerformanceDialogTaskController extends Controller
 
             return redirect()->back()->with('success', $message);
         } catch (ValidationException $e) {
-            return redirect()->back()->with('error', $e->errors()['error'][0]);
+            return redirect()->back()->with('error', $e->errors()[0][0]);
         } catch (\Exception $e) {
             $errorMessage = "Import failed: " . $e->getMessage();
 
@@ -117,5 +130,16 @@ class PerformanceDialogTaskController extends Controller
 
             return back()->with('error', $errorMessage);
         }
+    }
+
+    public function invalidExport()
+    {
+        $invalidEmployees = session('invalid_employees');
+
+        if (empty($invalidEmployees)) {
+            return redirect()->back()->with('success', 'No invalid employees to export.');
+        }
+
+        return Excel::download(new InvalidPerformanceDialogManagerImport($invalidEmployees), 'errors_performance_dialog_import.xlsx');
     }
 }
