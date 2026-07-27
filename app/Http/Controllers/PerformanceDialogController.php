@@ -45,22 +45,22 @@ class PerformanceDialogController extends Controller
             ->where('deleted_at', null)
             ->get();
 
-        $performanceDialogYears = PerformanceDialog::select('period')
-            ->where('employee_id', $employeeID)
-            ->distinct()
-            ->orderBy('period')
-            ->pluck('period');
-
-        if (empty($performanceDialogYears)) {
-            $performanceDialogYears = [$period];
-        }
-
         foreach($performanceDialogs as $row) {
             $row->formatted_start_date = $row->start_date ? Carbon::parse($row->start_date)->format('d M Y') : '-';
             $row->formatted_end_date = $row->end_date ? Carbon::parse($row->end_date)->format('d M Y') : '-';
             $row->formatted_due_date = $row->due_date ? Carbon::parse($row->due_date)->format('d M Y') : '-';
             $row->formatted_created_at = $row->created_at ? Carbon::parse($row->created_at)->format('d M Y') : '-';
             $row->formatted_updated_at = $row->updated_at ? Carbon::parse($row->updated_at)->format('d M Y') : '-';
+        }
+
+        $performanceDialogYears = PerformanceDialog::select('period')
+            ->where('employee_id', $employeeID)
+            ->distinct()
+            ->orderBy('period')
+            ->pluck('period');
+
+        if ($performanceDialogYears->isEmpty()) {
+            $performanceDialogYears = collect([$period]);
         }
 
         return view('pages.performance-dialog.my-history', [

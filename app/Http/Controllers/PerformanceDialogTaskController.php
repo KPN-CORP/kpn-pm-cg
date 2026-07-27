@@ -14,6 +14,7 @@ use Illuminate\Validation\ValidationException;
 use Maatwebsite\Excel\Facades\Excel;
 
 use App\Models\PerformanceDialog;
+use App\Models\ApprovalLayer;
 use App\Services\AppService;
 use App\Imports\PerformanceDialogManagerImport;
 use App\Exports\InvalidPerformanceDialogManagerImport;
@@ -42,21 +43,15 @@ class PerformanceDialogTaskController extends Controller
             $period = $request->filterYear;
         }
 
-        $performanceDialogs = PerformanceDialog::with(['employeeCreatedBy', 'employeeUpdatedBy'])
+        $rows = [];
+
+        $performanceDialogs = PerformanceDialog::with(['employee'])
             ->where('manager_employee_id', $employeeID)
             ->where('period', $period)
             ->where('deleted_at', null)
             ->get();
 
-        $performanceDialogYears = PerformanceDialog::select('period')
-            ->where('manager_employee_id', $employeeID)
-            ->distinct()
-            ->orderBy('period')
-            ->pluck('period');
-
-        if (empty($performanceDialogYears)) {
-            $performanceDialogYears = [$period];
-        }
+        $now = Carbon::now();
 
         foreach($performanceDialogs as $row) {
             $row->formatted_start_date = $row->start_date ? Carbon::parse($row->start_date)->format('d M Y') : '-';
@@ -64,6 +59,78 @@ class PerformanceDialogTaskController extends Controller
             $row->formatted_due_date = $row->due_date ? Carbon::parse($row->due_date)->format('d M Y') : '-';
             $row->formatted_created_at = $row->created_at ? Carbon::parse($row->created_at)->format('d M Y') : '-';
             $row->formatted_updated_at = $row->updated_at ? Carbon::parse($row->updated_at)->format('d M Y') : '-';
+
+            $scheduleAt = $row->start_date ?? "-";
+            $initiatedAt = $row->created_at ?? "-";
+            $status = $row->status ?? "-";
+            $isActionInitiate = false;
+            $isActionEdit = false;
+            $isActionDownload = false;
+
+            if ($scheduleAt != "-" && Carbon::parse($scheduleAt)->lt($now)) {
+                $status = "Overdue";
+            }
+
+            if ($status == "Scheduled" || $status == "Overdue") {
+                $isActionInitiate = true;
+            }
+
+            if ($status == "Draft" || $status == "Submitted") {
+                $isActionEdit = true;
+            }
+
+            if ($status == "Done" || $status == "Submitted") {
+                $isActionDownload = true;
+            }
+
+            $formattedScheduleAt = $scheduleAt != "-" ? Carbon::parse($scheduleAt)->format('d M Y') : '-';
+            $formattedInitiatedAt = $initiatedAt != "-" ? Carbon::parse($initiatedAt)->format('d M Y') : '-';
+
+            $rows[] = [
+                "id" => $row->id,
+                "employee_id" => $row->employee_id,
+                "employee_name" => $row->employee?->fullname ?? "-",
+                "formatted_schedule_at" => $formattedScheduleAt,
+                "formatted_initiated_at" => $formattedInitiatedAt,
+                "status" => $status,
+                "is_action_initiate" => $isActionInitiate,
+                "is_action_edit" => $isActionEdit,
+                "is_action_download" => $isActionDownload
+            ];
+        }
+
+        $performanceDialogGroupByEmployeeID = $performanceDialogs->groupBy('employee_id');
+
+        $performanceDialogYears = PerformanceDialog::select('period')
+            ->where('manager_employee_id', $employeeID)
+            ->distinct()
+            ->orderBy('period')
+            ->pluck('period');
+
+        if ($performanceDialogYears->isEmpty()) {
+            $performanceDialogYears = collect([$period]);
+        }
+
+        $reportees = ApprovalLayer::with(["employee"])->where("approver_id", $employeeID)->get();
+
+        foreach($reportees as $reportee) {
+            $reporteePerformanceDialog = $performanceDialogGroupByEmployeeID[$reportee->employee_id] ?? null;
+
+            if ($reporteePerformanceDialog) {
+                continue;
+            }
+
+            $rows[] = [
+                "id" => null,
+                "employee_id" => $reportee->employee_id,
+                "employee_name" => $reportee->employee?->fullname ?? "-",
+                "formatted_schedule_at" => "-",
+                "formatted_initiated_at" => "-",
+                "status" => "Not Scheduled",
+                "is_action_initiate" => true,
+                "is_action_edit" => false,
+                "is_action_download" => false
+            ];
         }
 
         return view('pages.performance-dialog.task-box', [
@@ -72,8 +139,8 @@ class PerformanceDialogTaskController extends Controller
             "period" => $period,
             "user_id" => $userID,
             "employee_id" => $employeeID,
-            "performance_dialogs" => $performanceDialogs,
             "performance_dialog_years" => $performanceDialogYears,
+            "rows" => $rows,
         ]);
     }
 

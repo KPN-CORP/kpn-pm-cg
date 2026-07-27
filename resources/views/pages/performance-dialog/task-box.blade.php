@@ -71,39 +71,49 @@
                                                 <th>No</th>
                                                 <th>Employee ID</th>
                                                 <th>Name</th>
-                                                <th>Period</th>
-                                                <th>{{ __('Initiated Date') }}</th>
-                                                <th>Due Date</th>
+                                                <th>Schedule Date</th>
+                                                <th>Initiated Date</th>
                                                 <th>Status</th>
                                                 <th class="sorting_1">Action</th>
                                             </tr>
                                         </thead>
                                         <tbody>
-                                            @foreach($performance_dialogs as $row)
+                                            @foreach($rows as $row)
                                                 <tr>
                                                     <td class="text-center"></td>
-                                                    <td>{{ $row->employee_id ?? '-' }}</td>
-                                                    <td>{{ $row->employee ? $row->employee->fullname : '-' }}</td>
-                                                    <td>{{ $row->period ?? '-' }}</td>
-                                                    <td>{{ $row->formatted_created_at ?? '-' }}</td>
-                                                    <td>{{ $row->formatted_due_date ?? '-' }}</td>
+                                                    <td>{{ $row['employee_id'] }}</td>
+                                                    <td>{{ $row['employee_name'] }}</td>
+                                                    <td>{{ $row['formatted_schedule_at'] }}</td>
+                                                    <td>{{ $row['formatted_initiated_at'] }}</td>
                                                     <td class="text-center">
                                                         @php
-                                                            $status = strtolower($row->status ?? '');
-                                                            $class = match($status) {
+                                                            $status = strtolower($row['status']);
+                                                            $statusClass = match($status) {
                                                                 'draft' => 'secondary',
+                                                                'overdue' => 'secondary',
                                                                 'approved' => 'success',
+                                                                'done' => 'success',
                                                                 default => 'light text-body'
                                                             };
                                                         @endphp
-                                                        <span class="badge bg-{{ $class }}">
-                                                            {{ $row->status }}
+                                                        <span class="badge bg-{{ $statusClass }}">
+                                                            {{ $row['status'] }}
                                                         </span>
                                                     </td>
                                                     <td class="text-center">
-                                                        @if ($row->status != "Draft")
-                                                            <a class="btn btn-sm btn-outline-primary fw-semibold" href="{{ route('performance-dialog.form-view', $row->id) }}" onclick="showLoader()">
+                                                        @if ($row['is_action_initiate'])
+                                                            <a class="btn btn-sm btn-outline-primary fw-semibold" href="{{ route('performance-dialog.form') }}" onclick="showLoader()">
+                                                                <i class="ri-send-plane-line"></i>
+                                                            </a>
+                                                        @endif
+                                                        @if ($row['is_action_edit'])
+                                                            <a class="btn btn-sm btn-outline-primary fw-semibold" href="{{ route('performance-dialog.form-edit', $row['id']) }}" onclick="showLoader()">
                                                                 <i class="ri-eye-line"></i>
+                                                            </a>
+                                                        @endif
+                                                        @if ($row['is_action_edit'])
+                                                            <a class="btn btn-sm btn-outline-primary fw-semibold" href="#">
+                                                                <i class="ri-download-line"></i>
                                                             </a>
                                                         @endif
                                                     </td>
