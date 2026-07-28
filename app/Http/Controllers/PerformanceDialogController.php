@@ -263,6 +263,7 @@ class PerformanceDialogController extends Controller
         try {
             $loggedInUser = $this->loggedInUser;
             $userID = $loggedInUser->id;
+            $employeeID = $loggedInUser->employee_id;
             $employeeIDs = [];
 
             if ($request->performance_dialog_employee_ids && !empty($request->performance_dialog_employee_ids)) {
@@ -273,7 +274,6 @@ class PerformanceDialogController extends Controller
 
             $id = $request->id;
             $period = $request->period;
-            $managerEmployeeID = $request->manager_employee_id;
             $typeIDs = $request->performance_dialog_types;
             $othersType = $request->others_performance_dialog_type;
             $dueDate = $request->performance_dialog_due_date;
@@ -306,8 +306,10 @@ class PerformanceDialogController extends Controller
                 $period = now()->year;
             }
 
-            $employees = Employee::whereIn("employee_id", $employeeIDs)->get();
-            if (!$employees || $employees->count() < 1) {
+            $employee = Employee::where("employee_id", $employeeID)
+                ->where("id", $userID)
+                ->first();
+            if (!$employee) {
                 return response()->json([
                     'status' => false,
                     'message' => "Employee not found",
@@ -315,27 +317,25 @@ class PerformanceDialogController extends Controller
                 ]);
             }
 
-            $employeeGroupByEmployeeID = $employees->keyBy('employee_id');
+            $reporteeEmployees = Employee::whereIn("employee_id", $employeeIDs)->get();
+            if (!$reporteeEmployees || $reporteeEmployees->count() < 1) {
+                return response()->json([
+                    'status' => false,
+                    'message' => "Reportee employee not found",
+                    'errors' => []
+                ]);
+            }
 
-            $processedEmployeeIDs = [];
+            $reporteeEmployeeGroupByEmployeeID = $reporteeEmployees->keyBy('employee_id');
+
+            $processEmployeeIDs = [];
 
             foreach ($employeeIDs as $row) {
-                if (!isset($employeeGroupByEmployeeID[$row]) || !$employeeGroupByEmployeeID[$row]) {
+                if (!isset($reporteeEmployeeGroupByEmployeeID[$row]) || !$reporteeEmployeeGroupByEmployeeID[$row]) {
                     continue;
                 }
 
-                $processedEmployeeIDs[] = $employeeGroupByEmployeeID[$row]->employee_id;
-            }
-
-            $employeeManager = Employee::where("employee_id", $managerEmployeeID)
-                ->where("id", $userID)
-                ->first();
-            if (!$employeeManager) {
-                return response()->json([
-                    'status' => false,
-                    'message' => "Employee manager not found",
-                    'errors' => []
-                ]);
+                $processEmployeeIDs[] = $reporteeEmployeeGroupByEmployeeID[$row]->employee_id;
             }
 
             $directApprovalLayer = ApprovalLayer::with(['employee'])->where('employee_id', $employeeID)->where('layer', 1)->first();
