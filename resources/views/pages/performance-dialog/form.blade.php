@@ -1,4 +1,4 @@
-@extends('layouts_.vertical', ['page_title' => 'Performance Review'])
+@extends('layouts_.vertical', ['page_title' => 'Performance Dialog'])
 
 @section('css')
 <style>
@@ -75,43 +75,45 @@
         </div>
     @endif
 
-    <div class="detail-employee">
-        <div class="row mb-2">
-            <div class="col-12">
-                <div class="card shadow-sm">
-                    <div class="card-body p-2 pb-0">
-                        <div class="row">
-                            <div class="col-md">
-                                <div class="row">
-                                    <div class="col">
-                                        <p class="mb-2"><span class="text-muted">Employee Name:</span> {{ $employee_name }}</p>
+    @if ($is_show_employee_detail)
+        <div class="detail-employee">
+            <div class="row mb-2">
+                <div class="col-12">
+                    <div class="card shadow-sm bg-primary text-white">
+                        <div class="card-body p-2 pb-0">
+                            <div class="row">
+                                <div class="col-md">
+                                    <div class="row">
+                                        <div class="col">
+                                            <p class="mb-2"><strong>Employee Name:</strong> {{ $employee_name }}</p>
+                                        </div>
+                                    </div>
+                                    <div class="row">
+                                        <div class="col">
+                                            <p class="mb-2"><strong>Employee ID:</strong> {{ $employee_id }}</p>
+                                        </div>
+                                    </div>
+                                    <div class="row">
+                                        <div class="col">
+                                            <p class="mb-2"><strong>Job Level:</strong> {{ $employee_job_level }}</p>
+                                        </div>
                                     </div>
                                 </div>
-                                <div class="row">
-                                    <div class="col">
-                                        <p class="mb-2"><span class="text-muted">Employee ID:</span> {{ $employee_id }}</p>
+                                <div class="col-md">
+                                    <div class="row">
+                                        <div class="col">
+                                            <p class="mb-2"><strong>Business Unit:</strong> {{ $employee_group_company }}</p>
+                                        </div>
                                     </div>
-                                </div>
-                                <div class="row">
-                                    <div class="col">
-                                        <p class="mb-2"><span class="text-muted">Job Level:</span> {{ $employee_job_level }}</p>
+                                    <div class="row">
+                                        <div class="col">
+                                            <p class="mb-2"><strong>Division:</strong> {{ $employee_unit }}</p>
+                                        </div>
                                     </div>
-                                </div>
-                            </div>
-                            <div class="col-md">
-                                <div class="row">
-                                    <div class="col">
-                                        <p class="mb-2"><span class="text-muted">Business Unit:</span> {{ $employee_group_company }}</p>
-                                    </div>
-                                </div>
-                                <div class="row">
-                                    <div class="col">
-                                        <p class="mb-2"><span class="text-muted">Division:</span> {{ $employee_unit }}</p>
-                                    </div>
-                                </div>
-                                <div class="row">
-                                    <div class="col">
-                                        <p class="mb-2"><span class="text-muted">Designation:</span> {{ $employee_designation_name }}</p>
+                                    <div class="row">
+                                        <div class="col">
+                                            <p class="mb-2"><strong>Designation:</strong> {{ $employee_designation_name }}</p>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
@@ -120,7 +122,9 @@
                 </div>
             </div>
         </div>
-    </div>
+    @else
+        <br/>
+    @endif
 
     <div class="mandatory-field"></div>
         <div id="form-alert" class="alert alert-danger d-none"></div>
@@ -130,26 +134,39 @@
             <input type="hidden" class="form-control" name="employee_id" value="{{ $employee_id }}" readonly>
             <input type="hidden" class="form-control" name="manager_employee_id" value="{{ $manager_employee_id }}" readonly>
             <div class="row mb-2">
+                @if ($is_show_select_employee)
+                    <div class="col-md-6">
+                        <label for="performance_dialog_employee" class="form-label">Employees</label>
+                        <select class="form-select form-select-sm select2" id="performance_dialog_employee" name="performance_dialog_employee_ids[]" data-placeholder="Select Employees" multiple required>
+                            <option></option>
+                            @foreach ($reportees as $row)
+                                @if ($row->employee && $row->employee->fullname)
+                                    <option value="{{ $row->employee_id }}">{{ $row->employee->fullname }} ({{ $row->employee_id }})</option>
+                                @endif
+                            @endforeach
+                        </select>
+                    </div>
+                @endif
                 <div class="col-md-6">
-                    <label for="performance_review_type" class="form-label">Objectives</label>
-                    <select class="form-select form-select-sm select2" id="performance_review_type" name="performance_review_types[]" data-placeholder="Select Objectives" multiple required {{ $is_performance_review_types_readonly ? 'readonly' : '' }}>
+                    <label for="performance_dialog_type" class="form-label">Objectives</label>
+                    <select class="form-select form-select-sm select2" id="performance_dialog_type" name="performance_dialog_types[]" data-placeholder="Select Objectives" multiple required {{ $is_performance_dialog_types_readonly ? 'readonly' : '' }}>
                         <option></option>
-                        @foreach ($master_performance_review_types as $master_performance_review_type)
+                        @foreach ($master_performance_dialog_types as $master_performance_dialog_type)
                             @php
                                 $isSelected = false;
 
-                                if ($performance_review_types) {
-                                    foreach ($performance_review_types as $performance_review_type) {
-                                        if ($master_performance_review_type->name == $performance_review_type["name"]) {
+                                if ($performance_dialog_types) {
+                                    foreach ($performance_dialog_types as $performance_dialog_type) {
+                                        if ($master_performance_dialog_type->name == $performance_dialog_type["name"]) {
                                             $isSelected = true;
                                             break;
                                         }
                                     }
                                 }
                             @endphp
-                            <option value="{{ $master_performance_review_type->id }}" {{ $isSelected ? "selected" : "" }}>{{ $master_performance_review_type->name }}</option>
+                            <option value="{{ $master_performance_dialog_type->id }}" {{ $isSelected ? "selected" : "" }}>{{ $master_performance_dialog_type->name }}</option>
                         @endforeach
-                        @if (!empty($performance_review_others_type_name))
+                        @if (!empty($performance_dialog_others_type_name))
                             <option value="0" selected>Others</option>
                         @else
                             <option value="0">Others</option>
@@ -158,42 +175,34 @@
                     <br>
                     <div class="row">
                         <div class="">
-                            <input type="text" name="others_performance_review_type" id="others_performance_review_type"
+                            <input type="text" name="others_performance_dialog_type" id="others_performance_dialog_type"
                             class="form-control form-control-sm" placeholder="ex: Penilaian Kerja"
-                            value="" style="{{ empty($performance_review_others_type_name) ? "display: none;" : "" }}" {{ $is_others_performance_review_type_readonly ? 'readonly' : '' }}>
+                            value="" style="{{ empty($performance_dialog_others_type_name) ? "display: none;" : "" }}" {{ $is_others_performance_dialog_type_readonly ? 'readonly' : '' }}>
                         </div>
                     </div>
                 </div>
-                <div class="col-md-6 mb-1">
-                    <label for="performance_review_start_date" class="form-label">Start Date</label>
-                    <input type="date" class="form-control form-control-sm" id="performance_review_start_date" name="performance_review_start_date" value="{{ $formatted_performance_review_start_date }}" required {{ $is_performance_review_start_date_readonly ? 'readonly' : '' }}>
-                </div>
-                <div class="col-md-6 mb-1">
-                    <label for="performance_review_end_date" class="form-label">End Date</label>
-                    <input type="date" class="form-control form-control-sm" id="performance_review_end_date" name="performance_review_end_date" value="{{ $formatted_performance_review_end_date }}" required {{ $is_performance_review_end_date_readonly ? 'readonly' : '' }}>
-                </div>
-                <div class="col-md-6 mb-1">
-                    <label for="performance_review_due_date" class="form-label">Due Date</label>
-                    <input type="date" class="form-control form-control-sm" id="performance_review_due_date" name="performance_review_due_date" value="{{ $formatted_performance_review_due_date }}" required {{ $is_performance_review_due_date_readonly ? 'readonly' : '' }}>
-                </div>
             </div>
             <div class="row mb-2">
-                <div class="col-md-6 mt-2">
-                    <label for="" class="form-label">Summary</label>
-                    <textarea class="form-control form-control-sm" id="performance_review_summary" name="performance_review_summary" rows="4"
-                        placeholder="Please add more detail of summary ..." {{ $is_performance_review_summary_readonly ? 'readonly' : '' }}>{{ $performance_review_summary }}</textarea>
-                </div>
-                <div class="col-md-6 mt-2">
+                <div class="col-md-6">
                     <label for="" class="form-label">Development Plan</label>
-                    <textarea class="form-control form-control-sm" id="performance_review_development_plan" name="performance_review_development_plan" rows="4"
-                        placeholder="Please add more detail of development plan ..." {{ $is_performance_review_development_plan_readonly ? 'readonly' : '' }}>{{ $performance_review_development_plan }}</textarea>
+                    <textarea class="form-control form-control-sm" id="performance_dialog_development_plan" name="performance_dialog_development_plan" rows="4"
+                        placeholder="Please add more detail of development plan ..." {{ $is_performance_dialog_development_plan_readonly ? 'readonly' : '' }}>{{ $performance_dialog_development_plan }}</textarea>
+                </div>
+                <div class="col-md-6">
+                    <label for="performance_dialog_due_date" class="form-label">Due Date</label>
+                    <input type="datetime-local" class="form-control form-control-sm" id="performance_dialog_due_date" name="performance_dialog_due_date" value="{{ $performance_dialog_due_date }}" required {{ $is_performance_dialog_due_date_readonly ? 'readonly' : '' }}>
                 </div>
             </div>
             <div class="row mb-2">
-                <div class="col-md-12 mt-2">
+                <div class="col-md-6">
+                    <label for="" class="form-label">Summary</label>
+                    <textarea class="form-control form-control-sm" id="performance_dialog_summary" name="performance_dialog_summary" rows="4"
+                        placeholder="Please add more detail of summary ..." {{ $is_performance_dialog_summary_readonly ? 'readonly' : '' }}>{{ $performance_dialog_summary }}</textarea>
+                </div>
+                <div class="col-md-6">
                     <label for="" class="form-label">Additional Notes</label>
-                    <textarea class="form-control form-control-sm" id="performance_review_additional_notes" name="performance_review_additional_notes" rows="4"
-                        placeholder="Please add more detail of additional notes ..." {{ $is_performance_review_additional_notes_readonly ? 'readonly' : '' }}>{{ $performance_review_additional_notes }}</textarea>
+                    <textarea class="form-control form-control-sm" id="performance_dialog_additional_notes" name="performance_dialog_additional_notes" rows="4"
+                        placeholder="Please add more detail of additional notes ..." {{ $is_performance_dialog_additional_notes_readonly ? 'readonly' : '' }}>{{ $performance_dialog_additional_notes }}</textarea>
                 </div>
             </div>
             <div class="d-flex justify-content-end mt-4 mb-4">
@@ -214,9 +223,9 @@
     </div>
 @endsection
 @push('scripts')
-    @if($is_performance_review_types_readonly)
+    @if($is_performance_dialog_types_readonly)
         <script>
-            $('#performance_review_type').on('select2:opening', function (e) {
+            $('#performance_dialog_type').on('select2:opening', function (e) {
                 e.preventDefault();
             });
         </script>

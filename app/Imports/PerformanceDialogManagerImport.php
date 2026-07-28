@@ -86,6 +86,7 @@ class PerformanceDialogManagerImport implements ToModel, WithValidation, WithHea
             $developmentPlan =  $row['development_plan'];
             $additionalNotes =  $row['additional_notes'];
             $period =  $row['period'];
+            $initiateDate = $row['initiate_date'];
             $startDate = $row['start_date'];
             $endDate = $row['end_date'];
             $dueDate = $row['due_date'];
@@ -174,6 +175,7 @@ class PerformanceDialogManagerImport implements ToModel, WithValidation, WithHea
                 "development_plan" => $developmentPlan,
                 "additional_notes" => $additionalNotes,
                 "period" => $period,
+                "initiate_date" => $initiateDate,
                 "start_date" => $startDate,
                 "end_date" => $endDate,
                 "due_date" => $dueDate,
@@ -230,6 +232,7 @@ class PerformanceDialogManagerImport implements ToModel, WithValidation, WithHea
                         ->where('employee_id', $data['employee_id'])
                         ->where('manager_employee_id', $data['manager_employee_id'])
                         ->where('period', $data['period'])
+                        ->where('initiate_date', $data['initiate_date'])
                         ->where('start_date', $data['start_date'])
                         ->where('end_date', $data['end_date'])
                         ->where('due_date', $data['due_date'])
@@ -252,6 +255,7 @@ class PerformanceDialogManagerImport implements ToModel, WithValidation, WithHea
                         'summary' => $data['summary'],
                         'development_plan' => $data['development_plan'],
                         'additional_notes' => $data['additional_notes'],
+                        'initiate_date' => $data['initiate_date'],
                         'start_date' => $data['start_date'],
                         'end_date' => $data['end_date'],
                         'due_date' => $data['due_date'],

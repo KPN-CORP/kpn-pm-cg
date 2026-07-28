@@ -55,15 +55,9 @@ class PerformanceDialogTaskController extends Controller
         $now = Carbon::now();
 
         foreach($performanceDialogs as $row) {
-            $row->formatted_start_date = $row->start_date ? Carbon::parse($row->start_date)->format('d M Y') : '-';
-            $row->formatted_end_date = $row->end_date ? Carbon::parse($row->end_date)->format('d M Y') : '-';
-            $row->formatted_due_date = $row->due_date ? Carbon::parse($row->due_date)->format('d M Y') : '-';
-            $row->formatted_created_at = $row->created_at ? Carbon::parse($row->created_at)->format('d M Y') : '-';
-            $row->formatted_updated_at = $row->updated_at ? Carbon::parse($row->updated_at)->format('d M Y') : '-';
-
             $dueDate = $row->due_date ?? "-";
             $scheduleAt = $row->start_date ?? "-";
-            $initiatedAt = $row->created_at ?? "-";
+            $initiatedAt = $row->initiate_date ?? "-";
             $status = $row->status ?? "-";
             $isActionInitiate = false;
             $isActionEdit = false;
@@ -253,7 +247,7 @@ class PerformanceDialogTaskController extends Controller
             $employeeManager = Employee::where("employee_id", $managerEmployeeID)
                 ->where("id", $userID)
                 ->first();
-            if (!$managerEmployeeID) {
+            if (!$employeeManager) {
                 return response()->json([
                     'status' => false,
                     'message' => "Employee manager not found",

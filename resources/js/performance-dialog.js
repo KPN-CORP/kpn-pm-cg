@@ -291,12 +291,13 @@ document.addEventListener("DOMContentLoaded", function () {
         });
     });
 
-    $('#schedule-performance-dialog').click(function (e) {
+    $('#schedule-performance-dialog-submit').click(function (e) {
         e.preventDefault();
 
         let button = $(this);
         let spinner = button.find('.spinner-border');
         let form = $('#schedule-performance-dialog');
+        let formData = form.serializeArray();
 
         $('#schedule-performance-dialog-form-alert').addClass('d-none').empty();
 

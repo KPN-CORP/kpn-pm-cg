@@ -18,6 +18,7 @@ class PerformanceDialog extends Model
         "development_plan",
         "additional_notes",
         "period",
+        "initiate_date",
         "start_date",
         "end_date",
         "due_date",

@@ -93,6 +93,7 @@
                                                             $statusClass = match($status) {
                                                                 'draft' => 'secondary',
                                                                 'overdue' => 'secondary',
+                                                                'scheduled' => 'warning',
                                                                 'approved' => 'success',
                                                                 'done' => 'success',
                                                                 default => 'light text-body'
@@ -205,7 +206,7 @@
                     </div>
                     <div class="modal-footer">
                         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                        <button type="submit" id="schedulePerformanceDialogButton" class="btn btn-primary">
+                        <button type="submit" id="schedule-performance-dialog-submit" class="btn btn-primary">
                             <span class="spinner-border spinner-border-sm me-1 d-none" role="status" aria-hidden="true"></span>
                             Submit
                         </button>
