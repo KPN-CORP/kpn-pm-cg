@@ -15,6 +15,7 @@ use Maatwebsite\Excel\Facades\Excel;
 
 use App\Models\PerformanceDialog;
 use App\Models\ApprovalLayer;
+use App\Models\Employee;
 use App\Services\AppService;
 use App\Imports\PerformanceDialogManagerImport;
 use App\Exports\InvalidPerformanceDialogManagerImport;
@@ -212,5 +213,100 @@ class PerformanceDialogTaskController extends Controller
         }
 
         return Excel::download(new InvalidPerformanceDialogManagerImport($invalidEmployees), 'errors_performance_dialog_import.xlsx');
+    }
+
+    public function setSchedule(Request $request) {
+        try {
+            $loggedInUser = $this->loggedInUser;
+            $userID = $loggedInUser->id;
+            $managerEmployeeID = $loggedInUser->employee?->employee_id ?? null;
+            $period = now()->year;
+            $employeeIDs = [];
+            $startDate = Carbon::parse($request->start_date);
+            $status = "Scheduled";
+            $redirect = route('performance-dialog-task');
+
+            if ($startDate && !empty($startDate)) {
+                $startDateYear = $startDate->year;
+
+                if ($startDateYear) {
+                    $period = $startDateYear;
+                }
+            }
+
+            if (!empty($request->employee_id)) {
+                $employeeIDs[] = $request->employee_id;
+            } else if (!empty($request->employee_ids)) {
+                foreach ($request->employee_ids as $row) {
+                    $employeeIDs[] = $row;
+                }
+            }
+
+            if (empty($employeeIDs)) {
+                return response()->json([
+                    'status' => false,
+                    'message' => 'Missing employee ID',
+                    'data' => []
+                ]);
+            }
+
+            $employeeManager = Employee::where("employee_id", $managerEmployeeID)
+                ->where("id", $userID)
+                ->first();
+            if (!$managerEmployeeID) {
+                return response()->json([
+                    'status' => false,
+                    'message' => "Employee manager not found",
+                    'errors' => []
+                ]);
+            }
+
+            $reportees = ApprovalLayer::with(['employee'])
+                ->where("approver_id", $managerEmployeeID)
+                ->whereIn('employee_id', $employeeIDs)
+                ->get();
+            if (!$reportees || empty($reportees)) {
+                return response()->json([
+                    'status' => false,
+                    'message' => "Employee not found",
+                    'errors' => []
+                ]);
+            }
+
+            $insertData = [];
+
+            foreach ($reportees as $row) {
+                if ($row->approver_id != $managerEmployeeID) {
+                    continue;
+                }
+
+                $insertData[] = [
+                    "manager_employee_id" => $managerEmployeeID,
+                    "employee_id" => $row->employee_id,
+                    "period" => $period,
+                    "start_date" => $startDate,
+                    "status" => $status,
+                    "created_by" => $userID,
+                    "created_at" => Carbon::now(),
+                    "updated_by" => $userID,
+                    "updated_at" => Carbon::now(),
+                ];
+            }
+
+            PerformanceDialog::insert($insertData);
+
+            return response()->json([
+                'status' => true,
+                'message' => 'Success',
+                'redirect' => $redirect,
+                'data' => []
+            ]);
+        } catch (Exception $e) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Error: ' . $e->getMessage(),
+                'errors' => []
+            ]);
+        }
     }
 }

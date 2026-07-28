@@ -178,7 +178,8 @@
                     <h5 class="modal-title" id="scheduleModalLabel">Set Schedule</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
-                <form id="schedulePerformanceDialog" action="{{ route('performance-dialog-task.set-schedule') }}" method="POST">
+                <div id="schedule-performance-dialog-form-alert" class="alert alert-danger d-none"></div>
+                <form id="schedule-performance-dialog" action="{{ route('performance-dialog-task.set-schedule') }}" method="POST">
                     @csrf
                     <div class="modal-body">
                         <input type="hidden" name="employee_id" id="performance-dialog-schedule-form-employee-id" class="form-control">
@@ -188,7 +189,7 @@
                         </div>
                         <div class="form-group mb-2">
                             <label for="performance-dialog-schedule-form-schedule-date" class="form-label">Schedule Date</label>
-                            <input type="date" class="form-control form-control-sm" id="performance-dialog-schedule-form-schedule-date" name="start_date" required>
+                            <input type="datetime-local" class="form-control form-control-sm" id="performance-dialog-schedule-form-schedule-date" name="start_date" required>
                         </div>
                         <div id="performance-dialog-schedule-form-employee-elem" class="form-group">
                             <label for="performance-dialog-schedule-form-employee" class="form-label">Employees</label>

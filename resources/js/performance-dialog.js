@@ -290,4 +290,51 @@ document.addEventListener("DOMContentLoaded", function () {
             });
         });
     });
+
+    $('#schedule-performance-dialog').click(function (e) {
+        e.preventDefault();
+
+        let button = $(this);
+        let spinner = button.find('.spinner-border');
+        let form = $('#schedule-performance-dialog');
+
+        $('#schedule-performance-dialog-form-alert').addClass('d-none').empty();
+
+        $.ajax({
+            url: form.attr('action'),
+            type: form.attr('method'),
+            data: $.param(formData),
+
+            success: function (response) {
+                Swal.fire({
+                    title: "Success",
+                    text: response.message,
+                    icon: "success",
+                    timer: 1200,
+                    showConfirmButton: false
+                });
+
+                setTimeout(function () {
+                    window.location.href = response.redirect;
+                }, 1200);
+            },
+
+            error: function (xhr) {
+                button.prop('disabled', false);
+                spinner.addClass('d-none');
+
+                let html = '';
+
+                if (xhr.status === 422) {
+                    $.each(xhr.responseJSON.errors, function (key, value) {
+                        html += '<li>' + value[0] + '</li>';
+                    });
+                } else {
+                    html += '<li>' + (xhr.responseJSON?.message ?? 'Something went wrong.') + '</li>';
+                }
+
+                $('#schedule-performance-dialog-form-alert').removeClass('d-none').html('<ul class="mb-0">' + html + '</ul>');
+            }
+        });
+    });
 });
