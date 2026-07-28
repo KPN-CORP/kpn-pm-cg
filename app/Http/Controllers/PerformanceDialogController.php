@@ -307,7 +307,7 @@ class PerformanceDialogController extends Controller
             }
 
             $employees = Employee::whereIn("employee_id", $employeeIDs)->get();
-            if (!$employees || $employees->count < 1) {
+            if (!$employees || $employees->count() < 1) {
                 return response()->json([
                     'status' => false,
                     'message' => "Employee not found",
@@ -316,6 +316,16 @@ class PerformanceDialogController extends Controller
             }
 
             $employeeGroupByEmployeeID = $employees->keyBy('employee_id');
+
+            $processedEmployeeIDs = [];
+
+            foreach ($employeeIDs as $row) {
+                if (!isset($employeeGroupByEmployeeID[$row]) || !$employeeGroupByEmployeeID[$row]) {
+                    continue;
+                }
+
+                $processedEmployeeIDs[] = $employeeGroupByEmployeeID[$row]->employee_id;
+            }
 
             $employeeManager = Employee::where("employee_id", $managerEmployeeID)
                 ->where("id", $userID)
