@@ -60,6 +60,7 @@ class PerformanceDialogTaskController extends Controller
             $row->formatted_created_at = $row->created_at ? Carbon::parse($row->created_at)->format('d M Y') : '-';
             $row->formatted_updated_at = $row->updated_at ? Carbon::parse($row->updated_at)->format('d M Y') : '-';
 
+            $dueDate = $row->due_date ?? "-";
             $scheduleAt = $row->start_date ?? "-";
             $initiatedAt = $row->created_at ?? "-";
             $status = $row->status ?? "-";
@@ -67,7 +68,7 @@ class PerformanceDialogTaskController extends Controller
             $isActionEdit = false;
             $isActionDownload = false;
 
-            if ($scheduleAt != "-" && Carbon::parse($scheduleAt)->lt($now)) {
+            if ($dueDate != "-" && Carbon::parse($dueDate)->lt($now)) {
                 $status = "Overdue";
             }
 
@@ -94,6 +95,7 @@ class PerformanceDialogTaskController extends Controller
                 "formatted_initiated_at" => $formattedInitiatedAt,
                 "status" => $status,
                 "is_action_initiate" => $isActionInitiate,
+                "is_action_schedule" => false,
                 "is_action_edit" => $isActionEdit,
                 "is_action_download" => $isActionDownload
             ];
@@ -128,6 +130,7 @@ class PerformanceDialogTaskController extends Controller
                 "formatted_initiated_at" => "-",
                 "status" => "Not Scheduled",
                 "is_action_initiate" => true,
+                "is_action_schedule" => true,
                 "is_action_edit" => false,
                 "is_action_download" => false
             ];
@@ -141,6 +144,7 @@ class PerformanceDialogTaskController extends Controller
             "employee_id" => $employeeID,
             "performance_dialog_years" => $performanceDialogYears,
             "rows" => $rows,
+            "reportees" => $reportees,
         ]);
     }
 

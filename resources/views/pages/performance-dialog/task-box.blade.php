@@ -59,7 +59,9 @@
                                         </div>
                                     </div>
                                     <div class="col-md-auto">
-                                        <button type="button" class="btn btn-primary shadow" data-bs-toggle="modal" data-bs-target="#importModal">Import Performance Dialog</button>
+                                        <button type="button" class="btn btn-outline-warning shadow" data-bs-toggle="modal" data-bs-target="#scheduleModal" onclick="setPerformanceDialogSchedule()"><i class="ri-calendar-line"></i> Set Schedule</button>
+                                        <a class="btn btn-primary shadow" href="{{ route('performance-dialog.form') }}" onclick="showLoader()"><i class="ri-send-plane-line"></i> Initiate</a>
+                                        <button type="button" class="btn btn-outline-info shadow" data-bs-toggle="modal" data-bs-target="#importModal"><i class="ri-upload-2-line"></i> Import</button>
                                     </div>
                                 </div>
                             </form>
@@ -101,18 +103,23 @@
                                                         </span>
                                                     </td>
                                                     <td class="text-center">
+                                                        @if ($row['is_action_schedule'])
+                                                            <button type="button" class="btn btn-sm btn-outline-warning" data-bs-toggle="modal" data-bs-target="#scheduleModal" onclick="setPerformanceDialogScheduleEmployee('{{ $row['employee_id'] }}', '{{ $row['employee_name'] }}')">
+                                                                <i class="ri-calendar-line"></i>
+                                                            </button>
+                                                        @endif
                                                         @if ($row['is_action_initiate'])
-                                                            <a class="btn btn-sm btn-outline-primary fw-semibold" href="{{ route('performance-dialog.form') }}" onclick="showLoader()">
+                                                            <a class="btn btn-sm btn-outline-primary" href="{{ route('performance-dialog.form') }}" onclick="showLoader()">
                                                                 <i class="ri-send-plane-line"></i>
                                                             </a>
                                                         @endif
                                                         @if ($row['is_action_edit'])
-                                                            <a class="btn btn-sm btn-outline-primary fw-semibold" href="{{ route('performance-dialog.form-edit', $row['id']) }}" onclick="showLoader()">
+                                                            <a class="btn btn-sm btn-outline-primary" href="{{ route('performance-dialog.form-edit', $row['id']) }}" onclick="showLoader()">
                                                                 <i class="ri-eye-line"></i>
                                                             </a>
                                                         @endif
                                                         @if ($row['is_action_edit'])
-                                                            <a class="btn btn-sm btn-outline-primary fw-semibold" href="#">
+                                                            <a class="btn btn-sm btn-outline-primary" href="#">
                                                                 <i class="ri-download-line"></i>
                                                             </a>
                                                         @endif
@@ -137,19 +144,16 @@
                     <h5 class="modal-title" id="importModalLabel">Import Performance Dialog</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
-                <form id="importGoal" action="{{ route('performance-dialog-task.import') }}" method="POST" enctype="multipart/form-data">
+                <form id="importPerformaceDialog" action="{{ route('performance-dialog-task.import') }}" method="POST" enctype="multipart/form-data">
                     @csrf
                     <div class="modal-body">
-                        {{-- <div class="row">
+                        <div class="row">
                             <div class="col">
                                 <div class="alert alert-info">
-                                    <strong>Notes:</strong>
-                                    <ul class="mb-0">
-                                        <li>{{ __('Note Import Performance Dialog Manager') }}<strong><br> > Tab "{{ __('Not Initiated') }}" -> {{ __('Download') }}</strong></li>
-                                    </ul>
+                                    <span><a href="#" style="text-decoration: underline">{{ __('Download Template') }}</a></span>
                                 </div>
                             </div>
-                        </div> --}}
+                        </div>
                         <div class="form-group">
                             <label for="file">Upload File</label>
                             <input type="file" name="file" id="file" class="form-control" required>
@@ -157,9 +161,52 @@
                     </div>
                     <div class="modal-footer">
                         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                        <button type="submit" id="importGoalsButton" class="btn btn-primary">
+                        <button type="submit" id="importPerformanceDialogButton" class="btn btn-primary">
                             <span class="spinner-border spinner-border-sm me-1 d-none" role="status" aria-hidden="true"></span>
                             Import
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="scheduleModal" tabindex="-1" aria-labelledby="scheduleModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="scheduleModalLabel">Set Schedule</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <form id="schedulePerformanceDialog" action="{{ route('performance-dialog-task.set-schedule') }}" method="POST" enctype="multipart/form-data">
+                    @csrf
+                    <div class="modal-body">
+                        <input type="hidden" name="employee_id" id="performance-dialog-schedule-form-employee-id" class="form-control">
+                        <div id="performance-dialog-schedule-form-employee-name-elem" class="form-group mb-2">
+                            <label for="performance-dialog-schedule-form-employee-name" class="form-label">Employee</label>
+                            <input type="text" class="form-control form-control-sm" id="performance-dialog-schedule-form-employee-name" name="employee_name" value="" disabled>
+                        </div>
+                        <div class="form-group mb-2">
+                            <label for="performance-dialog-schedule-form-schedule-date" class="form-label">Schedule Date</label>
+                            <input type="date" class="form-control form-control-sm" id="performance-dialog-schedule-form-schedule-date" name="start_date" required>
+                        </div>
+                        <div id="performance-dialog-schedule-form-employee-elem" class="form-group">
+                            <label for="performance-dialog-schedule-form-employee" class="form-label">Employees</label>
+                            <select class="form-select form-select-sm select2" id="performance-dialog-schedule-form-employee" name="employee_ids[]" data-placeholder="Select Employees" multiple required>
+                                <option></option>
+                                @foreach ($reportees as $row)
+                                    @if ($row->employee && $row->employee->fullname)
+                                        <option value="{{ $row->employee_id }}">{{ $row->employee->fullname }} ({{ $row->employee_id }})</option>
+                                    @endif
+                                @endforeach
+                            </select>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                        <button type="submit" id="schedulePerformanceDialogButton" class="btn btn-primary">
+                            <span class="spinner-border spinner-border-sm me-1 d-none" role="status" aria-hidden="true"></span>
+                            Submit
                         </button>
                     </div>
                 </form>

@@ -194,6 +194,7 @@ Route::middleware('auth', 'locale', 'notification', 'restrict_bu')->group(functi
 
     // Performance Dialog Task
     Route::get('/performance-dialog/tasks', [PerformanceDialogTaskController::class, 'index'])->name('performance-dialog-task');
+    Route::get('/performance-dialog/task/set-schedule', [PerformanceDialogTaskController::class, 'setSchedule'])->name('performance-dialog-task.set-schedule');
     Route::post('/performance-dialog/task/import', [PerformanceDialogTaskController::class, 'import'])->name('performance-dialog-task.import');
     Route::get('/performance-dialog/task/invalid-export', [PerformanceDialogTaskController::class, 'invalidExport'])->name('performance-dialog-task.invalid-export');
 

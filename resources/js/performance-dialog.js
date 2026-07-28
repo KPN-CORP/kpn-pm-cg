@@ -11,6 +11,28 @@ function yearPerformanceDialogTask(button) {
 
 window.yearPerformanceDialogTask = yearPerformanceDialogTask;
 
+function setPerformanceDialogSchedule() {
+    document.getElementById('performance-dialog-schedule-form-employee-id').value = "";
+    document.getElementById('performance-dialog-schedule-form-employee-id').disabled = true;
+    document.getElementById('performance-dialog-schedule-form-employee-elem').style = 'display: block';
+    document.getElementById('performance-dialog-schedule-form-employee-name-elem').style = 'display: none';
+    document.getElementById('performance-dialog-schedule-form-employee').disabled = false;
+    document.getElementById('performance-dialog-schedule-form-employee-name').value = '';
+}
+
+window.setPerformanceDialogSchedule = setPerformanceDialogSchedule;
+
+function setPerformanceDialogScheduleEmployee(employee_id, employee_name) {
+    document.getElementById('performance-dialog-schedule-form-employee-elem').style = 'display: none';
+    document.getElementById('performance-dialog-schedule-form-employee-name-elem').style = 'display: block';
+    document.getElementById('performance-dialog-schedule-form-employee-name').value = employee_name + ' (' + employee_id + ')';
+    document.getElementById('performance-dialog-schedule-form-employee-id').value = employee_id;
+    document.getElementById('performance-dialog-schedule-form-employee-id').disabled = false;
+    document.getElementById('performance-dialog-schedule-form-employee').disabled = true;
+}
+
+window.setPerformanceDialogScheduleEmployee = setPerformanceDialogScheduleEmployee;
+
 document.addEventListener("DOMContentLoaded", function () {
     $(document).ready(function() {
         var tableData = $('#tablePerformanceDialog').DataTable({
