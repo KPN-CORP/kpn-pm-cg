@@ -178,7 +178,7 @@
                     <h5 class="modal-title" id="scheduleModalLabel">Set Schedule</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
-                <form id="schedulePerformanceDialog" action="{{ route('performance-dialog-task.set-schedule') }}" method="POST" enctype="multipart/form-data">
+                <form id="schedulePerformanceDialog" action="{{ route('performance-dialog-task.set-schedule') }}" method="POST">
                     @csrf
                     <div class="modal-body">
                         <input type="hidden" name="employee_id" id="performance-dialog-schedule-form-employee-id" class="form-control">
