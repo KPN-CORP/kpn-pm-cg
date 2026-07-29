@@ -116,10 +116,10 @@
                                                         @endif
                                                         @if ($row['is_action_edit'])
                                                             <a class="btn btn-sm btn-outline-primary" href="{{ route('performance-dialog.form-edit', $row['id']) }}" onclick="showLoader()">
-                                                                <i class="ri-eye-line"></i>
+                                                                <i class="ri-pencil-line"></i>
                                                             </a>
                                                         @endif
-                                                        @if ($row['is_action_edit'])
+                                                        @if ($row['is_action_download'])
                                                             <a class="btn btn-sm btn-outline-primary" href="#">
                                                                 <i class="ri-download-line"></i>
                                                             </a>
