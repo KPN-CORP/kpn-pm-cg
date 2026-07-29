@@ -317,32 +317,34 @@ class PerformanceDialogController extends Controller
                 ]);
             }
 
-            $reporteeEmployees = Employee::whereIn("employee_id", $employeeIDs)->get();
+            $reporteeEmployees = ApprovalLayer::with(['employee'])
+                ->whereIn('employee_id', $employeeIDs)
+                ->where('approver_id', 1)
+                ->first();
             if (!$reporteeEmployees || $reporteeEmployees->count() < 1) {
                 return response()->json([
                     'status' => false,
-                    'message' => "Reportee employee not found",
+                    'message' => "There is no direct manager assigned in your position!",
                     'errors' => []
                 ]);
             }
 
             $reporteeEmployeeGroupByEmployeeID = $reporteeEmployees->keyBy('employee_id');
 
-            $processEmployeeIDs = [];
+            $processEmployees = [];
 
             foreach ($employeeIDs as $row) {
-                if (!isset($reporteeEmployeeGroupByEmployeeID[$row]) || !$reporteeEmployeeGroupByEmployeeID[$row]) {
+                if (!isset($reporteeEmployeeGroupByEmployeeID[$row]) || !$reporteeEmployeeGroupByEmployeeID[$row] || !$reporteeEmployeeGroupByEmployeeID[$row]->employee) {
                     continue;
                 }
 
-                $processEmployeeIDs[] = $reporteeEmployeeGroupByEmployeeID[$row]->employee_id;
+                $processEmployees[] = $reporteeEmployeeGroupByEmployeeID[$row];
             }
 
-            $directApprovalLayer = ApprovalLayer::with(['employee'])->where('employee_id', $employeeID)->where('layer', 1)->first();
-            if (!$directApprovalLayer) {
+            if (empty($processEmployees) || count($processEmployees) < 1) {
                 return response()->json([
                     'status' => false,
-                    'message' => "There is no direct manager assigned in your position!",
+                    'message' => "Employee not found",
                     'errors' => []
                 ]);
             }
@@ -355,7 +357,7 @@ class PerformanceDialogController extends Controller
                     ->first();
             }
 
-            if ($actionApprove && !$performanceDialog) {
+            if (($actionApprove || $actionDraft) && !$performanceDialog) {
                 return response()->json([
                     'status' => false,
                     'message' => "Performance dialog not found!",
@@ -395,31 +397,37 @@ class PerformanceDialogController extends Controller
                     ]);
                 }
             } else {
-                PerformanceDialog::create([
-                    'manager_employee_id' => $managerEmployeeID,
-                    'employee_id' => $employeeID,
-                    'period' => $period,
-                    'summary' => $summary,
-                    'development_plan' => $developmentPlan,
-                    'additional_notes' => $additionalNotes,
-                    'initiate_date' => Carbon::now(),
-                    'start_date' => Carbon::now(),
-                    'due_date' => $dueDate,
-                    'type_ids' => $typeIDs,
-                    'others_type_name' => $othersType,
-                    'status' => $status,
-                    'created_by' => $userID,
-                    'created_at' => Carbon::now(),
-                    'updated_by' => $userID,
-                    'updated_at' => Carbon::now(),
-                ]);
+                $insertData = [];
+
+                foreach ($processEmployees as $row) {
+                    if ($row->approver_id != $employeeID) {
+                        continue;
+                    }
+
+                    $insertData[] = [
+                        'manager_employee_id' => $row->approver_id,
+                        'employee_id' => $row->employee_id,
+                        'period' => $period,
+                        'summary' => $summary,
+                        'development_plan' => $developmentPlan,
+                        'additional_notes' => $additionalNotes,
+                        'initiate_date' => Carbon::now(),
+                        'start_date' => Carbon::now(),
+                        'due_date' => $dueDate,
+                        'type_ids' => $typeIDs,
+                        'others_type_name' => $othersType,
+                        'status' => $status,
+                        'created_by' => $userID,
+                        'created_at' => Carbon::now(),
+                        'updated_by' => $userID,
+                        'updated_at' => Carbon::now(),
+                    ];
+                }
+
+                PerformanceDialog::insert($insertData);
             }
 
-            $redirect = route('performance-dialog.my-history');
-
-            if ($actionApprove) {
-                $redirect = route('performance-dialog-task');
-            }
+            $redirect = route('performance-dialog-task');
 
             return response()->json([
                 'status' => true,
