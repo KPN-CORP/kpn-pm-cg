@@ -59,8 +59,8 @@ class PerformanceDialogTaskController extends Controller
             $scheduleAt = $row->start_date ?? "-";
             $initiatedAt = $row->initiate_date ?? "-";
             $status = $row->status ?? "-";
-            $isActionInitiate = false;
             $isActionEdit = false;
+            $isActionEditInitiate = false;
             $isActionDownload = false;
 
             if ($dueDate != "-" && Carbon::parse($dueDate)->lt($now)) {
@@ -68,7 +68,7 @@ class PerformanceDialogTaskController extends Controller
             }
 
             if ($status == "Scheduled" || $status == "Overdue") {
-                $isActionInitiate = true;
+                $isActionEditInitiate = true;
             }
 
             if ($status == "Draft" || $status == "Submitted") {
@@ -89,9 +89,10 @@ class PerformanceDialogTaskController extends Controller
                 "formatted_schedule_at" => $formattedScheduleAt,
                 "formatted_initiated_at" => $formattedInitiatedAt,
                 "status" => $status,
-                "is_action_initiate" => $isActionInitiate,
+                "is_action_initiate" => false,
                 "is_action_schedule" => false,
                 "is_action_edit" => $isActionEdit,
+                "is_action_edit_initiate" => $isActionEditInitiate,
                 "is_action_download" => $isActionDownload
             ];
         }
@@ -127,6 +128,7 @@ class PerformanceDialogTaskController extends Controller
                 "is_action_initiate" => true,
                 "is_action_schedule" => true,
                 "is_action_edit" => false,
+                "is_action_edit_initiate" => false,
                 "is_action_download" => false
             ];
         }

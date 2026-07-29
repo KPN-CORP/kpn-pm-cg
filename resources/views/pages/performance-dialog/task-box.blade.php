@@ -114,6 +114,11 @@
                                                                 <i class="ri-send-plane-line"></i>
                                                             </a>
                                                         @endif
+                                                        @if ($row['is_action_edit_initiate'])
+                                                            <a class="btn btn-sm btn-outline-primary" href="{{ route('performance-dialog.form-edit', $row['id']) }}" onclick="showLoader()">
+                                                                <i class="ri-send-plane-line"></i>
+                                                            </a>
+                                                        @endif
                                                         @if ($row['is_action_edit'])
                                                             <a class="btn btn-sm btn-outline-primary" href="{{ route('performance-dialog.form-edit', $row['id']) }}" onclick="showLoader()">
                                                                 <i class="ri-pencil-line"></i>
