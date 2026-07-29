@@ -131,13 +131,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
                     let html = '';
 
-                    if (xhr.status === 422) {
-                        $.each(xhr.responseJSON.errors, function (key, value) {
-                            html += '<li>' + value[0] + '</li>';
-                        });
-                    } else {
-                        html += '<li>' + (xhr.responseJSON?.message ?? 'Something went wrong.') + '</li>';
-                    }
+                    html += '<li>' + (xhr.responseJSON?.message ?? 'Something went wrong.') + '</li>';
 
                     $('#form-alert').removeClass('d-none').html('<ul class="mb-0">' + html + '</ul>');
                 }
@@ -204,13 +198,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
                     let html = '';
 
-                    if (xhr.status === 422) {
-                        $.each(xhr.responseJSON.errors, function (key, value) {
-                            html += '<li>' + value[0] + '</li>';
-                        });
-                    } else {
-                        html += '<li>' + (xhr.responseJSON?.message ?? 'Something went wrong.') + '</li>';
-                    }
+                    html += '<li>' + (xhr.responseJSON?.message ?? 'Something went wrong.') + '</li>';
 
                     $('#form-alert').removeClass('d-none').html('<ul class="mb-0">' + html + '</ul>');
                 }
@@ -277,13 +265,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
                     let html = '';
 
-                    if (xhr.status === 422) {
-                        $.each(xhr.responseJSON.errors, function (key, value) {
-                            html += '<li>' + value[0] + '</li>';
-                        });
-                    } else {
-                        html += '<li>' + (xhr.responseJSON?.message ?? 'Something went wrong.') + '</li>';
-                    }
+                    html += '<li>' + (xhr.responseJSON?.message ?? 'Something went wrong.') + '</li>';
 
                     $('#form-alert').removeClass('d-none').html('<ul class="mb-0">' + html + '</ul>');
                 }
@@ -326,13 +308,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
                 let html = '';
 
-                if (xhr.status === 422) {
-                    $.each(xhr.responseJSON.errors, function (key, value) {
-                        html += '<li>' + value[0] + '</li>';
-                    });
-                } else {
-                    html += '<li>' + (xhr.responseJSON?.message ?? 'Something went wrong.') + '</li>';
-                }
+                html += '<li>' + (xhr.responseJSON?.message ?? 'Something went wrong.') + '</li>';
 
                 $('#schedule-performance-dialog-form-alert').removeClass('d-none').html('<ul class="mb-0">' + html + '</ul>');
             }

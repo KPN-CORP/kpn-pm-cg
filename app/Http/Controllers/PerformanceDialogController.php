@@ -289,7 +289,7 @@ class PerformanceDialogController extends Controller
                     'status' => false,
                     'message' => 'Invalid action',
                     'errors' => []
-                ]);
+                ], 422);
             }
 
             $status = "Pending";
@@ -314,19 +314,19 @@ class PerformanceDialogController extends Controller
                     'status' => false,
                     'message' => "Employee not found",
                     'errors' => []
-                ]);
+                ], 422);
             }
 
             $reporteeEmployees = ApprovalLayer::with(['employee'])
                 ->whereIn('employee_id', $employeeIDs)
-                ->where('approver_id', 1)
-                ->first();
+                ->where('approver_id', $employeeID)
+                ->get();
             if (!$reporteeEmployees || $reporteeEmployees->count() < 1) {
                 return response()->json([
                     'status' => false,
                     'message' => "There is no direct manager assigned in your position!",
                     'errors' => []
-                ]);
+                ], 422);
             }
 
             $reporteeEmployeeGroupByEmployeeID = $reporteeEmployees->keyBy('employee_id');
@@ -346,7 +346,7 @@ class PerformanceDialogController extends Controller
                     'status' => false,
                     'message' => "Employee not found",
                     'errors' => []
-                ]);
+                ], 422);
             }
 
             $performanceDialog = null;
@@ -357,12 +357,12 @@ class PerformanceDialogController extends Controller
                     ->first();
             }
 
-            if (($actionApprove || $actionDraft) && !$performanceDialog) {
+            if ($actionApprove && !$performanceDialog) {
                 return response()->json([
                     'status' => false,
                     'message' => "Performance dialog not found!",
                     'errors' => []
-                ]);
+                ], 422);
             }
 
             if ($performanceDialog) {
@@ -389,7 +389,7 @@ class PerformanceDialogController extends Controller
                         'period' => $period,
                         'initiate_date' => $initiateDate,
                         'due_date' => $dueDate,
-                        'type_ids' => $typeIDs,
+                        'type_ids' => json_encode($typeIDs),
                         'others_type_name' => $othersType,
                         'status' => $status,
                         'updated_by' => $userID,
@@ -414,7 +414,7 @@ class PerformanceDialogController extends Controller
                         'initiate_date' => Carbon::now(),
                         'start_date' => Carbon::now(),
                         'due_date' => $dueDate,
-                        'type_ids' => $typeIDs,
+                        'type_ids' => json_encode($typeIDs),
                         'others_type_name' => $othersType,
                         'status' => $status,
                         'created_by' => $userID,
@@ -440,7 +440,7 @@ class PerformanceDialogController extends Controller
                 'status' => false,
                 'message' => 'Error: ' . $e->getMessage(),
                 'errors' => []
-            ]);
+            ], 500);
         }
     }
 

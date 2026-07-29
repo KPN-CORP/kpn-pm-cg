@@ -241,7 +241,7 @@ class PerformanceDialogTaskController extends Controller
                     'status' => false,
                     'message' => 'Missing employee ID',
                     'data' => []
-                ]);
+                ], 422);
             }
 
             $employeeManager = Employee::where("employee_id", $managerEmployeeID)
@@ -252,7 +252,7 @@ class PerformanceDialogTaskController extends Controller
                     'status' => false,
                     'message' => "Employee manager not found",
                     'errors' => []
-                ]);
+                ], 422);
             }
 
             $reportees = ApprovalLayer::with(['employee'])
@@ -264,7 +264,7 @@ class PerformanceDialogTaskController extends Controller
                     'status' => false,
                     'message' => "Employee not found",
                     'errors' => []
-                ]);
+                ], 422);
             }
 
             $insertData = [];
@@ -300,7 +300,7 @@ class PerformanceDialogTaskController extends Controller
                 'status' => false,
                 'message' => 'Error: ' . $e->getMessage(),
                 'errors' => []
-            ]);
+            ], 500);
         }
     }
 }
