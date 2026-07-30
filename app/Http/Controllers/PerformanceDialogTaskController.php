@@ -185,7 +185,7 @@ class PerformanceDialogTaskController extends Controller
 
             $queries = DB::getQueryLog();
 
-            Log::info($userID ." Executed queries import goals manager: ", $queries);
+            Log::info($userID ." Executed queries import performance dialog manager: ", $queries);
             Log::info($userID ." Performance Dialog import : Data imported successfully.");
 
             return redirect()->back()->with('success', $message);

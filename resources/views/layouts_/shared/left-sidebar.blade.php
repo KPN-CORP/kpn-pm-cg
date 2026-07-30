@@ -310,6 +310,9 @@
                                 <a href="{{ route('importRating') }}">{{ __('Import Rating') }}</a>
                             </li>
                             @endif
+                            <li>
+                                <a href="{{ route('performance-dialog-admin.import-page') }}">Import Performance Dialog</a>
+                            </li>
                         </ul>
                     </div>
                 </li>

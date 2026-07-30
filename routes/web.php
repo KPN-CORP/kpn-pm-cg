@@ -49,6 +49,7 @@ use App\Http\Controllers\FormGroupAppraisalController;
 use App\Http\Controllers\PaReminderController;
 use App\Http\Controllers\PerformanceDialogController;
 use App\Http\Controllers\PerformanceDialogTaskController;
+use App\Http\Controllers\PerformanceDialogAdminController;
 use App\Http\Controllers\Proposed360;
 use App\Http\Controllers\Proposed360Controller;
 
@@ -197,6 +198,11 @@ Route::middleware('auth', 'locale', 'notification', 'restrict_bu')->group(functi
     Route::post('/performance-dialog/task/set-schedule', [PerformanceDialogTaskController::class, 'setSchedule'])->name('performance-dialog-task.set-schedule');
     Route::post('/performance-dialog/task/import', [PerformanceDialogTaskController::class, 'import'])->name('performance-dialog-task.import');
     Route::get('/performance-dialog/task/invalid-export', [PerformanceDialogTaskController::class, 'invalidExport'])->name('performance-dialog-task.invalid-export');
+
+    // Performance Dialog Admin
+    Route::get('/performance-dialog/admin/import-page', [PerformanceDialogAdminController::class, 'importPage'])->name('performance-dialog-admin.import-page');
+    Route::post('/performance-dialog/admin/import', [PerformanceDialogAdminController::class, 'import'])->name('performance-dialog-admin.import');
+    Route::get('/performance-dialog/admin/invalid-export', [PerformanceDialogAdminController::class, 'invalidExport'])->name('performance-dialog-admin.invalid-export');
 
     // Rating | Calibration
     Route::get('/rating', [RatingController::class, 'index'])->name('rating');
