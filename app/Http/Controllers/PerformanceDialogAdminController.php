@@ -16,6 +16,7 @@ use Maatwebsite\Excel\Facades\Excel;
 use App\Models\PerformanceDialog;
 use App\Models\ApprovalLayer;
 use App\Models\Employee;
+use App\Models\PerformanceDialogImportTransaction;;
 use App\Services\AppService;
 use App\Imports\PerformanceDialogManagerImport;
 use App\Exports\InvalidPerformanceDialogManagerImport;
@@ -32,9 +33,17 @@ class PerformanceDialogAdminController extends Controller
     }
 
     public function importPage(Request $request) {
+        $userId = Auth::id();
+        $parentLink = 'Settings';
+        $link = 'Performance Dialog Import';
+
+        $performance_dialog_imports = PerformanceDialogImportTransaction::where('submit_by',$userId)->orderBy('created_at', 'desc')->get();
+
         return view('pages.performance-dialog.import-admin', [
-            "parentLink" => "Imports",
-            "link" => "Performance Dialog",
+            'link' => $link,
+            'parentLink' => $parentLink,
+            'userId' => $userId,
+            'performance_dialog_imports' => $performance_dialog_imports,
         ]);
     }
 

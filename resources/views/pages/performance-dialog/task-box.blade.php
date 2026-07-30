@@ -156,7 +156,10 @@
                         <div class="row">
                             <div class="col">
                                 <div class="alert alert-info">
-                                    <span><a href="#" style="text-decoration: underline">{{ __('Download Template') }}</a></span>
+                                    <strong>Notes:</strong>
+                                    <ul class="mb-0">
+                                        <li>Template Import Performance Dialog can be downloaded <strong><a href="#" style="text-decoration: underline">here</a></strong></li>
+                                    </ul>
                                 </div>
                             </div>
                         </div>

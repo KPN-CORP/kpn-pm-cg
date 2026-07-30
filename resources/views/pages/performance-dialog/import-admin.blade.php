@@ -129,45 +129,30 @@
                         <h5 class="modal-title" id="importModalLabel">Import Performance Dialogs</h5>
                         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                     </div>
-
-                    <!-- Nav tabs -->
-                    <ul class="nav nav-tabs" id="importTabs" role="tablist">
-                        <li class="nav-item" role="presentation">
-                            <button class="nav-link active" id="regular-tab" data-bs-toggle="tab" data-bs-target="#regular" type="button" role="tab" aria-controls="regular" aria-selected="true">Regular Performance Dialogs</button>
-                        </li>
-                        <li class="nav-item" role="presentation">
-                            <button class="nav-link" id="clustering-tab" data-bs-toggle="tab" data-bs-target="#clustering" type="button" role="tab" aria-controls="clustering" aria-selected="false">Clustering KPI</button>
-                        </li>
-                    </ul>
-
-                    <div class="tab-content" id="importTabsContent">
-                        <!-- Regular Performance Dialogs Tab -->
-                        <div class="tab-pane fade show active" id="regular" role="tabpanel" aria-labelledby="regular-tab">
-                            <form action="{{ route('performance-dialog-admin.import') }}" method="POST" enctype="multipart/form-data">
-                                @csrf
-                                <div class="modal-body">
-                                    <div class="row">
-                                        <div class="col">
-                                            <div class="alert alert-info">
-                                                <strong>Notes:</strong>
-                                                <ul class="mb-0">
-                                                    <li>Template Import Performance Dialogs can use from the File Export at menu Reports : <strong>Reports -> Detailed Performance Dialogs -> Download</strong></li>
-                                                    <li>Headers required: Employee_ID, Employee_Name, KPI, Target, UOM, Weightage, Type, Description, Current Approver ID, Period</li>
-                                                </ul>
-                                            </div>
+                    <div class="tab-pane fade show active" id="regular" role="tabpanel" aria-labelledby="regular-tab">
+                        <form action="{{ route('performance-dialog-admin.import') }}" method="POST" enctype="multipart/form-data">
+                            @csrf
+                            <div class="modal-body">
+                                <div class="row">
+                                    <div class="col">
+                                        <div class="alert alert-info">
+                                            <strong>Notes:</strong>
+                                            <ul class="mb-0">
+                                                <li>Template Import Performance Dialog can be downloaded <strong><a href="#" style="text-decoration: underline">here</a></strong></li>
+                                            </ul>
                                         </div>
                                     </div>
-                                    <div class="form-group">
-                                        <label for="file">Upload File</label>
-                                        <input type="file" name="file" id="file" class="form-control" required>
-                                    </div>
                                 </div>
-                                <div class="modal-footer">
-                                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                                    <button type="submit" class="btn btn-primary">Import Regular Performance Dialogs</button>
+                                <div class="form-group">
+                                    <label for="file">Upload File</label>
+                                    <input type="file" name="file" id="file" class="form-control" required>
                                 </div>
-                            </form>
-                        </div>
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                                <button type="submit" class="btn btn-primary">Import</button>
+                            </div>
+                        </form>
                     </div>
                 </div>
             </div>
