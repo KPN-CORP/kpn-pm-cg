@@ -60,6 +60,11 @@ class PerformanceDialog extends Model
         return $this->belongsTo(Employee::class, 'created_by','id');
     }
 
+    public function employeeAcknowledgeBy()
+    {
+        return $this->belongsTo(Employee::class, 'acknowledge_by','id');
+    }
+
     public function employeeUpdatedBy()
     {
         return $this->belongsTo(Employee::class, 'updated_by','id');
