@@ -118,9 +118,11 @@
                         <li>
                             <a href="{{ route('performance-dialog.my-history') }}">{{ __('My History') }}</a>
                         </li>
+                        @if (auth()->user()->isApprover())
                         <li>
                             <a href="{{ route('performance-dialog-task') }}">{{ __('Task Box') }}</a>
                         </li>
+                        @endif
                     </ul>
                 </div>
             </li>
