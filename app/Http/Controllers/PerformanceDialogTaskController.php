@@ -63,7 +63,7 @@ class PerformanceDialogTaskController extends Controller
             $isActionEditInitiate = false;
             $isActionDownload = false;
 
-            if ($dueDate != "-" && Carbon::parse($dueDate)->lt($now)) {
+            if ($scheduleAt != "-" && Carbon::parse($scheduleAt)->lt($now) && $status == "Scheduled") {
                 $status = "Overdue";
             }
 
@@ -125,7 +125,7 @@ class PerformanceDialogTaskController extends Controller
                 "formatted_schedule_at" => "-",
                 "formatted_initiated_at" => "-",
                 "status" => "Not Scheduled",
-                "is_action_initiate" => true,
+                "is_action_initiate" => false,
                 "is_action_schedule" => true,
                 "is_action_edit" => false,
                 "is_action_edit_initiate" => false,

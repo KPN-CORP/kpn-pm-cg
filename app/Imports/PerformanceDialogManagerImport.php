@@ -49,11 +49,11 @@ class PerformanceDialogManagerImport implements ToModel, WithValidation, WithHea
 
             if (!$headersChecked) {
                 $headers = collect($row)->keys();
-                $expectedHeaders = ['employee_id', 'employee_name', 'current_approver_id', 'summary', 'development_plan', 'additional_notes', 'period', 'start_date', 'end_date', 'due_date', 'type_name', 'status'];
+                $expectedHeaders = ['employee_id', 'employee_name', 'current_approver_id', 'summary', 'additional_notes', 'development_plan', 'due_date', 'period', 'schedule_date', 'initiate_date', 'type_name', 'status'];
 
                 if (!collect($expectedHeaders)->diff($headers)->isEmpty()) {
                     throw ValidationException::withMessages([
-                        'error' => 'Invalid excel format. The header must contain employee_id, employee_name, current_approver_id, summary, development_plan, additional_notes, period, start_date, end_date, due_date, type_name, status.',
+                        'error' => 'Invalid excel format. The header must contain employee_id, employee_name, current_approver_id, summary, additional_notes, development_plan, due_date, period, schedule_date, initiate_date, type_name, status.',
                     ]);
                 }
 
@@ -62,7 +62,7 @@ class PerformanceDialogManagerImport implements ToModel, WithValidation, WithHea
 
             $validate = Validator::make($row, [
                 'employee_id' => 'digits:11',
-                'weightage' => 'required|numeric|min:0.05|max:1.00'
+                'current_approver_id' => 'digits:11',
             ]);
 
             if ($validate->fails()) {
@@ -78,6 +78,17 @@ class PerformanceDialogManagerImport implements ToModel, WithValidation, WithHea
                         'message' => "Employee ID must contain 11 digits.",
                     ];
                 }
+
+                if ($errors->has('current_approver_id')) {
+                    $this->detailError[] = [
+                        'employee_id' => $row['current_approver_id'],
+                        'message' => "Current Approver ID must contain 11 digits.",
+                    ];
+                    $this->invalidEmployees[] = [
+                        'employee_id' => $row['current_approver_id'],
+                        'message' => "Current Approver ID must contain 11 digits.",
+                    ];
+                }
             }
 
             $employeeID = $row['employee_id'];
@@ -86,14 +97,22 @@ class PerformanceDialogManagerImport implements ToModel, WithValidation, WithHea
             $developmentPlan =  $row['development_plan'];
             $additionalNotes =  $row['additional_notes'];
             $period =  $row['period'];
-            $initiateDate = $row['initiate_date'];
-            $startDate = $row['start_date'];
-            $endDate = $row['end_date'];
+            $initiateDate = Carbon::now();
+            $startDate = $row['schedule_date'];
+            $endDate = null;
             $dueDate = $row['due_date'];
             $typeName = $row['type_name'];
             $status = $row['status'];
             $typeIDs = null;
             $othersTypeName = null;
+
+            if (isset($row['initiate_date']) && !empty($row['initiate_date'])) {
+                $initiateDate = $row['initiate_date'];
+            }
+
+            if ($status && $status != "Done") {
+                $initiateDate = null;
+            }
 
             if (empty($period)) {
                 $period = now()->year;
@@ -302,7 +321,6 @@ class PerformanceDialogManagerImport implements ToModel, WithValidation, WithHea
             'employee_id' => 'required|string',
             'employee_name' => 'required|string',
             'current_approver_id' => 'required|string',
-            'type_name' => 'required|string',
             'status' => 'required|string',
         ];
     }

@@ -130,6 +130,7 @@
         <div id="form-alert" class="alert alert-danger d-none"></div>
         <form id="performance-dialog-form" action="{{ route('performance-dialog.create-or-update') }}" class="needs-validation" method="POST">
             @csrf
+            <input type="hidden" class="form-control" name="id" value="{{ $id }}" readonly>
             <input type="hidden" class="form-control" name="period" value="{{ $period }}" readonly>
             <input type="hidden" class="form-control" name="employee_id" value="{{ $employee_id }}" readonly>
             <input type="hidden" class="form-control" name="manager_employee_id" value="{{ $manager_employee_id }}" readonly>
@@ -181,6 +182,12 @@
                         </div>
                     </div>
                 </div>
+                @if ($is_show_start_date)
+                    <div class="col-md-6">
+                        <label for="performance_dialog_start_date" class="form-label">Scheduled At</label>
+                        <input type="datetime-local" class="form-control form-control-sm" id="performance_dialog_due_date" name="performance_dialog_start_date" value="{{ $performance_dialog_start_date }}" required {{ $is_performance_dialog_start_date_readonly ? 'readonly' : '' }}>
+                    </div>
+                @endif
             </div>
             <div class="row mb-2">
                 <div class="col-md-6">

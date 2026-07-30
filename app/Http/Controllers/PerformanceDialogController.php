@@ -39,19 +39,46 @@ class PerformanceDialogController extends Controller
             $period = $request->filterYear;
         }
 
-        $performanceDialogs = PerformanceDialog::with(['employee', 'employeeCreatedBy', 'employeeUpdatedBy'])
+        $rows = [];
+
+        $performanceDialogs = PerformanceDialog::with(['employee'])
             ->where('employee_id', $employeeID)
             ->where('period', $period)
             ->where('deleted_at', null)
             ->get();
 
+        $now = Carbon::now();
+
         foreach($performanceDialogs as $row) {
-            $row->formatted_start_date = $row->start_date ? Carbon::parse($row->start_date)->format('d M Y') : '-';
-            $row->formatted_end_date = $row->end_date ? Carbon::parse($row->end_date)->format('d M Y') : '-';
-            $row->formatted_due_date = $row->due_date ? Carbon::parse($row->due_date)->format('d M Y') : '-';
-            $row->formatted_created_at = $row->created_at ? Carbon::parse($row->created_at)->format('d M Y') : '-';
-            $row->formatted_updated_at = $row->updated_at ? Carbon::parse($row->updated_at)->format('d M Y') : '-';
+            $dueDate = $row->due_date ?? "-";
+            $scheduleAt = $row->start_date ?? "-";
+            $initiatedAt = $row->initiate_date ?? "-";
+            $status = $row->status ?? "-";
+            $isActionDownload = false;
+
+            if ($scheduleAt != "-" && Carbon::parse($scheduleAt)->lt($now) && $status == "Scheduled") {
+                $status = "Overdue";
+            }
+
+            if ($status == "Done" || $status == "Submitted") {
+                $isActionDownload = true;
+            }
+
+            $formattedScheduleAt = $scheduleAt != "-" ? Carbon::parse($scheduleAt)->format('d M Y') : '-';
+            $formattedInitiatedAt = $initiatedAt != "-" ? Carbon::parse($initiatedAt)->format('d M Y') : '-';
+
+            $rows[] = [
+                "id" => $row->id,
+                "employee_id" => $row->employee_id,
+                "employee_name" => $row->employee?->fullname ?? "-",
+                "formatted_schedule_at" => $formattedScheduleAt,
+                "formatted_initiated_at" => $formattedInitiatedAt,
+                "status" => $status,
+                "is_action_download" => $isActionDownload
+            ];
         }
+
+        $performanceDialogGroupByEmployeeID = $performanceDialogs->groupBy('employee_id');
 
         $performanceDialogYears = PerformanceDialog::select('period')
             ->where('employee_id', $employeeID)
@@ -69,8 +96,8 @@ class PerformanceDialogController extends Controller
             "period" => $period,
             "user_id" => $userID,
             "employee_id" => $employeeID,
-            "performance_dialogs" => $performanceDialogs,
             "performance_dialog_years" => $performanceDialogYears,
+            "rows" => $rows,
         ]);
     }
 
@@ -99,6 +126,7 @@ class PerformanceDialogController extends Controller
 
             $performanceDialogTypes = [];
             $performanceDialogOthersTypeName = "";
+            $performanceDialogStartDate = "";
             $performanceDialogDueDate = "";
             $performanceDialogSummary = "";
             $performanceDialogDevelopmentPlan = "";
@@ -106,14 +134,16 @@ class PerformanceDialogController extends Controller
 
             $isShowEmployeeDetail = false;
             $isShowSelectEmployee = true;
+            $isShowStartDate = false;
             $isFormApproval = false;
             $isFormView = false;
-            $isPerformanceReviewTypesReadonly = false;
-            $isOthersPerformanceReviewTypeReadonly = false;
-            $isPerformanceReviewDueDateReadonly = false;
-            $isPerformanceReviewSummaryReadonly = false;
-            $isPerformanceReviewDevelopmentPlanReadonly = false;
-            $isPerformanceReviewAdditionalNotesReadonly = false;
+            $isPerformanceDialogTypesReadonly = false;
+            $isOthersPerformanceDialogTypeReadonly = false;
+            $isPerformanceDialogStartDateReadonly = true;
+            $isPerformanceDialogDueDateReadonly = false;
+            $isPerformanceDialogSummaryReadonly = false;
+            $isPerformanceDialogDevelopmentPlanReadonly = false;
+            $isPerformanceDialogAdditionalNotesReadonly = false;
 
             $redirectBack = "";
 
@@ -179,6 +209,7 @@ class PerformanceDialogController extends Controller
 
                 $performanceDialogTypes = $performanceDialog->type_datas;
                 $performanceDialogOthersTypeName = $performanceDialog->others_type_name;
+                $performanceDialogStartDate = $performanceDialog->start_date;
                 $performanceDialogDueDate = $performanceDialog->due_date;
                 $performanceDialogSummary = $performanceDialog->summary;
                 $performanceDialogDevelopmentPlan = $performanceDialog->development_plan;
@@ -189,29 +220,33 @@ class PerformanceDialogController extends Controller
 
                     if ($performanceDialog->status == "Pending") {
                         $isFormApproval = true;
-                    } else {
+                    } else if ($performanceDialog->status == "Done") {
                         $isFormView = true;
                     }
                 } else if ($loggedInEmployee->employee_id == $employeeID) {
                     $redirectBack = route('performance-dialog.my-history');
 
-                    if ($performanceDialog->status != "Draft") {
-                        $isFormView = true;
-                    }
+                    // if ($performanceDialog->status != "Draft") {
+                    //     $isFormView = true;
+                    // }
                 }
 
                 if ($isFormApproval) {
-                    $isPerformanceReviewTypesReadonly = true;
-                    $isOthersPerformanceReviewTypeReadonly = true;
-                    $isPerformanceReviewDueDateReadonly = true;
+                    $isPerformanceDialogTypesReadonly = true;
+                    $isOthersPerformanceDialogTypeReadonly = true;
+                    $isPerformanceDialogDueDateReadonly = true;
                 } else if ($isFormView) {
-                    $isPerformanceReviewTypesReadonly = true;
-                    $isOthersPerformanceReviewTypeReadonly = true;
-                    $isPerformanceReviewDueDateReadonly = true;
-                    $isPerformanceReviewSummaryReadonly = true;
-                    $isPerformanceReviewDevelopmentPlanReadonly = true;
-                    $isPerformanceReviewAdditionalNotesReadonly = true;
+                    $isPerformanceDialogTypesReadonly = true;
+                    $isOthersPerformanceDialogTypeReadonly = true;
+                    $isPerformanceDialogDueDateReadonly = true;
+                    $isPerformanceDialogSummaryReadonly = true;
+                    $isPerformanceDialogDevelopmentPlanReadonly = true;
+                    $isPerformanceDialogAdditionalNotesReadonly = true;
                 }
+
+                $isShowEmployeeDetail = true;
+                $isShowSelectEmployee = false;
+                $isShowStartDate = true;
             }
 
             $masterPerformanceDialogTypes = PerformanceDialogType::where("is_active", true)->where("deleted_at", null)->get();
@@ -221,6 +256,7 @@ class PerformanceDialogController extends Controller
             return view('pages.performance-dialog.form', [
                 "parentLink" => "Performance Dialog",
                 "link" => "Form Performance Dialog",
+                "id" => $id,
                 "period" => $period,
                 "employee_id" => $employeeID,
                 "employee_name" => $employeeName,
@@ -232,20 +268,23 @@ class PerformanceDialogController extends Controller
                 "master_performance_dialog_types" => $masterPerformanceDialogTypes,
                 "performance_dialog_types" => $performanceDialogTypes,
                 "performance_dialog_others_type_name" => $performanceDialogOthersTypeName,
+                "performance_dialog_start_date" => $performanceDialogStartDate,
                 "performance_dialog_due_date" => $performanceDialogDueDate,
                 "performance_dialog_summary" => $performanceDialogSummary,
                 "performance_dialog_development_plan" => $performanceDialogDevelopmentPlan,
                 "performance_dialog_additional_notes" => $performanceDialogAdditionalNotes,
                 "is_show_employee_detail" => $isShowEmployeeDetail,
                 "is_show_select_employee" => $isShowSelectEmployee,
+                "is_show_start_date" => $isShowStartDate,
                 "is_form_approval" => $isFormApproval,
                 "is_form_view" => $isFormView,
-                "is_performance_dialog_types_readonly" => $isPerformanceReviewTypesReadonly,
-                "is_others_performance_dialog_type_readonly" => $isOthersPerformanceReviewTypeReadonly,
-                "is_performance_dialog_due_date_readonly" => $isPerformanceReviewDueDateReadonly,
-                "is_performance_dialog_summary_readonly" => $isPerformanceReviewSummaryReadonly,
-                "is_performance_dialog_development_plan_readonly" => $isPerformanceReviewDevelopmentPlanReadonly,
-                "is_performance_dialog_additional_notes_readonly" => $isPerformanceReviewAdditionalNotesReadonly,
+                "is_performance_dialog_types_readonly" => $isPerformanceDialogTypesReadonly,
+                "is_others_performance_dialog_type_readonly" => $isOthersPerformanceDialogTypeReadonly,
+                "is_performance_dialog_start_date_readonly" => $isPerformanceDialogStartDateReadonly,
+                "is_performance_dialog_due_date_readonly" => $isPerformanceDialogDueDateReadonly,
+                "is_performance_dialog_summary_readonly" => $isPerformanceDialogSummaryReadonly,
+                "is_performance_dialog_development_plan_readonly" => $isPerformanceDialogDevelopmentPlanReadonly,
+                "is_performance_dialog_additional_notes_readonly" => $isPerformanceDialogAdditionalNotesReadonly,
                 "reportees" => $reportees,
                 "redirect_back" => $redirectBack,
             ]);
@@ -377,6 +416,10 @@ class PerformanceDialogController extends Controller
                     ]);
                 } else {
                     $initiateDate = Carbon::now();
+
+                    if ($actionDraft) {
+                        $initiateDate = null;
+                    }
 
                     if ($performanceDialog->initiate_date && !empty($performanceDialog->initiate_date)) {
                         $initiateDate = $performanceDialog->initiate_date;

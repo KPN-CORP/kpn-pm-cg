@@ -70,13 +70,13 @@
                                     <table id="tablePerformanceDialog" class="table table-hover table-sm activate-select dataTables_scrollHeadInner">
                                         <thead>
                                             <tr>
-                                                <th>No</th>
+                                                <th class="text-center">No</th>
                                                 <th>Employee ID</th>
                                                 <th>Name</th>
                                                 <th>Schedule Date</th>
                                                 <th>Initiated Date</th>
-                                                <th>Status</th>
-                                                <th class="sorting_1">Action</th>
+                                                <th class="text-center">Status</th>
+                                                <th class="text-center sorting_1">Action</th>
                                             </tr>
                                         </thead>
                                         <tbody>
