@@ -38,7 +38,7 @@ use Illuminate\Validation\ValidationException;
 
 class MyAppraisalController extends Controller
 {
-    
+
     protected $category;
     protected $user;
     protected $appService;
@@ -64,7 +64,7 @@ class MyAppraisalController extends Controller
     }
 
     public function index(Request $request) {
-        
+
         $user = $this->user;
         $period = $this->appService->appraisalPeriod();
         $filterYear = $request->input('filterYear');
@@ -96,7 +96,7 @@ class MyAppraisalController extends Controller
             }
 
             $datas = $datasQuery->get();
-                        
+
             $formattedData = $datas->map(function($item) {
                 $item->formatted_created_at = $this->appService->formatDate($item->appraisal->created_at);
 
@@ -113,8 +113,8 @@ class MyAppraisalController extends Controller
                 }
                 return $item;
             });
-                        
-            $adjustByManager = $datas->first()->updatedBy ? 
+
+            $adjustByManager = $datas->first()->updatedBy ?
                 ApprovalLayerAppraisal::where('approver_id', $datas->first()->updatedBy->employee_id)
                     ->where('employee_id', $datas->first()->employee_id)
                     ->first() : null;
@@ -128,23 +128,23 @@ class MyAppraisalController extends Controller
                 $leadershipData = $this->getDataByName($formGroupData['data']['form_appraisals'], 'Leadership') ?? [];
                 $technicalData = $this->getDataByName($formGroupData['data']['form_appraisals'], 'Technical') ?? [];
                 $sigapData = $this->getDataByName($formGroupData['data']['form_appraisals'], 'Sigap') ?? [];
-                
+
                 if ($request->appraisal->goal->form_status != 'Draft' || $request->created_by == Auth::user()->id) {
-                    
+
                     $goalData = $request ? json_decode($request->appraisal->goal->form_data, true) : [];
-                    
+
                     $form_data = Auth::user()->id == $request->appraisal->created_by
                     ? $request->appraisal->approvalSnapshots->form_data
                     : $request->appraisal->form_data;
-                    
+
                     $appraisalData = json_decode($form_data, true) ?? [];
-                    
+
                     $groupedContributors = $request->contributor->groupBy('contributor_type');
-                    
+
                     $employeeData = $request->employee;
-                    
+
                     $formData = $this->appService->combineFormData($appraisalData, $goalData, 'employee', $employeeData, $request->period);
-                    
+
                     if (isset($formData['totalKpiScore'])) {
                         $appraisalData['kpiScore'] = round($formData['totalKpiScore'], 2);
                         $appraisalData['cultureScore'] = round($formData['totalCultureScore'], 2);
@@ -152,7 +152,7 @@ class MyAppraisalController extends Controller
                         $appraisalData['technicalScore'] = round($formData['totalTechnicalScore'], 2);
                         $appraisalData['sigapScore'] = round($formData['totalSigapScore'], 2);
                     }
-                    
+
                     foreach ($formData['formData'] as &$form) {
                         if ($form['formName'] === 'Leadership') {
                             foreach ($leadershipData as $index => $leadershipItem) {
@@ -221,7 +221,7 @@ class MyAppraisalController extends Controller
                             }
                         }
                     }
-                    
+
 
                     $formGroup = FormGroupAppraisal::with('rating')->find($request->appraisal->form_group_id);
 
@@ -280,7 +280,7 @@ class MyAppraisalController extends Controller
                     $combinedSubData = $mergedFormData;
                 }
             }
-            
+
             $path = base_path('resources/goal.json');
             if (!File::exists($path)) {
                 $options = ['UoM' => [], 'Type' => []];
@@ -367,12 +367,12 @@ class MyAppraisalController extends Controller
                     }
                     unset($goalItem);
                 } else {
-                
+
                     // decode form_data KPI
                     $kpiData = is_string($kpiCompanies['form_data'])
                         ? json_decode($kpiCompanies['form_data'], true)
                         : $kpiCompanies['form_data'];
-                
+
                     // pastikan hasil decode array
                     if (!is_array($kpiData)) {
                         foreach ($goalData as &$goalItem) {
@@ -380,7 +380,7 @@ class MyAppraisalController extends Controller
                         }
                         unset($goalItem);
                     } else {
-                
+
                         // mapping berdasarkan index (asumsi urutan sama)
                         foreach ($goalData as $index => &$goalItem) {
                             $goalItem['actual'] = $kpiData[$index]['achievement'] ?? null;
@@ -388,7 +388,7 @@ class MyAppraisalController extends Controller
                         unset($goalItem);
                     }
                 }
-                
+
                 // simpan kembali ke model
                 $goal->form_data = json_encode($goalData);
 
@@ -408,33 +408,33 @@ class MyAppraisalController extends Controller
                 Session::flash('error', "Appraisal $period already initiated.");
                 return redirect()->route('appraisals');
             }
-            
+
             $approval = ApprovalLayerAppraisal::select('approver_id')->where('employee_id', $request->id)->where('layer_type', 'manager')->where('layer', 1)->first();
-      
+
             if (!$approval) {
                 Session::flash('error', "No Reviewer assigned, please contact admin to assign reviewer");
                 return redirect()->back();
             }
-            
+
             $calibrator = ApprovalLayerAppraisal::where('layer', 1)->where('layer_type', 'calibrator')->where('employee_id', $request->id)->value('approver_id');
 
             if (!$calibrator) {
                 Session::flash('error', "No Layer assigned, please contact admin to assign layer");
                 return redirect()->back();
             }
-            
-            
+
+
             // Get form group appraisal
             $formGroupData = $this->appService->formGroupAppraisal($request->id, 'Appraisal Form', $period);
-            
+
             // Validate formGroupData is not empty
             if (empty($formGroupData) || !isset($formGroupData['data']) || empty($formGroupData['data']['form_appraisals'])) {
                 throw new Exception("Form group configuration is incomplete or missing.");
             }
-                    
+
             $formTypes = $formGroupData['data']['form_names'] ?? [];
             $formDatas = $formGroupData['data']['form_appraisals'] ?? [];
-                    
+
             $filteredFormData = array_filter($formDatas, function($form) use ($formTypes) {
                 return in_array($form['name'], $formTypes);
             });
@@ -624,10 +624,10 @@ class MyAppraisalController extends Controller
 
     function show($id) {
         $data = Goal::find($id);
-        
+
         return view('pages.goals.modal', compact('data')); //modal body hilang ketika modal show bentrok dengan view goal
     }
-    
+
 
     function edit(Request $request) {
         try {
@@ -651,38 +651,38 @@ class MyAppraisalController extends Controller
 
             // Read the content of the JSON files
             $formGroupContent = $this->appService->formGroupAppraisal($appraisal->employee_id, 'Appraisal Form', $period);
-            
+
             if (!$formGroupContent || empty($formGroupContent['data']['form_appraisals'])) {
                 throw new Exception("Form group configuration is incomplete or missing for employee.");
             }
-            
+
             $formGroupData = $formGroupContent;
-            
+
             $formTypes = $formGroupData['data']['form_names'] ?? [];
             $formDatas = $formGroupData['data']['form_appraisals'] ?? [];
-            
-            
+
+
             $filteredFormData = array_filter($formDatas, function($form) use ($formTypes) {
                 return in_array($form['name'], $formTypes);
             });
-            
+
             $ratings = $formGroupData['data']['rating'] ?? [];
-            
+
             $approval = ApprovalLayerAppraisal::select('approver_id')->where('employee_id', $appraisal->employee_id)->where('layer', 1)->first();
-            
+
             $cultureData = $this->getDataByName($formGroupData['data']['form_appraisals'], 'Culture') ?? [];
             $leadershipData = $this->getDataByName($formGroupData['data']['form_appraisals'], 'Leadership') ?? [];
             $technicalData = $this->getDataByName($formGroupData['data']['form_appraisals'], 'Technical') ?? [];
             $sigapData = $this->getDataByName($formGroupData['data']['form_appraisals'], 'Sigap') ?? [];
-            
+
             // Read the contents of the JSON file
             $formData = json_decode($appraisal->form_data, true);
-            
+
             $formCount = count($formData);
-            
+
             $data = json_decode($appraisal->form_data, true);
 
-            
+
             $selfReviewData = [];
             foreach ($formData['formData'] as $item) {
                 if ($item['formName'] === 'KPI') {
@@ -691,7 +691,7 @@ class MyAppraisalController extends Controller
                 }
             }
 
-            
+
             // Add the achievements to the goalData
             foreach ($goalData as $index => &$goal) {
                 if (isset($selfReviewData[$index])) {
@@ -701,7 +701,7 @@ class MyAppraisalController extends Controller
                 }
             }
 
-            foreach ($formData['formData'] as &$form) {                
+            foreach ($formData['formData'] as &$form) {
                 if ($form['formName'] === 'Culture') {
                     foreach ($form as $key => &$value) {
                         if (is_numeric($key)) {
@@ -782,7 +782,7 @@ class MyAppraisalController extends Controller
                 }
                 return $filteredFormData;
             }
-            
+
             // Merge the scores
             $filteredFormData = mergeScores($formData, $filteredFormData);
 
@@ -840,11 +840,11 @@ class MyAppraisalController extends Controller
 
             // View Cement only //
             $viewAchievement = $employee->group_company == 'Cement' ? true : false;
-            
+
             $sefInitiate = $appraisal->created_by == Auth::id();
-            
+
             $viewCategory = 'Edit';
-            
+
 
             return view('pages.appraisals.edit', compact('step', 'goal', 'appraisal', 'goalData', 'formCount', 'filteredFormData', 'link', 'data', 'approvalRequest', 'parentLink', 'approval', 'formGroupData', 'ratings', 'viewCategory', 'achievements', 'viewAchievement', 'sefInitiate'));
         }
@@ -1008,7 +1008,7 @@ class MyAppraisalController extends Controller
 
         return redirect('appraisals')->with('success', $message);
     }
-    
+
     public function destroyFile(Request $request)
     {
         $request->validate([

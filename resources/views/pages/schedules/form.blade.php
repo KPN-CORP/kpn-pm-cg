@@ -7,7 +7,7 @@
     <!-- Begin Page Content -->
     <div class="container-fluid">
         <!-- Page Heading -->
-        
+
         <div class="d-sm-flex align-items-center justify-content-right">
             <div class="card col-md-6">
                 <div class="card-header d-flex bg-white justify-content-between">
@@ -37,11 +37,19 @@
                                                     <option value="goals">Schedule Goals</option>
                                                 @endif
                                             @endcan
+                                            @can('schedulepr')
+                                                @if($schedulemasterpr)
+                                                    <option value="schedulepr">Schedule PR</option>
+                                                @endif
+                                            @endcan
                                             @can('masterschedulepa')
                                                 <option value="masterschedulepa">Master Schedule PA</option>
                                             @endcan
                                             @can('masterschedulegoals')
                                                 <option value="masterschedulegoals">Master Schedule Goals</option>
+                                            @endcan
+                                            @can('masterschedulepr')
+                                                <option value="masterschedulepr">Master Schedule PR</option>
                                             @endcan
                                         @endif
                                     </select>
@@ -113,7 +121,7 @@
                                         </div>
                                     </div>
                                 </div>
-                                
+
                                 <div class="row my-2" id="check360" style="display:none">
                                     <div class="col-md-5">
                                         <div class="form-group">
@@ -272,7 +280,7 @@
         var selectBox = document.getElementById("inputState");
         var repeatOnDiv = document.getElementById("repeaton");
         var beforeEndDateDiv = document.getElementById("beforeenddate");
-        
+
         if (selectBox.value === "repeaton") {
             repeatOnDiv.style.display = "block";
             beforeEndDateDiv.style.display = "none";
@@ -308,8 +316,8 @@
         if (endInput) {
             endInput.value = "";
         }
-        
-        if (event_type.value === "masterschedulepa" || event_type.value === "masterschedulegoals") {
+
+        if (event_type.value === "masterschedulepa" || event_type.value === "masterschedulegoals" || event_type.value === "masterschedulepr") {
             nonmaster1.style.display = "none";
             nonmaster2.style.display = "none";
             bisnis_unit.removeAttribute("required");
@@ -318,7 +326,7 @@
             schedulePeriodeMaster.classList.remove("d-none");
             schedulePeriodeMaster.setAttribute("required", "required");
         } else {
-            event_type.value === "schedulepa" ? schedulePeriode.value = "{{ $schedulemasterpa->schedule_periode ?? "" }}" : schedulePeriode.value = "{{ $schedulemastergoals->schedule_periode ?? "" }}";
+            event_type.value === "schedulepa" ? schedulePeriode.value = "{{ $schedulemasterpa->schedule_periode ?? "" }}" : (event_type.value === "schedulepr" ? schedulePeriode.value = "{{ $schedulemasterpr->schedule_periode ?? "" }}" : schedulePeriode.value = "{{ $schedulemastergoals->schedule_periode ?? "" }}");
             nonmaster1.style.display = "block";
             nonmaster2.style.display = "block";
             bisnis_unit.setAttribute("required", "required");
@@ -382,7 +390,33 @@
                 endJoinInput.setAttribute("required", true);
             }
             check360.style.display = "none";
-        }else {
+        } else if (event_type.value === 'schedulepr') {
+            // Set min and max from the server-rendered values
+            const startDate = "{{ optional($schedulemasterpr)->start_date ? \Carbon\Carbon::parse(optional($schedulemasterpr)->start_date)->format('Y-m-d') : '' }}";
+            const endDate = "{{ optional($schedulemasterpr)->end_date ? \Carbon\Carbon::parse(optional($schedulemasterpr)->end_date)->format('Y-m-d') : '' }}";
+            startInput.min = startDate;
+            startInput.max = endDate;
+            endInput.min = startDate;
+            endInput.max = endDate;
+
+            const startJoinDateFromDB = "{{ optional($schedulemasterpr)->start_join_date ? \Carbon\Carbon::parse(optional($schedulemasterpr)->start_join_date)->format('Y-m-d') : '' }}";
+            const lastJoinDateFromDB = "{{ optional($schedulemasterpr)->last_join_date ? \Carbon\Carbon::parse(optional($schedulemasterpr)->last_join_date)->format('Y-m-d') : '' }}";
+
+            if (startJoinDateFromDB) {
+                startJoinInput.min = startJoinDateFromDB;
+                endJoinInput.min = startJoinDateFromDB;
+                startJoinInput.value = startJoinDateFromDB;
+                startJoinInput.setAttribute("required", true);
+            }
+
+            if (lastJoinDateFromDB) {
+                startJoinInput.max = lastJoinDateFromDB;
+                endJoinInput.max = lastJoinDateFromDB;
+                endJoinInput.value = lastJoinDateFromDB;
+                endJoinInput.setAttribute("required", true);
+            }
+            check360.style.display = "block";
+        } else {
             // Clear min and max if event_type is not 'schedulepa'
             startInput.min = '';
             startInput.max = '';

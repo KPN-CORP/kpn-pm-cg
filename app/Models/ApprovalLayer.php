@@ -17,6 +17,11 @@ class ApprovalLayer extends Model
         return $this->belongsTo(Employee::class, 'employee_id', 'employee_id');
     }
 
+    public function employeeManager()
+    {
+        return $this->belongsTo(Employee::class, 'approver_id', 'employee_id');
+    }
+
     public function subordinates()
     {
         return $this->hasMany(ApprovalRequest::class, 'employee_id', 'employee_id');

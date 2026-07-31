@@ -47,6 +47,9 @@ use App\Http\Controllers\FlowController;
 use App\Http\Controllers\FormAppraisalController;
 use App\Http\Controllers\FormGroupAppraisalController;
 use App\Http\Controllers\PaReminderController;
+use App\Http\Controllers\PerformanceDialogController;
+use App\Http\Controllers\PerformanceDialogTaskController;
+use App\Http\Controllers\PerformanceDialogAdminController;
 use App\Http\Controllers\Proposed360;
 use App\Http\Controllers\Proposed360Controller;
 
@@ -172,6 +175,34 @@ Route::middleware('auth', 'locale', 'notification', 'restrict_bu')->group(functi
 
     // Appraisal 360
     Route::get('/appraisals-task/review/{id}', [AppraisalTaskController::class, 'review'])->name('appraisals-360.review');
+
+    // // My Goals
+    // Route::get('/goals', [MyGoalController::class, 'index'])->name('goals');
+    // Route::get('/goals/detail/{id}', [MyGoalController::class, 'show'])->name('goals.detail');
+    // Route::get('/goals/form/{id}', [MyGoalController::class, 'create'])->name('goals.form');
+    // Route::post('/goals/submit', [MyGoalController::class, 'store'])->name('goals.submit');
+    // Route::get('/goals/edit/{id}', [MyGoalController::class, 'edit'])->name('goals.edit');
+    // Route::post('/goals/update', [MyGoalController::class, 'update'])->name('goals.update');
+    // // routes/web.php
+    // Route::get('/goals/latest/{id}', [MyGoalController::class, 'latest'])->name('goals.latest');
+
+    // Performance Dialog
+    Route::get('/performance-dialogs', [PerformanceDialogController::class, 'index'])->name('performance-dialog.my-history');
+    Route::get('/performance-dialog/form/add', [PerformanceDialogController::class, 'form'])->name('performance-dialog.form');
+    Route::get('/performance-dialog/form/edit/{id}', [PerformanceDialogController::class, 'form'])->name('performance-dialog.form-edit');
+    Route::get('/performance-dialog/form/view/{id}', [PerformanceDialogController::class, 'form'])->name('performance-dialog.form-view');
+    Route::post('/performance-dialog/create-or-update', [PerformanceDialogController::class, 'createOrUpdate'])->name('performance-dialog.create-or-update');
+
+    // Performance Dialog Task
+    Route::get('/performance-dialog/tasks', [PerformanceDialogTaskController::class, 'index'])->name('performance-dialog-task');
+    Route::post('/performance-dialog/task/set-schedule', [PerformanceDialogTaskController::class, 'setSchedule'])->name('performance-dialog-task.set-schedule');
+    Route::post('/performance-dialog/task/import', [PerformanceDialogTaskController::class, 'import'])->name('performance-dialog-task.import');
+    Route::get('/performance-dialog/task/invalid-export', [PerformanceDialogTaskController::class, 'invalidExport'])->name('performance-dialog-task.invalid-export');
+
+    // Performance Dialog Admin
+    Route::get('/performance-dialog/admin/import-page', [PerformanceDialogAdminController::class, 'importPage'])->name('performance-dialog-admin.import-page');
+    Route::post('/performance-dialog/admin/import', [PerformanceDialogAdminController::class, 'import'])->name('performance-dialog-admin.import');
+    Route::get('/performance-dialog/admin/invalid-export', [PerformanceDialogAdminController::class, 'invalidExport'])->name('performance-dialog-admin.invalid-export');
 
     // Rating | Calibration
     Route::get('/rating', [RatingController::class, 'index'])->name('rating');

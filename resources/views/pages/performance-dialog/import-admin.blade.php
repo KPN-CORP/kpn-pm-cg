@@ -1,4 +1,4 @@
-@extends('layouts_.vertical', ['page_title' => 'Goals'])
+@extends('layouts_.vertical', ['page_title' => 'Performance Dialog Admin - Import'])
 
 @section('css')
 @endsection
@@ -18,6 +18,7 @@
                 <strong>Error - </strong> {{ session('error') }}
             </div>
         @endif
+
         <div class="row">
             <div class="col-10">
             <div class="col-md-auto">
@@ -35,14 +36,12 @@
                 <button type="button" class="btn btn-primary shadow" data-bs-toggle="modal" data-bs-target="#importModal">Import</button>
             </div>
         </div>
-
         <div class="row">
           <div class="col-md-12">
             <div class="card shadow mb-4">
               <div class="card-body">
                 <div class="d-flex justify-content-between align-items-center mb-3">
                     <h3 class="card-title"></h3>
-
                 </div>
                   <div class="table-responsive">
                       <table class="table table-hover dt-responsive nowrap" id="scheduleTable" width="100%" cellspacing="0">
@@ -55,7 +54,7 @@
                               </tr>
                           </thead>
                           <tbody>
-                            @foreach ($goals_imports as $index => $import)
+                            @foreach ($performance_dialog_imports as $index => $import)
                                 <tr>
                                     <td class="text-center" style="width:5%">{{ $index + 1 }}</td>
                                     <td>{{ \Carbon\Carbon::parse($import->created_at)->format('d-m-Y H:i') }}</td>
@@ -76,7 +75,7 @@
                                   <div class="modal-dialog modal-dialog-centered">
                                     <div class="modal-content">
                                       <div class="modal-header">
-                                        <h5 class="modal-title" id="modalInfoLabel">Goals Import Error Employee ID's</h5>
+                                        <h5 class="modal-title" id="modalInfoLabel">Performance Dialog Import Error Employee ID's</h5>
                                         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                                       </div>
                                         <div class="modal-body">
@@ -127,90 +126,33 @@
             <div class="modal-dialog">
                 <div class="modal-content">
                     <div class="modal-header">
-                        <h5 class="modal-title" id="importModalLabel">Import Goals</h5>
+                        <h5 class="modal-title" id="importModalLabel">Import Performance Dialogs</h5>
                         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                     </div>
-
-                    <!-- Nav tabs -->
-                    <ul class="nav nav-tabs" id="importTabs" role="tablist">
-                        <li class="nav-item" role="presentation">
-                            <button class="nav-link active" id="regular-tab" data-bs-toggle="tab" data-bs-target="#regular" type="button" role="tab" aria-controls="regular" aria-selected="true">Regular Goals</button>
-                        </li>
-                        <li class="nav-item" role="presentation">
-                            <button class="nav-link" id="clustering-tab" data-bs-toggle="tab" data-bs-target="#clustering" type="button" role="tab" aria-controls="clustering" aria-selected="false">Clustering KPI</button>
-                        </li>
-                    </ul>
-
-                    <div class="tab-content" id="importTabsContent">
-                        <!-- Regular Goals Tab -->
-                        <div class="tab-pane fade show active" id="regular" role="tabpanel" aria-labelledby="regular-tab">
-                            <form action="{{ route('importgoals') }}" method="POST" enctype="multipart/form-data">
-                                @csrf
-                                <div class="modal-body">
-                                    <div class="row">
-                                        <div class="col">
-                                            <div class="alert alert-info">
-                                                <strong>Notes:</strong>
-                                                <ul class="mb-0">
-                                                    <li>Template Import Goals can use from the File Export at menu Reports : <strong>Reports -> Detailed Goals -> Download</strong></li>
-                                                    <li>Headers required: Employee_ID, Employee_Name, KPI, Target, UOM, Weightage, Type, Description, Current Approver ID, Period</li>
-                                                </ul>
-                                            </div>
+                    <div class="tab-pane fade show active" id="regular" role="tabpanel" aria-labelledby="regular-tab">
+                        <form action="{{ route('performance-dialog-admin.import') }}" method="POST" enctype="multipart/form-data">
+                            @csrf
+                            <div class="modal-body">
+                                <div class="row">
+                                    <div class="col">
+                                        <div class="alert alert-info">
+                                            <strong>Notes:</strong>
+                                            <ul class="mb-0">
+                                                <li>Template Import Performance Dialog can be downloaded <strong><a href="#" style="text-decoration: underline">here</a></strong></li>
+                                            </ul>
                                         </div>
                                     </div>
-                                    <div class="form-group">
-                                        <label for="file">Upload File</label>
-                                        <input type="file" name="file" id="file" class="form-control" required>
-                                    </div>
                                 </div>
-                                <div class="modal-footer">
-                                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                                    <button type="submit" class="btn btn-primary">Import Regular Goals</button>
+                                <div class="form-group">
+                                    <label for="file">Upload File</label>
+                                    <input type="file" name="file" id="file" class="form-control" required>
                                 </div>
-                            </form>
-                        </div>
-
-                        <!-- Clustering KPI Tab -->
-                        <div class="tab-pane fade" id="clustering" role="tabpanel" aria-labelledby="clustering-tab">
-                            <form action="{{ route('importClusteringKPI') }}" method="POST" enctype="multipart/form-data">
-                                @csrf
-                                <div class="modal-body">
-                                    <div class="row">
-                                        <div class="col">
-                                            <div class="alert alert-info">
-                                                <strong>Notes:</strong>
-                                                <ul class="mb-0">
-                                                    <li>Import Clustering KPI with cluster information (company, division, personal)</li>
-                                                    <li>Headers required: Employee_ID, KPI, Target, UoM, Weightage, Type, Period, Cluster</li>
-                                                    <li>Optional headers: Employee_Name, Achievement</li>
-                                                    <li>Current Approver ID always defaults to 'admin'</li>
-                                                    <li>Achievement field will be mapped to KPI description</li>
-                                                    <li>If UoM doesn't match available options, it will be set to "Other" and the value stored in custom_uom</li>
-                                                    <li>Weightage validation is not enforced (each cluster can have different weightage distribution)</li>
-                                                    <li><strong>Mode Full:</strong> Replace all KPI (must total 90%)</li>
-                                                    <li><strong>Mode Company:</strong> Only update company KPI (no weight validation)</li>
-                                                </ul>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <div class="form-group mb-3">
-                                        <label for="mode">Import Mode</label>
-                                        <select name="mode" class="form-select" required>
-                                            <option value="full">Full Import (Company + Division + Personal)</option>
-                                            <option value="company">Company Only (Update Company KPI)</option>
-                                        </select>
-                                    </div>
-                                    <div class="form-group">
-                                        <label for="file">Upload File</label>
-                                        <input type="file" name="file" id="clustering_file" class="form-control" required>
-                                    </div>
-                                </div>
-                                <div class="modal-footer">
-                                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                                    <button type="submit" class="btn btn-primary">Import Clustering KPI</button>
-                                </div>
-                            </form>
-                        </div>
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                                <button type="submit" class="btn btn-primary">Import</button>
+                            </div>
+                        </form>
                     </div>
                 </div>
             </div>
