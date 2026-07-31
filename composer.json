@@ -19,6 +19,7 @@
         "datatables.net/datatables.net-scroller-bs5": "^2.4",
         "datatables.net/datatables.net-searchbuilder-bs5": "^1.7",
         "datatables.net/datatables.net-searchpanes-bs5": "^2.3",
+        "filament/filament": "^4.12",
         "laravel/framework": "^11.0",
         "laravel/sanctum": "^4.0",
         "laravel/tinker": "^2.9",
