@@ -38,33 +38,40 @@ deployment:
       mkdir -p $DEPLOYPATH/public/scss
       mkdir -p $DEPLOYPATH/storage
       mkdir -p $DEPLOYPATH/bootstrap/cache
+      mkdir -p public
+      mkdir -p public/build
+      mkdir -p public/css
+      mkdir -p public/img
+      mkdir -p public/images
+      mkdir -p public/js
+      mkdir -p public/scss
 
       LOG="$DEPLOYPATH/deploy.log"
 
       echo "Deploying $REPO -> $DEPLOYPATH  (assets: $PUBHTML)" >> "$LOG" 2>&1
 
-      # Copy application code into the live app directory
+      echo "Copy application code into the live app directory" >> "$LOG" 2>&1
       cp -r app bootstrap config database routes resources "$DEPLOYPATH"/ >> "$LOG" 2>&1
-      cp -r app bootstrap config database routes resources artisan composer.json composer.lock package.json package-lock.json yarn.lock "$DEPLOYPATH"/ >> "$LOG" 2>&1
+      cp -r app bootstrap config database routes resources artisan composer.json composer.lock package.json package-lock.json "$DEPLOYPATH"/ >> "$LOG" 2>&1
       cp -r public/build public/css public/img public/images public/js public/scss "$DEPLOYPATH"/public/ >> "$LOG" 2>&1
 
-      # Change to deployment directory
+      echo "Change to deployment directory" >> "$LOG" 2>&1
       cd $DEPLOYPATH >> "$LOG" 2>&1
 
-      # Install composer dependencies
+      # echo "Install composer dependencies" >> "$LOG" 2>&1
       # composer install --ignore-platform-reqs --no-dev --no-interaction --prefer-dist --optimize-autoloader >> "$LOG" 2>&1
 
-      # Install Node packages
+      # echo "Install Node packages" >> "$LOG" 2>&1
       # npm install --legacy-peer-deps --no-audit --silent >> "$LOG" 2>&1
       # npm run build >> "$LOG" 2>&1
 
-      # Set correct permissions
+      echo "Set correct permissions" >> "$LOG" 2>&1
       chmod -R 755 storage >> "$LOG" 2>&1
       chmod -R 755 bootstrap/cache >> "$LOG" 2>&1
 
-      # Refresh Laravel caches in the live app
+      echo "Refresh Laravel caches in the live app" >> "$LOG" 2>&1
       php artisan view:clear >> "$LOG" 2>&1
       php artisan optimize:clear >> "$LOG" 2>&1
 
-      # Copy public assets into the site document root
+      echo "Copy public assets into the site document root" >> "$LOG" 2>&1
       cp -r public/build public/css public/img public/images public/js public/scss "$PUBHTML"/ >> "$LOG" 2>&1
