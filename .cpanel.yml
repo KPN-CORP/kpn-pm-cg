@@ -16,7 +16,7 @@ deployment:
       case "$REPO" in
         kpn-pm-cg)                             # PRODUCTION
           DEPLOYPATH=/home/hcispanel/kpn-pm-cg
-          PUBHTML=/home/hcispanel/public_html/kpncorporation-cg.hcis.live
+          PUBHTML=/home/hcispanel/public_html/kpncorporation-cg
           ;;
         kpn-pm-cg-stage)                       # STAGING
           DEPLOYPATH=/home/hcispanel/kpn-pm-cg-stage
