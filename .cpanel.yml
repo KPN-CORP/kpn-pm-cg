@@ -41,8 +41,7 @@ deployment:
       mkdir -p $DEPLOYPATH/bootstrap/cache
 
       # Copy application code into the live app directory
-      cp -r app bootstrap config database routes resources "$DEPLOYPATH"/
-      cp -r public/build public/css public/img public/images public/js public/scss "$DEPLOYPATH"/public/
+      rsync -av --exclude='.git' ./ "$DEPLOYPATH"/
 
       # Change to deployment directory
       cd $DEPLOYPATH
