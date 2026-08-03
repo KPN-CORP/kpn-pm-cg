@@ -192,6 +192,7 @@ Route::middleware('auth', 'locale', 'notification', 'restrict_bu')->group(functi
     Route::get('/performance-dialog/form/edit/{id}', [PerformanceDialogController::class, 'form'])->name('performance-dialog.form-edit');
     Route::get('/performance-dialog/form/view/{id}', [PerformanceDialogController::class, 'form'])->name('performance-dialog.form-view');
     Route::post('/performance-dialog/create-or-update', [PerformanceDialogController::class, 'createOrUpdate'])->name('performance-dialog.create-or-update');
+    Route::get('/performance-dialog/download/{id}', [PerformanceDialogController::class, 'download'])->name('performance-dialog.download');
 
     // Performance Dialog Task
     Route::get('/performance-dialog/tasks', [PerformanceDialogTaskController::class, 'index'])->name('performance-dialog-task');

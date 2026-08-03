@@ -100,7 +100,7 @@
                                                     </td>
                                                     <td class="text-center">
                                                         @if ($row['is_action_download'])
-                                                            <a class="btn btn-sm btn-outline-primary" href="#">
+                                                            <a class="btn btn-sm btn-outline-primary" href="{{ route('performance-dialog.download', $row['id']) }}" target="_blank">
                                                                 <i class="ri-download-line"></i>
                                                             </a>
                                                         @endif

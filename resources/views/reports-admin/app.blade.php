@@ -23,6 +23,7 @@
                         <option value="EmployeePA">Employee PA</option>
                       @endcan
                     @endif
+                    <option value="PerformanceDialog">Performance Dialog</option>
                     </select>
                   </div>
                 </div>
@@ -160,7 +161,7 @@
       </div>
     </div>
     <!-- Content -->
-    
+
 @endsection
 @push('scripts')
 
