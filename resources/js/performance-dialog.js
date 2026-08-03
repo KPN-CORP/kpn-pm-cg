@@ -81,6 +81,11 @@ document.addEventListener("DOMContentLoaded", function () {
         let spinner = button.find('.spinner-border');
         let form = $('#performance-dialog-form');
 
+        if (!form[0].checkValidity()) {
+            form[0].reportValidity();
+            return;
+        }
+
         $('#form-alert').addClass('d-none').empty();
 
         Swal.fire({
@@ -147,6 +152,11 @@ document.addEventListener("DOMContentLoaded", function () {
         let button = $(this);
         let spinner = button.find('.spinner-border');
         let form = $('#performance-dialog-form');
+
+        if (!form[0].checkValidity()) {
+            form[0].reportValidity();
+            return;
+        }
 
         $('#form-alert').addClass('d-none').empty();
 
@@ -215,6 +225,11 @@ document.addEventListener("DOMContentLoaded", function () {
         let spinner = button.find('.spinner-border');
         let form = $('#performance-dialog-form');
 
+        if (!form[0].checkValidity()) {
+            form[0].reportValidity();
+            return;
+        }
+
         $('#form-alert').addClass('d-none').empty();
 
         Swal.fire({
@@ -239,6 +254,150 @@ document.addEventListener("DOMContentLoaded", function () {
             formData.push({
                 name: 'action_approve',
                 value: 'approve'
+            });
+
+            $.ajax({
+                url: form.attr('action'),
+                type: form.attr('method'),
+                data: $.param(formData),
+
+                success: function (response) {
+                    Swal.fire({
+                        title: "Success",
+                        text: response.message,
+                        icon: "success",
+                        timer: 1200,
+                        showConfirmButton: false
+                    });
+
+                    setTimeout(function () {
+                        window.location.href = response.redirect;
+                    }, 1200);
+
+                },
+
+                error: function (xhr) {
+                    button.prop('disabled', false);
+                    spinner.addClass('d-none');
+
+                    let html = '';
+
+                    html += '<li>' + (xhr.responseJSON?.message ?? 'Something went wrong.') + '</li>';
+
+                    $('#form-alert').removeClass('d-none').html('<ul class="mb-0">' + html + '</ul>');
+                }
+            });
+        });
+    });
+
+    $('#performance-dialog-acknowledge').click(function (e) {
+        e.preventDefault();
+
+        let button = $(this);
+        let spinner = button.find('.spinner-border');
+        let form = $('#performance-dialog-form');
+
+        if (!form[0].checkValidity()) {
+            form[0].reportValidity();
+            return;
+        }
+
+        $('#form-alert').addClass('d-none').empty();
+
+        Swal.fire({
+            title: "Acknowledge performance dialog?",
+            text: "This can't be reverted",
+            icon: "question",
+            showCancelButton: true,
+            confirmButtonColor: "#3e60d5",
+            cancelButtonColor: "#f15776",
+            confirmButtonText: "Ok, acknowledge it",
+            reverseButtons: true,
+        }).then((result) => {
+            if (!result.isConfirmed) {
+                return;
+            }
+
+            button.prop('disabled', true);
+            spinner.removeClass('d-none');
+
+            let formData = form.serializeArray();
+
+            formData.push({
+                name: 'action_acknowledge',
+                value: 'acknowledge'
+            });
+
+            $.ajax({
+                url: form.attr('action'),
+                type: form.attr('method'),
+                data: $.param(formData),
+
+                success: function (response) {
+                    Swal.fire({
+                        title: "Success",
+                        text: response.message,
+                        icon: "success",
+                        timer: 1200,
+                        showConfirmButton: false
+                    });
+
+                    setTimeout(function () {
+                        window.location.href = response.redirect;
+                    }, 1200);
+
+                },
+
+                error: function (xhr) {
+                    button.prop('disabled', false);
+                    spinner.addClass('d-none');
+
+                    let html = '';
+
+                    html += '<li>' + (xhr.responseJSON?.message ?? 'Something went wrong.') + '</li>';
+
+                    $('#form-alert').removeClass('d-none').html('<ul class="mb-0">' + html + '</ul>');
+                }
+            });
+        });
+    });
+
+    $('#performance-dialog-delete').click(function (e) {
+        e.preventDefault();
+
+        let button = $(this);
+        let spinner = button.find('.spinner-border');
+        let form = $('#performance-dialog-form');
+
+        if (!form[0].checkValidity()) {
+            form[0].reportValidity();
+            return;
+        }
+
+        $('#form-alert').addClass('d-none').empty();
+
+        Swal.fire({
+            title: "Delete performance dialog?",
+            text: "This can't be reverted",
+            icon: "question",
+            showCancelButton: true,
+            confirmButtonColor: "#3e60d5",
+            cancelButtonColor: "#f15776",
+            confirmButtonText: "Ok, delete it",
+            reverseButtons: true,
+        }).then((result) => {
+            if (!result.isConfirmed) {
+                return;
+            }
+
+            button.prop('disabled', true);
+            spinner.removeClass('d-none');
+
+            let formData = form.serializeArray();
+
+            formData.push({
+                name: 'action_delete',
+                value: 'delete'
             });
 
             $.ajax({
@@ -315,5 +474,20 @@ document.addEventListener("DOMContentLoaded", function () {
                 $('#schedule-performance-dialog-form-alert').removeClass('d-none').html('<ul class="mb-0">' + html + '</ul>');
             }
         });
+    });
+
+    $('#performance_dialog_type').on('change', function () {
+        const values = $(this).val() || [];
+
+        if (values.includes('0')) {
+            $('#others_performance_dialog_type')
+                .show()
+                .prop('required', true);
+        } else {
+            $('#others_performance_dialog_type')
+                .hide()
+                .prop('required', false)
+                .val('');
+        }
     });
 });

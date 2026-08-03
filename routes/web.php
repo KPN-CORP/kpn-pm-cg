@@ -193,12 +193,16 @@ Route::middleware('auth', 'locale', 'notification', 'restrict_bu')->group(functi
     Route::get('/performance-dialog/form/view/{id}', [PerformanceDialogController::class, 'form'])->name('performance-dialog.form-view');
     Route::post('/performance-dialog/create-or-update', [PerformanceDialogController::class, 'createOrUpdate'])->name('performance-dialog.create-or-update');
     Route::get('/performance-dialog/download/{id}', [PerformanceDialogController::class, 'download'])->name('performance-dialog.download');
+    Route::get('/performance-dialog/form/acknowledge/{id}', [PerformanceDialogController::class, 'form'])->name('performance-dialog.form-acknowledge');
+    Route::get('/performance-dialog/form/delete/{id}', [PerformanceDialogController::class, 'form'])->name('performance-dialog.form-delete');
+    Route::post('/performance-dialog/acknowledge', [PerformanceDialogController::class, 'acknowledge'])->name('performance-dialog.acknowledge');
 
     // Performance Dialog Task
     Route::get('/performance-dialog/tasks', [PerformanceDialogTaskController::class, 'index'])->name('performance-dialog-task');
     Route::post('/performance-dialog/task/set-schedule', [PerformanceDialogTaskController::class, 'setSchedule'])->name('performance-dialog-task.set-schedule');
     Route::post('/performance-dialog/task/import', [PerformanceDialogTaskController::class, 'import'])->name('performance-dialog-task.import');
     Route::get('/performance-dialog/task/invalid-export', [PerformanceDialogTaskController::class, 'invalidExport'])->name('performance-dialog-task.invalid-export');
+    Route::post('/performance-dialog/task/delete', [PerformanceDialogTaskController::class, 'delete'])->name('performance-dialog-task.delete');
 
     // Performance Dialog Admin
     Route::get('/performance-dialog/admin/import-page', [PerformanceDialogAdminController::class, 'importPage'])->name('performance-dialog-admin.import-page');

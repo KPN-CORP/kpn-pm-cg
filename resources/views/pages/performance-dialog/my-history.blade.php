@@ -67,7 +67,8 @@
                                             <tr>
                                                 <th class="text-center">No</th>
                                                 <th>Employee ID</th>
-                                                <th>Name</th>
+                                                <th>Employee Name</th>
+                                                <th>Manager Name</th>
                                                 <th>Schedule Date</th>
                                                 <th>Initiated Date</th>
                                                 <th class="text-center">Status</th>
@@ -80,6 +81,7 @@
                                                     <td class="text-center"></td>
                                                     <td>{{ $row['employee_id'] }}</td>
                                                     <td>{{ $row['employee_name'] }}</td>
+                                                    <td>{{ $row['employee_manager_name'] }}</td>
                                                     <td>{{ $row['formatted_schedule_at'] }}</td>
                                                     <td>{{ $row['formatted_initiated_at'] }}</td>
                                                     <td class="text-center">
@@ -100,8 +102,24 @@
                                                     </td>
                                                     <td class="text-center">
                                                         @if ($row['is_action_download'])
-                                                            <a class="btn btn-sm btn-outline-primary" href="{{ route('performance-dialog.download', $row['id']) }}" target="_blank">
+                                                            <a class="btn btn-sm btn-outline-info" href="{{ route('performance-dialog.download', $row['id']) }}" target="_blank"
+                                                            data-bs-toggle="tooltip"
+                                                            data-bs-placement="top"
+                                                            title="Download"
+                                                            >
                                                                 <i class="ri-download-line"></i>
+                                                            </a>
+                                                        @endif
+                                                        @if ($row['is_action_acknowledge'])
+                                                            <a class="btn btn-sm btn-outline-warning" href="{{ route('performance-dialog.form-acknowledge', [
+                                                                'id' => $row['id'],
+                                                                'action' => 'acknowledge',
+                                                            ]) }}"
+                                                            data-bs-toggle="tooltip"
+                                                            data-bs-placement="top"
+                                                            title="Acknowledge"
+                                                            >
+                                                                <i class="ri-task-line"></i>
                                                             </a>
                                                         @endif
                                                     </td>

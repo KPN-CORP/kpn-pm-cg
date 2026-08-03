@@ -41,7 +41,7 @@ class PerformanceDialogController extends Controller
 
         $rows = [];
 
-        $performanceDialogs = PerformanceDialog::with(['employee'])
+        $performanceDialogs = PerformanceDialog::with(['employee', 'employeeManager'])
             ->where('employee_id', $employeeID)
             ->where('period', $period)
             ->where('deleted_at', null)
@@ -55,26 +55,34 @@ class PerformanceDialogController extends Controller
             $initiatedAt = $row->initiate_date ?? "-";
             $status = $row->status ?? "-";
             $isActionDownload = false;
+            $isActionAcknowledge = false;
 
             if ($scheduleAt != "-" && Carbon::parse($scheduleAt)->lt($now) && $status == "Scheduled") {
                 $status = "Overdue";
             }
 
-            if ($status == "Done" || $status == "Submitted") {
+            if (($status == "Done" || $status == "Submitted") && (!$row->acknowledge_date || empty($row->acknowledge_date))) {
+                $isActionAcknowledge = true;
+            }
+            $isActionAcknowledge = true;
+
+            if (($status == "Done" || $status == "Submitted") && $row->acknowledge_date && !empty($row->acknowledge_date)) {
                 $isActionDownload = true;
             }
 
-            $formattedScheduleAt = $scheduleAt != "-" ? Carbon::parse($scheduleAt)->format('d M Y') : '-';
-            $formattedInitiatedAt = $initiatedAt != "-" ? Carbon::parse($initiatedAt)->format('d M Y') : '-';
+            $formattedScheduleAt = $scheduleAt != "-" ? Carbon::parse($scheduleAt)->format('Y-m-d H:i:s') : '-';
+            $formattedInitiatedAt = $initiatedAt != "-" ? Carbon::parse($initiatedAt)->format('Y-m-d H:i:s') : '-';
 
             $rows[] = [
                 "id" => $row->id,
                 "employee_id" => $row->employee_id,
                 "employee_name" => $row->employee?->fullname ?? "-",
+                "employee_manager_name" => $row->employeeManager?->fullname ?? "-",
                 "formatted_schedule_at" => $formattedScheduleAt,
                 "formatted_initiated_at" => $formattedInitiatedAt,
                 "status" => $status,
-                "is_action_download" => $isActionDownload
+                "is_action_download" => $isActionDownload,
+                "is_action_acknowledge" => $isActionAcknowledge,
             ];
         }
 
@@ -105,10 +113,9 @@ class PerformanceDialogController extends Controller
         try {
             $id = null;
             $period = now()->year;
-            $loggedInEmployee = $this->loggedInUser->employee;
 
-            $employee = $loggedInEmployee;
-            if (!$employee) {
+            $loggedInEmployee = $this->loggedInUser?->employee;
+            if (!$loggedInEmployee) {
                 Session::flash('error', [
                     'title' => 'Cannot create or edit performance dialog',
                     'message' => "Employee not found"
@@ -117,12 +124,14 @@ class PerformanceDialogController extends Controller
                 return redirect()->back();
             }
 
-            $employeeID = $employee->employee_id;
-            $employeeName = $employee->fullname;
-            $employeeJobLevel = $employee->job_level;
-            $employeeGroupCompany = $employee->group_company;
-            $employeeUnit = $employee->unit;
-            $employeeDesignationName = $employee->designation_name;
+            $loggedInEmployeeID = $loggedInEmployee->employee_id;
+
+            $employeeID = $loggedInEmployeeID;
+            $employeeName = $loggedInEmployee->fullname;
+            $employeeJobLevel = $loggedInEmployee->job_level;
+            $employeeGroupCompany = $loggedInEmployee->group_company;
+            $employeeUnit = $loggedInEmployee->unit;
+            $employeeDesignationName = $loggedInEmployee->designation_name;
 
             $performanceDialogTypes = [];
             $performanceDialogOthersTypeName = "";
@@ -134,12 +143,16 @@ class PerformanceDialogController extends Controller
 
             $isShowEmployeeDetail = false;
             $isShowSelectEmployee = true;
-            $isShowStartDate = false;
+            $isShowStartDate = true;
             $isFormApproval = false;
             $isFormView = false;
+            $isFormEdit = false;
+            $isFormCreate = true;
+            $isFormAcknowledge = false;
+            $isFormDelete = false;
             $isPerformanceDialogTypesReadonly = false;
             $isOthersPerformanceDialogTypeReadonly = false;
-            $isPerformanceDialogStartDateReadonly = true;
+            $isPerformanceDialogStartDateReadonly = false;
             $isPerformanceDialogDueDateReadonly = false;
             $isPerformanceDialogSummaryReadonly = false;
             $isPerformanceDialogDevelopmentPlanReadonly = false;
@@ -151,36 +164,30 @@ class PerformanceDialogController extends Controller
                 $id = $request->id;
             }
 
-            $directApprovalLayer = ApprovalLayer::with(['employeeManager'])->where('employee_id', $employeeID)->where('layer', 1)->first();
-            if (!$directApprovalLayer) {
-                Session::flash('error', [
-                    'title' => 'Cannot create or edit performance dialog',
-                    'message' => "There is no direct manager assigned in your position!"
-                ]);
+            $directApprovalLayer = ApprovalLayer::with(['employeeManager'])->where('employee_id', $loggedInEmployee)->where('layer', 1)->first();
+            $employeeManagerID = $directApprovalLayer?->employeeManager?->employee_id ?? null;
 
-                return redirect()->back();
-            }
-            if (!$directApprovalLayer->employeeManager) {
-                Session::flash('error', [
-                    'title' => 'Cannot create or edit performance dialog',
-                    'message' => "Manager not found!"
-                ]);
-
-                return redirect()->back();
-            }
-
-            $managerEmployeeID = $directApprovalLayer->approver_id;
-
-            $performanceDialog = PerformanceDialog::with(['employee'])
+            $performanceDialog = PerformanceDialog::with(['employee', 'employeeManager'])
                 ->where('id', $id)
                 ->where('deleted_at', null)
                 ->first();
 
             if ($performanceDialog) {
+                $isFormCreate = false;
+
                 if (!$performanceDialog->employee) {
                     Session::flash('error', [
-                        'title' => 'Cannot create or edit performance dialog',
-                        'message' => "Employee data nor found!"
+                        'title' => 'Performance dialog error',
+                        'message' => "Employee data not found!"
+                    ]);
+
+                    return redirect()->back();
+                }
+
+                if (!$performanceDialog->employeeManager) {
+                    Session::flash('error', [
+                        'title' => 'Performance dialog error',
+                        'message' => "Employee manager data not found!"
                     ]);
 
                     return redirect()->back();
@@ -189,15 +196,6 @@ class PerformanceDialogController extends Controller
                 $period = $performanceDialog->period;
 
                 $employee = $performanceDialog->employee;
-                if (!$employee) {
-                    Session::flash('error', [
-                        'title' => 'Cannot create or edit performance dialog',
-                        'message' => "Employee not found"
-                    ]);
-
-                    return redirect()->back();
-                }
-
                 $employeeID = $employee->employee_id;
                 $employeeName = $employee->fullname;
                 $employeeJobLevel = $employee->job_level;
@@ -205,7 +203,8 @@ class PerformanceDialogController extends Controller
                 $employeeUnit = $employee->unit;
                 $employeeDesignationName = $employee->designation_name;
 
-                $managerEmployeeID = $performanceDialog->manager_employee_id;
+                $employeeManager = $performanceDialog->employeeManager;
+                $employeeManagerID = $employeeManager->employee_id;
 
                 $performanceDialogTypes = $performanceDialog->type_datas;
                 $performanceDialogOthersTypeName = $performanceDialog->others_type_name;
@@ -215,47 +214,54 @@ class PerformanceDialogController extends Controller
                 $performanceDialogDevelopmentPlan = $performanceDialog->development_plan;
                 $performanceDialogAdditionalNotes = $performanceDialog->additional_notes;
 
-                if ($loggedInEmployee->employee_id == $managerEmployeeID) {
+                if ($loggedInEmployeeID == $employeeManagerID) {
                     $redirectBack = route('performance-dialog-task');
 
-                    if ($performanceDialog->status == "Pending") {
-                        $isFormApproval = true;
-                    } else if ($performanceDialog->status == "Done") {
+                    if ($request->action == "edit") {
+                        $isFormEdit = true;
+                    } else if ($request->action == "delete") {
+                        $isFormDelete = true;
+                    } else {
                         $isFormView = true;
                     }
-                } else if ($loggedInEmployee->employee_id == $employeeID) {
+                } else if ($loggedInEmployeeID == $employeeID) {
                     $redirectBack = route('performance-dialog.my-history');
 
-                    // if ($performanceDialog->status != "Draft") {
-                    //     $isFormView = true;
-                    // }
+                    if ($request->action == "acknowledge") {
+                        $isFormAcknowledge = true;
+                    } else {
+                        $isFormView = true;
+                    }
+                } else {
+                    $isFormView = true;
                 }
 
                 if ($isFormApproval) {
                     $isPerformanceDialogTypesReadonly = true;
                     $isOthersPerformanceDialogTypeReadonly = true;
                     $isPerformanceDialogDueDateReadonly = true;
-                } else if ($isFormView) {
+                    $isPerformanceDialogStartDateReadonly = true;
+                } else if ($isFormView || $isFormAcknowledge || $isFormDelete) {
                     $isPerformanceDialogTypesReadonly = true;
                     $isOthersPerformanceDialogTypeReadonly = true;
                     $isPerformanceDialogDueDateReadonly = true;
                     $isPerformanceDialogSummaryReadonly = true;
                     $isPerformanceDialogDevelopmentPlanReadonly = true;
                     $isPerformanceDialogAdditionalNotesReadonly = true;
+                    $isPerformanceDialogStartDateReadonly = true;
                 }
 
                 $isShowEmployeeDetail = true;
                 $isShowSelectEmployee = false;
-                $isShowStartDate = true;
             }
 
             $masterPerformanceDialogTypes = PerformanceDialogType::where("is_active", true)->where("deleted_at", null)->get();
 
-            $reportees = ApprovalLayer::with(["employee"])->where("approver_id", $employeeID)->get();
+            $reportees = ApprovalLayer::with(["employee"])->where("approver_id", $loggedInEmployeeID)->get();
 
             return view('pages.performance-dialog.form', [
                 "parentLink" => "Performance Dialog",
-                "link" => "Form Performance Dialog",
+                "link" => "Form",
                 "id" => $id,
                 "period" => $period,
                 "employee_id" => $employeeID,
@@ -264,7 +270,7 @@ class PerformanceDialogController extends Controller
                 "employee_group_company" => $employeeGroupCompany,
                 "employee_unit" => $employeeUnit,
                 "employee_designation_name" => $employeeDesignationName,
-                "manager_employee_id" => $managerEmployeeID,
+                "employee_manager_id" => $employeeManagerID,
                 "master_performance_dialog_types" => $masterPerformanceDialogTypes,
                 "performance_dialog_types" => $performanceDialogTypes,
                 "performance_dialog_others_type_name" => $performanceDialogOthersTypeName,
@@ -278,6 +284,10 @@ class PerformanceDialogController extends Controller
                 "is_show_start_date" => $isShowStartDate,
                 "is_form_approval" => $isFormApproval,
                 "is_form_view" => $isFormView,
+                "is_form_create" => $isFormCreate,
+                "is_form_edit" => $isFormEdit,
+                "is_form_acknowledge" => $isFormAcknowledge,
+                "is_form_delete" => $isFormDelete,
                 "is_performance_dialog_types_readonly" => $isPerformanceDialogTypesReadonly,
                 "is_others_performance_dialog_type_readonly" => $isOthersPerformanceDialogTypeReadonly,
                 "is_performance_dialog_start_date_readonly" => $isPerformanceDialogStartDateReadonly,
@@ -301,8 +311,9 @@ class PerformanceDialogController extends Controller
     public function createOrUpdate(Request $request) {
         try {
             $loggedInUser = $this->loggedInUser;
-            $userID = $loggedInUser->id;
-            $employeeID = $loggedInUser->employee_id;
+            $loggedInUserID = $loggedInUser->id;
+            $loggedInEmployeeID = $loggedInUser->employee_id;
+
             $employeeIDs = [];
 
             if ($request->performance_dialog_employee_ids && !empty($request->performance_dialog_employee_ids)) {
@@ -315,15 +326,15 @@ class PerformanceDialogController extends Controller
             $period = $request->period;
             $typeIDs = $request->performance_dialog_types;
             $othersType = $request->others_performance_dialog_type;
+            $startDate = $request->performance_dialog_start_date;
             $dueDate = $request->performance_dialog_due_date;
             $summary = $request->performance_dialog_summary;
             $developmentPlan = $request->performance_dialog_development_plan;
             $additionalNotes = $request->performance_dialog_additional_notes;
             $actionDraft = $request->has('action_draft');
             $actionSubmit = $request->has('action_submit');
-            $actionApprove = $request->has('action_approve');
 
-            if (!$actionDraft && !$actionSubmit && !$actionApprove) {
+            if (!$actionDraft && !$actionSubmit) {
                 return response()->json([
                     'status' => false,
                     'message' => 'Invalid action',
@@ -337,16 +348,14 @@ class PerformanceDialogController extends Controller
                 $status = "Draft";
             } else if ($actionSubmit) {
                 $status = "Done";
-            } else if ($actionApprove) {
-                $status = "Approved";
             }
 
             if (empty($period)) {
                 $period = now()->year;
             }
 
-            $employee = Employee::where("employee_id", $employeeID)
-                ->where("id", $userID)
+            $employee = Employee::where("employee_id", $loggedInEmployeeID)
+                ->where("id", $loggedInUserID)
                 ->first();
             if (!$employee) {
                 return response()->json([
@@ -358,12 +367,12 @@ class PerformanceDialogController extends Controller
 
             $reporteeEmployees = ApprovalLayer::with(['employee'])
                 ->whereIn('employee_id', $employeeIDs)
-                ->where('approver_id', $employeeID)
+                ->where('approver_id', $loggedInEmployeeID)
                 ->get();
             if (!$reporteeEmployees || $reporteeEmployees->count() < 1) {
                 return response()->json([
                     'status' => false,
-                    'message' => "There is no direct manager assigned in your position!",
+                    'message' => "You don't have any reportees!",
                     'errors' => []
                 ], 422);
             }
@@ -383,7 +392,7 @@ class PerformanceDialogController extends Controller
             if (empty($processEmployees) || count($processEmployees) < 1) {
                 return response()->json([
                     'status' => false,
-                    'message' => "Employee not found",
+                    'message' => "There is no employee to process",
                     'errors' => []
                 ], 422);
             }
@@ -396,54 +405,36 @@ class PerformanceDialogController extends Controller
                     ->first();
             }
 
-            if ($actionApprove && !$performanceDialog) {
-                return response()->json([
-                    'status' => false,
-                    'message' => "Performance dialog not found!",
-                    'errors' => []
-                ], 422);
-            }
-
             if ($performanceDialog) {
-                if ($actionApprove) {
-                    $performanceDialog->update([
-                        'summary' => $summary,
-                        'development_plan' => $developmentPlan,
-                        'additional_notes' => $additionalNotes,
-                        'status' => $status,
-                        'updated_by' => $userID,
-                        'updated_at' => Carbon::now(),
-                    ]);
-                } else {
-                    $initiateDate = Carbon::now();
+                $initiateDate = Carbon::now();
 
-                    if ($actionDraft) {
-                        $initiateDate = null;
-                    }
-
-                    if ($performanceDialog->initiate_date && !empty($performanceDialog->initiate_date)) {
-                        $initiateDate = $performanceDialog->initiate_date;
-                    }
-
-                    $performanceDialog->update([
-                        'summary' => $summary,
-                        'development_plan' => $developmentPlan,
-                        'additional_notes' => $additionalNotes,
-                        'period' => $period,
-                        'initiate_date' => $initiateDate,
-                        'due_date' => $dueDate,
-                        'type_ids' => json_encode($typeIDs),
-                        'others_type_name' => $othersType,
-                        'status' => $status,
-                        'updated_by' => $userID,
-                        'updated_at' => Carbon::now(),
-                    ]);
+                if ($actionDraft) {
+                    $initiateDate = null;
                 }
+
+                if ($performanceDialog->initiate_date && !empty($performanceDialog->initiate_date)) {
+                    $initiateDate = $performanceDialog->initiate_date;
+                }
+
+                $performanceDialog->update([
+                    'summary' => $summary,
+                    'development_plan' => $developmentPlan,
+                    'additional_notes' => $additionalNotes,
+                    'period' => $period,
+                    'start_date' => $startDate,
+                    'initiate_date' => $initiateDate,
+                    'due_date' => $dueDate,
+                    'type_ids' => json_encode($typeIDs),
+                    'others_type_name' => $othersType,
+                    'status' => $status,
+                    'updated_by' => $loggedInUserID,
+                    'updated_at' => Carbon::now(),
+                ]);
             } else {
                 $insertData = [];
 
                 foreach ($processEmployees as $row) {
-                    if ($row->approver_id != $employeeID) {
+                    if ($row->approver_id != $loggedInEmployeeID) {
                         continue;
                     }
 
@@ -455,14 +446,14 @@ class PerformanceDialogController extends Controller
                         'development_plan' => $developmentPlan,
                         'additional_notes' => $additionalNotes,
                         'initiate_date' => Carbon::now(),
-                        'start_date' => Carbon::now(),
+                        'start_date' => $startDate,
                         'due_date' => $dueDate,
                         'type_ids' => json_encode($typeIDs),
                         'others_type_name' => $othersType,
                         'status' => $status,
-                        'created_by' => $userID,
+                        'created_by' => $loggedInUserID,
                         'created_at' => Carbon::now(),
-                        'updated_by' => $userID,
+                        'updated_by' => $loggedInUserID,
                         'updated_at' => Carbon::now(),
                     ];
                 }
@@ -490,9 +481,45 @@ class PerformanceDialogController extends Controller
     public function acknowledge(Request $request) {
         try {
             $loggedInUser = $this->loggedInUser;
-            $userID = $loggedInUser->id;
-            $employeeID = $loggedInUser->employee_id;
+            $loggedInUserID = $loggedInUser->id;
+            $loggedInUserEmployeeID = $loggedInUser->employee_id;
             $redirect = route('performance-dialog.my-history');
+
+            $id = $request->id;
+
+            $loggedInEmployee = Employee::where("employee_id", $loggedInUserEmployeeID)
+                ->where("id", $loggedInUserID)
+                ->first();
+            if (!$loggedInEmployee) {
+                return response()->json([
+                    'status' => false,
+                    'message' => "Employee not found!",
+                    'errors' => []
+                ], 422);
+            }
+
+            $performanceDialog = PerformanceDialog::where("id", $id)->first();
+            if (!$performanceDialog) {
+                return response()->json([
+                    'status' => false,
+                    'message' => "Performance dialog not found!",
+                    'errors' => []
+                ], 422);
+            }
+            if ($performanceDialog->employee_id != $loggedInUserEmployeeID) {
+                return response()->json([
+                    'status' => false,
+                    'message' => "Performance dialog doesn't match with the current employee!",
+                    'errors' => []
+                ], 422);
+            }
+
+            $performanceDialog->update([
+                'acknowledge_by' => $loggedInUserID,
+                'acknowledge_date' => Carbon::now(),
+                'updated_by' => $loggedInUserID,
+                'updated_at' => Carbon::now(),
+            ]);
 
             return response()->json([
                 'status' => true,

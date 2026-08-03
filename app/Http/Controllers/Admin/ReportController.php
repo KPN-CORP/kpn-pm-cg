@@ -332,8 +332,8 @@ class ReportController extends Controller
                     $isActionDownload = true;
                 }
 
-                $formattedScheduleAt = $scheduleAt != "-" ? Carbon::parse($scheduleAt)->format('d M Y') : '-';
-                $formattedInitiatedAt = $initiatedAt != "-" ? Carbon::parse($initiatedAt)->format('d M Y') : '-';
+                $formattedScheduleAt = $scheduleAt != "-" ? Carbon::parse($scheduleAt)->format('Y-m-d H:i:s') : '-';
+                $formattedInitiatedAt = $initiatedAt != "-" ? Carbon::parse($initiatedAt)->format('Y-m-d H:i:s') : '-';
 
                 $data[] = [
                     "id" => $row->id,
