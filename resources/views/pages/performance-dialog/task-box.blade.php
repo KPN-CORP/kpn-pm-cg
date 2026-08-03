@@ -58,10 +58,18 @@
                                             </select>
                                         </div>
                                     </div>
-                                    <div class="col-md-auto">
-                                        <button type="button" class="btn btn-outline-warning shadow" data-bs-toggle="modal" data-bs-target="#scheduleModal" onclick="setPerformanceDialogSchedule()"><i class="ri-calendar-line"></i> Set Schedule</button>
-                                        <a class="btn btn-primary shadow" href="{{ route('performance-dialog.form') }}" onclick="showLoader()"><i class="ri-send-plane-line"></i> Initiate</a>
-                                        <button type="button" class="btn btn-outline-info shadow" data-bs-toggle="modal" data-bs-target="#importModal"><i class="ri-upload-2-line"></i> Import</button>
+                                    <div class="col-md-12">
+                                        <p style="float:right;margin-top:-40px;display:inline-block">
+                                            <span><strong>Total Team:</strong> {{ $total_team }}</span> |
+                                            <span><strong>Done:</strong> {{ $total_done }}</span> |
+                                            <span><strong>Scheduled:</strong> {{ $total_scheduled }}</span> |
+                                            <span><strong>Draft:</strong> {{ $total_draft }}</span> |
+                                            <span><strong>Overdue:</strong> {{ $total_overdue }}</span> |
+                                            <span><strong>Not Scheduled:</strong> {{ $total_not_scheduled }}</span>
+                                        </p>
+                                        <button style="float:right;margin-left:5px" type="button" class="btn btn-outline-info shadow" data-bs-toggle="modal" data-bs-target="#importModal"><i class="ri-upload-2-line"></i> Import</button>
+                                        <a style="float:right;margin-left:5px" class="btn btn-primary shadow" href="{{ route('performance-dialog.form') }}" onclick="showLoader()"><i class="ri-send-plane-line"></i> Initiate</a>
+                                        <button style="float:right;margin-left:5px" type="button" class="btn btn-outline-warning shadow" data-bs-toggle="modal" data-bs-target="#scheduleModal" onclick="setPerformanceDialogSchedule()"><i class="ri-calendar-line"></i> Set Schedule</button>
                                     </div>
                                 </div>
                             </form>
@@ -125,7 +133,7 @@
                                                             </a>
                                                         @endif
                                                         @if ($row['is_action_download'])
-                                                            <a class="btn btn-sm btn-outline-primary" href="#">
+                                                            <a class="btn btn-sm btn-outline-primary" href="{{ route('performance-dialog.download', $row['id']) }}" target="_blank">
                                                                 <i class="ri-download-line"></i>
                                                             </a>
                                                         @endif
