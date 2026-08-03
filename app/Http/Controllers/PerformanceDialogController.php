@@ -64,7 +64,6 @@ class PerformanceDialogController extends Controller
             if (($status == "Done" || $status == "Submitted") && (!$row->acknowledge_date || empty($row->acknowledge_date))) {
                 $isActionAcknowledge = true;
             }
-            $isActionAcknowledge = true;
 
             if (($status == "Done" || $status == "Submitted") && $row->acknowledge_date && !empty($row->acknowledge_date)) {
                 $isActionDownload = true;
