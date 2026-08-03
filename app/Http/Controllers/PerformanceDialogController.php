@@ -7,12 +7,12 @@ use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Session;
+use Barryvdh\DomPDF\Facade\Pdf as PDF;
 
 use App\Models\PerformanceDialog;
 use App\Models\PerformanceDialogType;
 use App\Models\ApprovalLayer;
 use App\Models\Employee;
-
 use App\Services\AppService;
 
 class PerformanceDialogController extends Controller
@@ -506,6 +506,91 @@ class PerformanceDialogController extends Controller
                 'message' => 'Error: ' . $e->getMessage(),
                 'errors' => []
             ], 500);
+        }
+    }
+
+    public function download($id) {
+        try {
+            $loggedInUser = $this->loggedInUser;
+            $loggedInUserID = $loggedInUser->id;
+            $loggedInUserEmployeeID = $loggedInUser->employee_id;
+
+            $loggedInEmployee = Employee::where("employee_id", $loggedInUserEmployeeID)
+                ->where("id", $loggedInUserID)
+                ->first();
+            if (!$loggedInEmployee) {
+                Session::flash('error', [
+                    'title' => 'Error',
+                    'message' => "Employee not found"
+                ]);
+
+                return redirect()->back();
+            }
+
+            $performanceDialog = PerformanceDialog::with(['employee', 'employeeManager'])
+            ->where("id", $id)
+            ->first();
+            if (!$performanceDialog) {
+                Session::flash('error', [
+                    'title' => 'Error',
+                    'message' => "Performance dialog not found"
+                ]);
+
+                return redirect()->back();
+            }
+
+            $employeeUnit = $performanceDialog->employee?->unit ?? "-";
+            $employeeName = $performanceDialog->employee?->fullname ?? "-";
+            $employeeID = $performanceDialog->employee?->employee_id ?? "-";
+            $employeeDesignation = $performanceDialog->employee?->designation ?? "-";
+            $employeeManagerName = $performanceDialog->employeeManager?->fullname ?? "-";
+            $employeeManagerID = $performanceDialog->employeeManager?->employee_id ?? "-";
+            $employeeManagerDesignation = $performanceDialog->employeeManager?->designation ?? "-";
+            $dialogTypes = $performanceDialog->type_datas;
+            $summary = $performanceDialog->summary ?? "-";
+            $developmentPlan = $performanceDialog->development_plan ?? "-";
+            $additionalNotes = $performanceDialog->additional_notes ?? "-";
+            $othersTypeName = $performanceDialog->others_type_name ?? "-";
+            $formattedDiscussionDate = $performanceDialog->start_date != "-" ? Carbon::parse($performanceDialog->start_date)->format('Y-m-d H:i:s') : '-';
+            $formattedDueDate = $performanceDialog->due_date != "-" ? Carbon::parse($performanceDialog->due_date)->format('Y-m-d H:i:s') : '-';
+            $formattedInitiateDate = $performanceDialog->initiate_date != "-" ? Carbon::parse($performanceDialog->initiate_date)->format('Y-m-d H:i:s') : '-';
+            $formattedAcknowledgeDate = $performanceDialog->acknowledge_date != "-" ? Carbon::parse($performanceDialog->acknowledge_date)->format('Y-m-d H:i:s') : '-';
+
+            $masterDialogTypes = PerformanceDialogType::where("is_active", true)->where("deleted_at", null)->get();
+
+            $pdf = PDF::loadView(
+                "pages.performance-dialog.form-pdf",
+                [
+                    "formatted_discussion_date" => $formattedDiscussionDate,
+                    "employee_unit" => $employeeUnit,
+                    "employee_name" => $employeeName,
+                    "employee_id" => $employeeID,
+                    "employee_designation" => $employeeDesignation,
+                    "employee_manager_name" => $employeeManagerName,
+                    "employee_manager_id" => $employeeManagerID,
+                    "employee_manager_designation" => $employeeManagerDesignation,
+                    "dialog_types" => $dialogTypes,
+                    "master_dialog_types" => $masterDialogTypes,
+                    "summary" => $summary,
+                    "development_plan" => $developmentPlan,
+                    "formatted_due_date" => $formattedDueDate,
+                    "additional_notes" => $additionalNotes,
+                    "formatted_initiate_date" => $formattedInitiateDate,
+                    "formatted_acknowledge_date" => $formattedAcknowledgeDate,
+                    "others_type_name" => $othersTypeName
+                ],
+            )
+                ->setPaper("a4", "portrait")
+                ->set_option("enable_php", true);
+
+            return $pdf->stream("Performance Dialog - " . $employeeID . " - " . $formattedDiscussionDate . ".pdf");
+        } catch (Exception $e) {
+            Session::flash('error', [
+                'title' => 'Error',
+                'message' => "General error: " . $e->getMessage()
+            ]);
+
+            return redirect()->back();
         }
     }
 }
