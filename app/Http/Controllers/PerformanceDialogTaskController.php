@@ -68,6 +68,7 @@ class PerformanceDialogTaskController extends Controller
             $isActionEdit = false;
             $isActionEditInitiate = false;
             $isActionDownload = false;
+            $isActionDelete = false;
 
             if ($scheduleAt != "-" && Carbon::parse($scheduleAt)->lt($now) && $status == "Scheduled") {
                 $status = "Overdue";
@@ -83,6 +84,10 @@ class PerformanceDialogTaskController extends Controller
 
             if ($status == "Done" || $status == "Submitted") {
                 $isActionDownload = true;
+            }
+
+            if ($status == "Scheduled" || $status == "Draft") {
+                $isActionDelete = true;
             }
 
             if ($status == "Done") {
@@ -101,8 +106,8 @@ class PerformanceDialogTaskController extends Controller
                 $totalOverdue += 1;
             }
 
-            $formattedScheduleAt = $scheduleAt != "-" ? Carbon::parse($scheduleAt)->format('d M Y') : '-';
-            $formattedInitiatedAt = $initiatedAt != "-" ? Carbon::parse($initiatedAt)->format('d M Y') : '-';
+            $formattedScheduleAt = $scheduleAt != "-" ? Carbon::parse($scheduleAt)->format('Y-m-d H:i:s') : '-';
+            $formattedInitiatedAt = $initiatedAt != "-" ? Carbon::parse($initiatedAt)->format('Y-m-d H:i:s') : '-';
 
             $rows[] = [
                 "id" => $row->id,
@@ -115,7 +120,8 @@ class PerformanceDialogTaskController extends Controller
                 "is_action_schedule" => false,
                 "is_action_edit" => $isActionEdit,
                 "is_action_edit_initiate" => $isActionEditInitiate,
-                "is_action_download" => $isActionDownload
+                "is_action_download" => $isActionDownload,
+                "is_action_delete" => $isActionDelete
             ];
         }
 
@@ -154,7 +160,8 @@ class PerformanceDialogTaskController extends Controller
                 "is_action_schedule" => true,
                 "is_action_edit" => false,
                 "is_action_edit_initiate" => false,
-                "is_action_download" => false
+                "is_action_download" => false,
+                "is_action_delete" => false
             ];
         }
 
@@ -340,9 +347,38 @@ class PerformanceDialogTaskController extends Controller
     public function delete(Request $request) {
         try {
             $loggedInUser = $this->loggedInUser;
-            $userID = $loggedInUser->id;
-            $employeeID = $loggedInUser->employee_id;
+            $loggedInUserID = $loggedInUser->id;
+            $loggedInUserEmployeeID = $loggedInUser->employee_id;
             $redirect = route('performance-dialog-task');
+
+            $id = $request->id;
+
+            $loggedInEmployee = Employee::where("employee_id", $loggedInUserEmployeeID)
+                ->where("id", $loggedInUserID)
+                ->first();
+            if (!$loggedInEmployee) {
+                return response()->json([
+                    'status' => false,
+                    'message' => "Employee not found!",
+                    'errors' => []
+                ], 422);
+            }
+
+            $performanceDialog = PerformanceDialog::where("id", $id)
+                ->where("manager_employee_id", $loggedInUserEmployeeID)
+                ->first();
+            if (!$performanceDialog) {
+                return response()->json([
+                    'status' => false,
+                    'message' => "Performance dialog not found!",
+                    'errors' => []
+                ], 422);
+            }
+
+            $performanceDialog->update([
+                'deleted_by' => $loggedInUserID,
+                'deleted_at' => Carbon::now(),
+            ]);
 
             return response()->json([
                 'status' => true,

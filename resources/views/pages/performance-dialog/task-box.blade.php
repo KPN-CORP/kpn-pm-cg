@@ -68,7 +68,7 @@
                                             <span><strong>Not Scheduled:</strong> {{ $total_not_scheduled }}</span>
                                         </p>
                                         <button style="float:right;margin-left:5px" type="button" class="btn btn-outline-info shadow" data-bs-toggle="modal" data-bs-target="#importModal"><i class="ri-upload-2-line"></i> Import</button>
-                                        <a style="float:right;margin-left:5px" class="btn btn-primary shadow" href="{{ route('performance-dialog.form') }}" onclick="showLoader()"><i class="ri-send-plane-line"></i> Initiate</a>
+                                        <a style="float:right;margin-left:5px" class="btn btn-primary shadow" href="{{ route('performance-dialog.form') }}" onclick="showLoader()"><i class="ri-file-line"></i> Initiate</a>
                                         <button style="float:right;margin-left:5px" type="button" class="btn btn-outline-warning shadow" data-bs-toggle="modal" data-bs-target="#scheduleModal" onclick="setPerformanceDialogSchedule()"><i class="ri-calendar-line"></i> Set Schedule</button>
                                     </div>
                                 </div>
@@ -113,28 +113,66 @@
                                                     </td>
                                                     <td class="text-center">
                                                         @if ($row['is_action_schedule'])
-                                                            <button type="button" class="btn btn-sm btn-outline-warning" data-bs-toggle="modal" data-bs-target="#scheduleModal" onclick="setPerformanceDialogScheduleEmployee('{{ $row['employee_id'] }}', '{{ $row['employee_name'] }}')">
+                                                            <button type="button" class="btn btn-sm btn-outline-warning" data-bs-toggle="modal" data-bs-target="#scheduleModal" onclick="setPerformanceDialogScheduleEmployee('{{ $row['employee_id'] }}', '{{ $row['employee_name'] }}')"
+                                                            data-bs-toggle="tooltip"
+                                                            data-bs-placement="top"
+                                                            title="Set Schedule"
+                                                            >
                                                                 <i class="ri-calendar-line"></i>
                                                             </button>
                                                         @endif
                                                         @if ($row['is_action_initiate'])
-                                                            <a class="btn btn-sm btn-outline-primary" href="{{ route('performance-dialog.form') }}" onclick="showLoader()">
-                                                                <i class="ri-send-plane-line"></i>
+                                                            <a class="btn btn-sm btn-primary" href="{{ route('performance-dialog.form') }}" onclick="showLoader()"
+                                                            data-bs-toggle="tooltip"
+                                                            data-bs-placement="top"
+                                                            title="Initiate"
+                                                            >
+                                                                <i class="ri-file-line"></i>
                                                             </a>
                                                         @endif
                                                         @if ($row['is_action_edit_initiate'])
-                                                            <a class="btn btn-sm btn-outline-primary" href="{{ route('performance-dialog.form-edit', $row['id']) }}" onclick="showLoader()">
-                                                                <i class="ri-send-plane-line"></i>
+                                                            <a class="btn btn-sm btn-primary" href="{{ route('performance-dialog.form-edit', [
+                                                                'id' => $row['id'],
+                                                                'action' => 'edit',
+                                                            ]) }}" onclick="showLoader()"
+                                                            data-bs-toggle="tooltip"
+                                                            data-bs-placement="top"
+                                                            title="Initiate"
+                                                            >
+                                                                <i class="ri-file-line"></i>
                                                             </a>
                                                         @endif
                                                         @if ($row['is_action_edit'])
-                                                            <a class="btn btn-sm btn-outline-primary" href="{{ route('performance-dialog.form-edit', $row['id']) }}" onclick="showLoader()">
+                                                            <a class="btn btn-sm btn-outline-secondary" href="{{ route('performance-dialog.form-edit', [
+                                                                'id' => $row['id'],
+                                                                'action' => 'edit',
+                                                            ]) }}" onclick="showLoader()"
+                                                            data-bs-toggle="tooltip"
+                                                            data-bs-placement="top"
+                                                            title="Edit"
+                                                            >
                                                                 <i class="ri-pencil-line"></i>
                                                             </a>
                                                         @endif
                                                         @if ($row['is_action_download'])
-                                                            <a class="btn btn-sm btn-outline-primary" href="{{ route('performance-dialog.download', $row['id']) }}" target="_blank">
+                                                            <a class="btn btn-sm btn-outline-info" href="{{ route('performance-dialog.download', $row['id']) }}" target="_blank"
+                                                            data-bs-toggle="tooltip"
+                                                            data-bs-placement="top"
+                                                            title="Download"
+                                                            >
                                                                 <i class="ri-download-line"></i>
+                                                            </a>
+                                                        @endif
+                                                        @if ($row['is_action_delete'])
+                                                            <a class="btn btn-sm btn-outline-danger" href="{{ route('performance-dialog.form-delete', [
+                                                                'id' => $row['id'],
+                                                                'action' => 'delete',
+                                                            ]) }}"
+                                                            data-bs-toggle="tooltip"
+                                                            data-bs-placement="top"
+                                                            title="Delete"
+                                                            >
+                                                                <i class="ri-delete-bin-line"></i>
                                                             </a>
                                                         @endif
                                                     </td>

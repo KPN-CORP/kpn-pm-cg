@@ -128,15 +128,30 @@
 
     <div class="mandatory-field"></div>
         <div id="form-alert" class="alert alert-danger d-none"></div>
-        <form id="performance-dialog-form" action="{{ route('performance-dialog.create-or-update') }}" class="needs-validation" method="POST">
+        <form id="performance-dialog-form"
+            @if ($is_form_acknowledge)
+                action="{{ route('performance-dialog.acknowledge') }}"
+            @elseif ($is_form_delete)
+                action="{{ route('performance-dialog-task.delete') }}"
+            @else
+                action="{{ route('performance-dialog.create-or-update') }}"
+            @endif
+            class="needs-validation" method="POST">
             @csrf
             <input type="hidden" class="form-control" name="id" value="{{ $id }}" readonly>
             <input type="hidden" class="form-control" name="period" value="{{ $period }}" readonly>
             <input type="hidden" class="form-control" name="employee_id" value="{{ $employee_id }}" readonly>
-            <input type="hidden" class="form-control" name="manager_employee_id" value="{{ $manager_employee_id }}" readonly>
+            <input type="hidden" class="form-control" name="employee_manager_id" value="{{ $employee_manager_id }}" readonly>
             <div class="row mb-2">
+                @php
+                    $colNum = "6";
+
+                    if ($is_show_select_employee && $is_show_start_date) {
+                        $colNum = "4";
+                    }
+                @endphp
                 @if ($is_show_select_employee)
-                    <div class="col-md-6">
+                    <div class="col-md-{{ $colNum }}">
                         <label for="performance_dialog_employee" class="form-label">Employees</label>
                         <select class="form-select form-select-sm select2" id="performance_dialog_employee" name="performance_dialog_employee_ids[]" data-placeholder="Select Employees" multiple required>
                             <option></option>
@@ -148,9 +163,9 @@
                         </select>
                     </div>
                 @endif
-                <div class="col-md-6">
+                <div class="col-md-{{ $colNum }}">
                     <label for="performance_dialog_type" class="form-label">Objectives</label>
-                    <select class="form-select form-select-sm select2" id="performance_dialog_type" name="performance_dialog_types[]" data-placeholder="Select Objectives" multiple required {{ $is_performance_dialog_types_readonly ? 'readonly' : '' }}>
+                    <select class="form-select form-select-sm select2 {{ $is_performance_dialog_types_readonly ? 'select2-readonly' : '' }}" id="performance_dialog_type" name="performance_dialog_types[]" data-placeholder="Select Objectives" multiple required {{ $is_performance_dialog_types_readonly ? 'readonly' : '' }}>
                         <option></option>
                         @foreach ($master_performance_dialog_types as $master_performance_dialog_type)
                             @php
@@ -173,19 +188,18 @@
                             <option value="0">Others</option>
                         @endif
                     </select>
-                    <br>
                     <div class="row">
                         <div class="">
                             <input type="text" name="others_performance_dialog_type" id="others_performance_dialog_type"
                             class="form-control form-control-sm" placeholder="ex: Penilaian Kerja"
-                            value="" style="{{ empty($performance_dialog_others_type_name) ? "display: none;" : "" }}" {{ $is_others_performance_dialog_type_readonly ? 'readonly' : '' }}>
+                            value="{{ $performance_dialog_others_type_name }}" style="{{ empty($performance_dialog_others_type_name) ? "display: none" : "" }};margin-top:10px" {{ $is_others_performance_dialog_type_readonly ? 'readonly' : '' }}>
                         </div>
                     </div>
                 </div>
                 @if ($is_show_start_date)
-                    <div class="col-md-6">
-                        <label for="performance_dialog_start_date" class="form-label">Scheduled At</label>
-                        <input type="datetime-local" class="form-control form-control-sm" id="performance_dialog_due_date" name="performance_dialog_start_date" value="{{ $performance_dialog_start_date }}" required {{ $is_performance_dialog_start_date_readonly ? 'readonly' : '' }}>
+                    <div class="col-md-{{ $colNum }}">
+                        <label for="performance_dialog_start_date" class="form-label">Schedule Date</label>
+                        <input type="datetime-local" class="form-control form-control-sm" id="performance_dialog_start_date" name="performance_dialog_start_date" value="{{ $performance_dialog_start_date }}" required {{ $is_performance_dialog_start_date_readonly ? 'readonly' : '' }}>
                     </div>
                 @endif
             </div>
@@ -193,7 +207,7 @@
                 <div class="col-md-6">
                     <label for="" class="form-label">Development Plan</label>
                     <textarea class="form-control form-control-sm" id="performance_dialog_development_plan" name="performance_dialog_development_plan" rows="4"
-                        placeholder="Please add more detail of development plan ..." {{ $is_performance_dialog_development_plan_readonly ? 'readonly' : '' }}>{{ $performance_dialog_development_plan }}</textarea>
+                        placeholder="Please add more detail of development plan ..." {{ $is_performance_dialog_development_plan_readonly ? 'readonly' : '' }} required>{{ $performance_dialog_development_plan }}</textarea>
                 </div>
                 <div class="col-md-6">
                     <label for="performance_dialog_due_date" class="form-label">Due Date</label>
@@ -204,7 +218,7 @@
                 <div class="col-md-6">
                     <label for="" class="form-label">Summary</label>
                     <textarea class="form-control form-control-sm" id="performance_dialog_summary" name="performance_dialog_summary" rows="4"
-                        placeholder="Please add more detail of summary ..." {{ $is_performance_dialog_summary_readonly ? 'readonly' : '' }}>{{ $performance_dialog_summary }}</textarea>
+                        placeholder="Please add more detail of summary ..." {{ $is_performance_dialog_summary_readonly ? 'readonly' : '' }} required>{{ $performance_dialog_summary }}</textarea>
                 </div>
                 <div class="col-md-6">
                     <label for="" class="form-label">Additional Notes</label>
@@ -213,17 +227,26 @@
                 </div>
             </div>
             <div class="d-flex justify-content-end mt-4 mb-4">
-                @if ($is_form_approval)
+                @if ($is_form_acknowledge)
+                    <a class="btn btn-outline-secondary rounded-pill submit-button me-2" href="{{ $redirect_back }}">Back</a>
                     <button type="submit" class="btn btn-primary rounded-pill submit-button"
-                        name="action_submit" value="Approve" id="performance-dialog-approve">Approve</button>
-                @elseif ($is_form_view)
-                    <a class="btn btn-primary rounded-pill submit-button" href="{{ $redirect_back }}">Back</a>
-                @else
+                        name="action_acknowledge" value="Acknowledge" id="performance-dialog-acknowledge">Acknowledge</button>
+                @elseif ($is_form_delete)
+                    <a class="btn btn-outline-secondary rounded-pill submit-button me-2" href="{{ $redirect_back }}">Back</a>
+                    <button type="submit" class="btn btn-primary rounded-pill submit-button"
+                        name="action_delete" value="Delete" id="performance-dialog-delete">Delete</button>
+                @elseif ($is_form_approval)
+                    <a class="btn btn-outline-secondary rounded-pill submit-button me-2" href="{{ $redirect_back }}">Back</a>
+                    <button type="submit" class="btn btn-primary rounded-pill submit-button"
+                        name="action_approve" value="Approve" id="performance-dialog-approve">Approve</button>
+                @elseif ($is_form_create || $is_form_edit)
                     <button type="submit" class="btn btn-outline-primary rounded-pill me-2 draft-button"
                         name="action_draft" value="Draft" id="performance-dialog-save-draft">Save as
                         Draft</button>
                     <button type="submit" class="btn btn-primary rounded-pill submit-button"
                         name="action_submit" value="Submitted" id="performance-dialog-submit">Submit</button>
+                @else
+                    <a class="btn btn-outline-secondary rounded-pill submit-button" href="{{ $redirect_back }}">Back</a>
                 @endif
             </div>
         </form>
@@ -232,8 +255,12 @@
 @push('scripts')
     @if($is_performance_dialog_types_readonly)
         <script>
-            $('#performance_dialog_type').on('select2:opening', function (e) {
-                e.preventDefault();
+            $(document).ready(function () {
+                $('#performance_dialog_type').on('select2:opening', function (e) {
+                    if ($(this).hasClass('select2-readonly')) {
+                        e.preventDefault();
+                    }
+                });
             });
         </script>
     @endif
