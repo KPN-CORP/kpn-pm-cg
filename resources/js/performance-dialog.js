@@ -45,7 +45,9 @@ document.addEventListener("DOMContentLoaded", function () {
             },
             scrollCollapse: true,
             scrollX: true,
-            paging: false,
+            paging: true,
+            pageLength: 10,
+            lengthChange: false,
             buttons: [
                 {
                     extend: 'csvHtml5',

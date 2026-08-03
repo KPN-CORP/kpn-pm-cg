@@ -17,7 +17,7 @@ function adminReportType(val) {
 
     const reportBtn = document.getElementById('existingReport');
 
-    reportBtn.classList.add('d-none');    
+    reportBtn.classList.add('d-none');
 
     if (val === 'Goal') {
 
@@ -51,7 +51,7 @@ function adminReportType(val) {
             });
 
             // Retrieve previous search value from stateSave
-            let savedState = reportGoalsTable.state.loaded();  
+            let savedState = reportGoalsTable.state.loaded();
             if (savedState && savedState.search.search) {
                 reportGoalsTable.search(savedState.search.search).draw();
                 customsearch.val(savedState.search.search); // Set input value
@@ -183,12 +183,12 @@ document.addEventListener("DOMContentLoaded", function () {
                 });
 
                 // Retrieve previous search value from stateSave
-                let savedState = reportGoalsTable.state.loaded();  
+                let savedState = reportGoalsTable.state.loaded();
                 if (savedState && savedState.search.search) {
                     reportGoalsTable.search(savedState.search.search).draw();
                     customsearch.val(savedState.search.search); // Set input value
                 }
-                
+
                 customsearch.on("keyup", function () {
                     reportGoalsTable.search($(this).val()).draw();
                 });
@@ -241,7 +241,7 @@ function reportType(val) {
     const reportContentDiv = $("#report_content");
     const customsearch = $("#customsearch");
     const formData = reportForm.serialize();
-    
+
     showLoader();
     if (val) {
         exportButton.removeClass("disabled"); // Enable export button
@@ -373,14 +373,14 @@ function exportExcel() {
     const company = $("#company").val();
     const location = $("#location").val();
     const period = $("#filterYear").val();
-    
-    
+
+
     $("#export_report_type").val(reportType);
     $("#export_group_company").val(groupCompany);
     $("#export_company").val(company);
     $("#export_location").val(location);
     $("#export_period").val(period);
-    
+
     // Submit the form
     exportForm.submit();
 }
@@ -453,7 +453,6 @@ function showEditModal(employee) {
     // Tampilkan modal
     var editModal = new bootstrap.Modal(document.getElementById('editEmployeeModal'));
     editModal.show();
-}   
+}
 
 window.showEditModal = showEditModal;
-

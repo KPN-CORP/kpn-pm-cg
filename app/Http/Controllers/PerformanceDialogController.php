@@ -487,12 +487,17 @@ class PerformanceDialogController extends Controller
         }
     }
 
-    public function delete(Request $request) {
+    public function acknowledge(Request $request) {
         try {
+            $loggedInUser = $this->loggedInUser;
+            $userID = $loggedInUser->id;
+            $employeeID = $loggedInUser->employee_id;
+            $redirect = route('performance-dialog.my-history');
+
             return response()->json([
                 'status' => true,
                 'message' => 'Success',
-                'redirect' => route('appraisals-task'),
+                'redirect' => $redirect,
                 'data' => []
             ]);
         } catch (Exception $e) {
@@ -500,7 +505,7 @@ class PerformanceDialogController extends Controller
                 'status' => false,
                 'message' => 'Error: ' . $e->getMessage(),
                 'errors' => []
-            ]);
+            ], 500);
         }
     }
 }

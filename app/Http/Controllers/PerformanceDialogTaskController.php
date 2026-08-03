@@ -45,6 +45,12 @@ class PerformanceDialogTaskController extends Controller
         }
 
         $rows = [];
+        $totalTeam = 0;
+        $totalDone = 0;
+        $totalScheduled = 0;
+        $totalDraft = 0;
+        $totalOverdue = 0;
+        $totalNotScheduled = 0;
 
         $performanceDialogs = PerformanceDialog::with(['employee'])
             ->where('manager_employee_id', $employeeID)
@@ -79,6 +85,22 @@ class PerformanceDialogTaskController extends Controller
                 $isActionDownload = true;
             }
 
+            if ($status == "Done") {
+                $totalDone += 1;
+            }
+
+            if ($status == "Scheduled") {
+                $totalScheduled += 1;
+            }
+
+            if ($status == "Draft") {
+                $totalDraft += 1;
+            }
+
+            if ($status == "Overdue") {
+                $totalOverdue += 1;
+            }
+
             $formattedScheduleAt = $scheduleAt != "-" ? Carbon::parse($scheduleAt)->format('d M Y') : '-';
             $formattedInitiatedAt = $initiatedAt != "-" ? Carbon::parse($initiatedAt)->format('d M Y') : '-';
 
@@ -110,6 +132,7 @@ class PerformanceDialogTaskController extends Controller
         }
 
         $reportees = ApprovalLayer::with(["employee"])->where("approver_id", $employeeID)->get();
+        $totalTeam = $reportees->count();
 
         foreach($reportees as $reportee) {
             $reporteePerformanceDialog = $performanceDialogGroupByEmployeeID[$reportee->employee_id] ?? null;
@@ -117,6 +140,8 @@ class PerformanceDialogTaskController extends Controller
             if ($reporteePerformanceDialog) {
                 continue;
             }
+
+            $totalNotScheduled += 1;
 
             $rows[] = [
                 "id" => null,
@@ -142,6 +167,12 @@ class PerformanceDialogTaskController extends Controller
             "performance_dialog_years" => $performanceDialogYears,
             "rows" => $rows,
             "reportees" => $reportees,
+            "total_team" => $totalTeam,
+            "total_done" => $totalDone,
+            "total_scheduled" => $totalScheduled,
+            "total_draft" => $totalDraft,
+            "total_overdue" => $totalOverdue,
+            "total_not_scheduled" => $totalNotScheduled
         ]);
     }
 
@@ -290,6 +321,28 @@ class PerformanceDialogTaskController extends Controller
             }
 
             PerformanceDialog::insert($insertData);
+
+            return response()->json([
+                'status' => true,
+                'message' => 'Success',
+                'redirect' => $redirect,
+                'data' => []
+            ]);
+        } catch (Exception $e) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Error: ' . $e->getMessage(),
+                'errors' => []
+            ], 500);
+        }
+    }
+
+    public function delete(Request $request) {
+        try {
+            $loggedInUser = $this->loggedInUser;
+            $userID = $loggedInUser->id;
+            $employeeID = $loggedInUser->employee_id;
+            $redirect = route('performance-dialog-task');
 
             return response()->json([
                 'status' => true,
