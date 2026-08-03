@@ -61,6 +61,16 @@
         color: #6c757d;
         cursor: not-allowed;
     }
+
+    .select2-readonly + .select2 .select2-selection {
+        pointer-events: none;
+        cursor: default !important;
+        background-color: #e9ecef;
+    }
+
+    .select2-readonly + .select2 .select2-selection * {
+        cursor: default !important;
+    }
 </style>
 @endsection
 
@@ -259,6 +269,7 @@
                 $('#performance_dialog_type').on('select2:opening', function (e) {
                     if ($(this).hasClass('select2-readonly')) {
                         e.preventDefault();
+                        return false;
                     }
                 });
             });
