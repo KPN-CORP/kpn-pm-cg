@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Exports\EmployeeDetailExport;
 use App\Exports\EmployeeExport;
+use App\Exports\PerformanceDialogExport;
 use App\Exports\GoalExport;
 use App\Exports\InitiatedExport;
 use App\Exports\NotInitiatedExport;
@@ -23,25 +24,25 @@ class ExportExcelController extends Controller
     protected $permissionLocations;
     protected $roles;
     protected $appService;
-    
+
     public function __construct(AppService $appService)
     {
         $this->roles = Auth::user()->roles;
         $this->appService = $appService;
-        
+
         $restrictionData = [];
 
         if(!$this->roles->isEmpty()){
             $restrictionData = json_decode($this->roles->first()->restriction, true);
         }
-        
+
         $this->permissionGroupCompanies = $restrictionData['group_company'] ?? [];
         $this->permissionCompanies = $restrictionData['contribution_level_code'] ?? [];
         $this->permissionLocations = $restrictionData['work_area_code'] ?? [];
 
     }
 
-    public function export(Request $request) 
+    public function export(Request $request)
     {
         $reportType = $request->export_report_type;
         $groupCompany = $request->export_group_company;
@@ -67,7 +68,7 @@ class ExportExcelController extends Controller
 
     }
 
-    public function exportAdmin(Request $request) 
+    public function exportAdmin(Request $request)
     {
         $reportType = $request->export_report_type;
         $groupCompany = $request->export_group_company;
@@ -78,7 +79,7 @@ class ExportExcelController extends Controller
         $permissionGroupCompanies = $this->permissionGroupCompanies;
         $permissionCompanies = $this->permissionCompanies;
         $permissionLocations = $this->permissionLocations;
-        
+
         $admin = 1;
 
         if ($reportType === 'Goal') {
@@ -112,6 +113,10 @@ class ExportExcelController extends Controller
         if($reportType==='EmployeePA'){
             $employee = new EmployeepaExport($groupCompany, $location, $company, $permissionLocations, $permissionCompanies, $permissionGroupCompanies);
             return Excel::download($employee, 'employeePA.xlsx');
+        }
+        if ($reportType === 'PerformanceDialog') {
+            $data = new PerformanceDialogExport($period, $groupCompany, $location, $company, $permissionLocations, $permissionCompanies, $permissionGroupCompanies);
+            return Excel::download($data, 'performance-dialog.xlsx');
         }
         return;
 
@@ -196,7 +201,7 @@ class ExportExcelController extends Controller
         return Storage::download($path);
     }
 
-    public function notInitiated(Request $request) 
+    public function notInitiated(Request $request)
     {
         $employee_id = $request->employee_id;
         $period = $request->filterYear;
@@ -206,7 +211,7 @@ class ExportExcelController extends Controller
 
     }
 
-    public function initiated(Request $request) 
+    public function initiated(Request $request)
     {
         $employee_id = $request->employee_id;
         $period = $request->filterYear;
@@ -216,7 +221,7 @@ class ExportExcelController extends Controller
 
     }
 
-    public function exportreportemp() 
+    public function exportreportemp()
     {
         return Excel::download(new EmployeeDetailExport, 'employees_detail.xlsx');
     }
