@@ -430,6 +430,13 @@ class PerformanceDialogController extends Controller
                     'updated_at' => Carbon::now(),
                 ]);
             } else {
+                if (!empty($startDate) && Carbon::now()->lt( Carbon::parse($startDate))) {
+                    return response()->json([
+                        'status' => false,
+                        'message' => 'You can only submit this performance dialog on or after the scheduled date.',
+                    ], 422);
+                }
+
                 $insertData = [];
 
                 foreach ($processEmployees as $row) {

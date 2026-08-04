@@ -86,6 +86,19 @@ document.addEventListener("DOMContentLoaded", function () {
             return;
         }
 
+        const scheduleDate = new Date($('#performance_dialog_start_date').val());
+        const now = new Date();
+
+        if (now < scheduleDate) {
+            Swal.fire({
+                icon: 'error',
+                title: 'Cannot Submit',
+                text: 'You can only submit this performance dialog on or after the scheduled date.'
+            });
+
+            return;
+        }
+
         $('#form-alert').addClass('d-none').empty();
 
         Swal.fire({
@@ -155,6 +168,19 @@ document.addEventListener("DOMContentLoaded", function () {
 
         if (!form[0].checkValidity()) {
             form[0].reportValidity();
+            return;
+        }
+
+        const scheduleDate = new Date($('#performance_dialog_start_date').val());
+        const now = new Date();
+
+        if (now < scheduleDate) {
+            Swal.fire({
+                icon: 'error',
+                title: 'Cannot Submit',
+                text: 'You can only submit this performance dialog on or after the scheduled date.'
+            });
+
             return;
         }
 
