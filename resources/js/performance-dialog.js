@@ -474,6 +474,15 @@ document.addEventListener("DOMContentLoaded", function () {
         let button = $(this);
         let spinner = button.find('.spinner-border');
         let form = $('#schedule-performance-dialog');
+
+        if (!form[0].checkValidity()) {
+            form[0].reportValidity();
+            return;
+        }
+
+        button.prop('disabled', true);
+        spinner.removeClass('d-none');
+
         let formData = form.serializeArray();
 
         $('#schedule-performance-dialog-form-alert').addClass('d-none').empty();
