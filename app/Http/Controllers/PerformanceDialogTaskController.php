@@ -201,6 +201,8 @@ class PerformanceDialogTaskController extends Controller
 
         DB::enableQueryLog();
 
+        // log
+
         try {
             $import = new PerformanceDialogManagerImport($filePath, $userID);
 
