@@ -68,7 +68,7 @@ class PerformanceDialogTaskController extends Controller
             $performanceDialogs = PerformanceDialog::with(['employee'])
                 ->where('manager_employee_id', $loggedInEmployeeID)
                 ->where('period', $period)
-                ->whereNull('deleted_at', null);
+                ->whereNull('deleted_at');
 
             if (in_array($currentActiveStatus, ['Draft', 'Scheduled', 'Done'])) {
                 $performanceDialogs->where('status', $currentActiveStatus);
@@ -179,7 +179,7 @@ class PerformanceDialogTaskController extends Controller
         foreach($reportees as $reportee) {
             $reporteePerformanceDialog = $performanceDialogGroupByEmployeeID[$reportee->employee_id] ?? null;
 
-            if ($reporteePerformanceDialog || in_array($currentActiveStatus, ['Draft', 'Scheduled', 'Done', 'Overdue'])) {
+            if ($reporteePerformanceDialog || in_array($currentActiveStatus, ['Draft', 'Scheduled', 'Done', 'Overdue']) || !empty($currentFilterInitiateDate)) {
                 continue;
             }
 
