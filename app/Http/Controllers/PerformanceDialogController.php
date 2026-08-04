@@ -584,10 +584,10 @@ class PerformanceDialogController extends Controller
             $developmentPlan = $performanceDialog->development_plan ?? "-";
             $additionalNotes = $performanceDialog->additional_notes ?? "-";
             $othersTypeName = $performanceDialog->others_type_name ?? "-";
-            $formattedDiscussionDate = $performanceDialog->start_date != "-" ? Carbon::parse($performanceDialog->start_date)->format('Y-m-d H:i:s') : '-';
-            $formattedDueDate = $performanceDialog->due_date != "-" ? Carbon::parse($performanceDialog->due_date)->format('Y-m-d H:i:s') : '-';
-            $formattedInitiateDate = $performanceDialog->initiate_date != "-" ? Carbon::parse($performanceDialog->initiate_date)->format('Y-m-d H:i:s') : '-';
-            $formattedAcknowledgeDate = $performanceDialog->acknowledge_date != "-" ? Carbon::parse($performanceDialog->acknowledge_date)->format('Y-m-d H:i:s') : '-';
+            $formattedDiscussionDate = $performanceDialog->start_date ? Carbon::parse($performanceDialog->start_date)->format('Y-m-d H:i:s') : '-';
+            $formattedDueDate = $performanceDialog->due_date ? Carbon::parse($performanceDialog->due_date)->format('Y-m-d H:i:s') : '-';
+            $formattedInitiateDate = $performanceDialog->initiate_date ? Carbon::parse($performanceDialog->initiate_date)->format('Y-m-d H:i:s') : '-';
+            $formattedAcknowledgeDate = $performanceDialog->acknowledge_date ? Carbon::parse($performanceDialog->acknowledge_date)->format('Y-m-d H:i:s') : '-';
 
             $masterDialogTypes = PerformanceDialogType::where("is_active", true)->where("deleted_at", null)->get();
 
