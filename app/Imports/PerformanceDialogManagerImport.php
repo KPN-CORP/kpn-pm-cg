@@ -101,10 +101,23 @@ class PerformanceDialogManagerImport implements ToModel, WithValidation, WithHea
             $startDate = $row['schedule_date'];
             $endDate = null;
             $dueDate = $row['due_date'];
-            $typeName = $row['type_name'];
+            $typeName = "";
             $status = $row['status'];
-            $typeIDs = null;
+            $typeIDs = [];
             $othersTypeName = null;
+
+            if (isset($row['objectives'])) {
+                $typeName = $row['objectives'];
+            } else if (isset($row['type_name'])) {
+                $typeName = $row['type_name'];
+            }
+
+            $typeNames = explode(',', $typeName);
+            $typeNames = array_map('trim', $typeNames);
+            $typeNames = array_filter($typeNames, function($value) {
+                return $value !== '';
+            });
+            $typeNames = array_values($typeNames);
 
             if (isset($row['initiate_date']) && !empty($row['initiate_date'])) {
                 $initiateDate = $row['initiate_date'];
@@ -180,11 +193,19 @@ class PerformanceDialogManagerImport implements ToModel, WithValidation, WithHea
                 return;
             }
 
-            $performanceDialogType = PerformanceDialogType::where("name", $typeName)->first();
-            if (!empty($performanceDialogType)) {
-                $typeIDs[] = $performanceDialogType->id;
-            } else {
-                $othersTypeName = $typeName;
+            $performanceDialogTypes = PerformanceDialogType::whereIn("name", $typeNames)->get();
+            $performanceDialogTypesGroupByName = $performanceDialogTypes->groupBy('name');
+
+            foreach ($typeNames as $typeNameRow) {
+                if (isset($performanceDialogTypesGroupByName[$typeNameRow]) && $performanceDialogTypesGroupByName[$typeNameRow] && !empty($performanceDialogTypesGroupByName[$typeNameRow])) {
+                    $typeIDs[] = $performanceDialogTypesGroupByName[$typeNameRow]->id;
+                } else {
+                    $othersTypeName = $typeNameRow;
+                }
+            }
+
+            if (empty($typeIDs)) {
+                $typeIDs = null;
             }
 
             $this->data[] = [
