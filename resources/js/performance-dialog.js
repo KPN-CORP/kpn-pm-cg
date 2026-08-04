@@ -1,7 +1,7 @@
 import { log } from 'handlebars';
 import $ from 'jquery';
 
-function yearPerformanceDialogTask(button) {
+function filterTriggerPerformanceDialogTask(button) {
     showLoader();
 
     var form = $(button).closest('form');
@@ -9,7 +9,7 @@ function yearPerformanceDialogTask(button) {
     form.submit();
 }
 
-window.yearPerformanceDialogTask = yearPerformanceDialogTask;
+window.filterTriggerPerformanceDialogTask = filterTriggerPerformanceDialogTask;
 
 function setPerformanceDialogSchedule() {
     document.getElementById('performance-dialog-schedule-form-employee-id').value = "";
@@ -72,6 +72,14 @@ document.addEventListener("DOMContentLoaded", function () {
         }).draw();
 
         addChildRowToggle(tableData, '#tablePerformanceDialog');
+    });
+
+    $('#importPerformanceDialog').on('submit', function () {
+        const button = $('#importPerformanceDialogButton');
+        const spinner = button.find('.spinner-border');
+
+        button.prop('disabled', true);
+        spinner.removeClass('d-none');
     });
 
     $('#performance-dialog-submit').click(function (e) {

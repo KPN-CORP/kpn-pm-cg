@@ -130,7 +130,7 @@
                         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                     </div>
                     <div class="tab-pane fade show active" id="regular" role="tabpanel" aria-labelledby="regular-tab">
-                        <form action="{{ route('performance-dialog-admin.import') }}" method="POST" enctype="multipart/form-data">
+                        <form id="importPerformanceDialog" action="{{ route('performance-dialog-admin.import') }}" method="POST" enctype="multipart/form-data">
                             @csrf
                             <div class="modal-body">
                                 <div class="row">
@@ -150,7 +150,10 @@
                             </div>
                             <div class="modal-footer">
                                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                                <button type="submit" class="btn btn-primary">Import</button>
+                                <button id="importPerformanceDialogButton" type="submit" class="btn btn-primary">
+                                    <span class="spinner-border spinner-border-sm me-1 d-none" role="status" aria-hidden="true"></span>
+                                    Import
+                                </button>
                             </div>
                         </form>
                     </div>
