@@ -328,7 +328,7 @@ class ReportController extends Controller
                     $status = "Overdue";
                 }
 
-                if ($status != "Done" || $status == "Submitted") {
+                if ($status == "Done" || $status == "Submitted") {
                     $isActionDownload = true;
                 }
 
