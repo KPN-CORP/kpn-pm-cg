@@ -204,7 +204,7 @@
                                 <div class="alert alert-info">
                                     <strong>Notes:</strong>
                                     <ul class="mb-0">
-                                        <li>Template Import Performance Dialog can be downloaded <strong><a href="#" style="text-decoration: underline">here</a></strong></li>
+                                        <li>Template Import Performance Dialog can be downloaded <strong><a href="{{ asset('templates/template_performance_dialog.xlsx') }}" style="text-decoration: underline" download>here</a></strong></li>
                                     </ul>
                                 </div>
                             </div>
