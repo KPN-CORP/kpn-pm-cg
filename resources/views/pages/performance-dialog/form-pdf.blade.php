@@ -203,10 +203,6 @@
                             </span>
 
                             {{ $master_dialog_type->name }}
-
-                            @if (empty($others_type_name) || $others_type_name != '-')
-                                : {{ $others_type_name }}
-                            @endif
                         </td>
                     @endforeach
                     @if ($types->count() == 1)
