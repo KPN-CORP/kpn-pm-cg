@@ -350,26 +350,27 @@ class ReportController extends Controller
 
             $performanceDialogGroupByEmployeeID = $performanceDialogs->groupBy('employee_id');
 
-            $reportees = ApprovalLayer::with(["employee", "employeeManager"])->get();
+            // $reportees = ApprovalLayer::with(["employee", "employeeManager"])->get();
 
-            foreach($reportees as $reportee) {
-                $reporteePerformanceDialog = $performanceDialogGroupByEmployeeID[$reportee->employee_id] ?? null;
+            // foreach($reportees as $reportee) {
+            //     $reporteePerformanceDialog = $performanceDialogGroupByEmployeeID[$reportee->employee_id] ?? null;
 
-                if ($reporteePerformanceDialog) {
-                    continue;
-                }
+            //     if ($reporteePerformanceDialog) {
+            //         continue;
+            //     }
 
-                $rows[] = ["id" => null,
-                    "employee_id" => $reportee->employee_id,
-                    "employee_name" => $reportee->employee?->fullname ?? "-",
-                    "employee_manager_id" => $reportee->employeeManager?->employee_id ?? "-",
-                    "employee_manager_name" => $reportee->employeeManager?->fullname ?? "-",
-                    "formatted_schedule_at" => "-",
-                    "formatted_initiated_at" => "-",
-                    "status" => "Not Scheduled",
-                    "is_action_download" => false
-                ];
-            }
+            //     $data[] = [
+            //         "id" => null,
+            //         "employee_id" => $reportee->employee_id,
+            //         "employee_name" => $reportee->employee?->fullname ?? "-",
+            //         "employee_manager_id" => $reportee->employeeManager?->employee_id ?? "-",
+            //         "employee_manager_name" => $reportee->employeeManager?->fullname ?? "-",
+            //         "formatted_schedule_at" => "-",
+            //         "formatted_initiated_at" => "-",
+            //         "status" => "Not Scheduled",
+            //         "is_action_download" => false
+            //     ];
+            // }
 
             $route = 'reports-admin.performance-dialog';
         } else {
