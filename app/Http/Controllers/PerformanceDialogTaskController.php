@@ -32,9 +32,11 @@ class PerformanceDialogTaskController extends Controller
     }
 
     public function index(Request $request) {
-        $userID = $this->loggedInUser->id;
-        $employeeID = $this->loggedInUser->employee_id;
+        $loggedInUserID = $this->loggedInUser->id;
+        $loggedInEmployeeID = $this->loggedInUser->employee_id;
         $period = now()->year;
+        $currentActiveStatus = "All";
+        $currentFilterInitiateDate = "";
 
         if (!empty($request->period)) {
             $period = $request->period;
@@ -42,6 +44,14 @@ class PerformanceDialogTaskController extends Controller
 
         if (!empty($request->filterYear)) {
             $period = $request->filterYear;
+        }
+
+        if (!empty($request->filterStatus)) {
+            $currentActiveStatus = $request->filterStatus;
+        }
+
+        if (!empty($request->filterInitiateDate)) {
+            $currentFilterInitiateDate = $request->filterInitiateDate;
         }
 
         $rows = [];
@@ -52,11 +62,28 @@ class PerformanceDialogTaskController extends Controller
         $totalOverdue = 0;
         $totalNotScheduled = 0;
 
-        $performanceDialogs = PerformanceDialog::with(['employee'])
-            ->where('manager_employee_id', $employeeID)
-            ->where('period', $period)
-            ->where('deleted_at', null)
-            ->get();
+        if ($currentActiveStatus == 'Not Scheduled') {
+            $performanceDialogs = collect();
+        } else {
+            $performanceDialogs = PerformanceDialog::with(['employee'])
+                ->where('manager_employee_id', $loggedInEmployeeID)
+                ->where('period', $period)
+                ->whereNull('deleted_at', null);
+
+            if (in_array($currentActiveStatus, ['Draft', 'Scheduled', 'Done'])) {
+                $performanceDialogs->where('status', $currentActiveStatus);
+            } elseif ($currentActiveStatus == 'Overdue') {
+                $performanceDialogs
+                    ->where('status', 'Scheduled')
+                    ->where('start_date', '<', now());
+            }
+
+            if (!empty($currentFilterInitiateDate)) {
+                $performanceDialogs->whereDate('initiate_date', $currentFilterInitiateDate);
+            }
+
+            $performanceDialogs = $performanceDialogs->get();
+        }
 
         $now = Carbon::now();
 
@@ -128,7 +155,7 @@ class PerformanceDialogTaskController extends Controller
         $performanceDialogGroupByEmployeeID = $performanceDialogs->groupBy('employee_id');
 
         $performanceDialogYears = PerformanceDialog::select('period')
-            ->where('manager_employee_id', $employeeID)
+            ->where('manager_employee_id', $loggedInEmployeeID)
             ->distinct()
             ->orderBy('period')
             ->pluck('period');
@@ -137,13 +164,22 @@ class PerformanceDialogTaskController extends Controller
             $performanceDialogYears = collect([$period]);
         }
 
-        $reportees = ApprovalLayer::with(["employee"])->where("approver_id", $employeeID)->get();
+        $performanceDialogStatuses = [
+            "All",
+            "Draft",
+            "Not Scheduled",
+            "Scheduled",
+            "Done",
+            "Overdue"
+        ];
+
+        $reportees = ApprovalLayer::with(["employee"])->where("approver_id", $loggedInEmployeeID)->get();
         $totalTeam = $reportees->count();
 
         foreach($reportees as $reportee) {
             $reporteePerformanceDialog = $performanceDialogGroupByEmployeeID[$reportee->employee_id] ?? null;
 
-            if ($reporteePerformanceDialog) {
+            if ($reporteePerformanceDialog || in_array($currentActiveStatus, ['Draft', 'Scheduled', 'Done', 'Overdue'])) {
                 continue;
             }
 
@@ -169,9 +205,12 @@ class PerformanceDialogTaskController extends Controller
             "parentLink" => "Performance Dialog",
             "link" => "Task Box",
             "period" => $period,
-            "user_id" => $userID,
-            "employee_id" => $employeeID,
+            "user_id" => $loggedInUserID,
+            "employee_id" => $loggedInEmployeeID,
             "performance_dialog_years" => $performanceDialogYears,
+            "current_active_status" => $currentActiveStatus,
+            "performance_dialog_statuses" => $performanceDialogStatuses,
+            "current_filter_initiate_date" => $currentFilterInitiateDate,
             "rows" => $rows,
             "reportees" => $reportees,
             "total_team" => $totalTeam,

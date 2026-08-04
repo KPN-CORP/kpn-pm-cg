@@ -49,7 +49,7 @@
                                     <div class="col-md-3">
                                         <div class="mb-2">
                                             <label class="form-label" for="filterYear">{{ __('Year') }}</label>
-                                            <select name="filterYear" id="filterYear" onchange="yearPerformanceDialogTask(this)" class="form-select">
+                                            <select name="filterYear" id="filterYear" onchange="filterTriggerPerformanceDialogTask(this)" class="form-select">
                                                 @foreach ($performance_dialog_years as $year)
                                                     <option value="{{ $year }}" {{ $year == $period ? 'selected' : '' }}>
                                                         {{ $year }}

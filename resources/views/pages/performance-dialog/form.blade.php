@@ -240,21 +240,35 @@
                 @if ($is_form_acknowledge)
                     <a class="btn btn-outline-secondary rounded-pill submit-button me-2" href="{{ $redirect_back }}">Back</a>
                     <button type="submit" class="btn btn-primary rounded-pill submit-button"
-                        name="action_acknowledge" value="Acknowledge" id="performance-dialog-acknowledge">Acknowledge</button>
+                        name="action_acknowledge" value="Acknowledge" id="performance-dialog-acknowledge">
+                            <span class="spinner-border spinner-border-sm me-1 d-none" role="status" aria-hidden="true"></span>
+                            Acknowledge
+                        </button>
                 @elseif ($is_form_delete)
                     <a class="btn btn-outline-secondary rounded-pill submit-button me-2" href="{{ $redirect_back }}">Back</a>
                     <button type="submit" class="btn btn-primary rounded-pill submit-button"
-                        name="action_delete" value="Delete" id="performance-dialog-delete">Delete</button>
+                        name="action_delete" value="Delete" id="performance-dialog-delete">
+                            <span class="spinner-border spinner-border-sm me-1 d-none" role="status" aria-hidden="true"></span>
+                            Delete
+                        </button>
                 @elseif ($is_form_approval)
                     <a class="btn btn-outline-secondary rounded-pill submit-button me-2" href="{{ $redirect_back }}">Back</a>
                     <button type="submit" class="btn btn-primary rounded-pill submit-button"
-                        name="action_approve" value="Approve" id="performance-dialog-approve">Approve</button>
+                        name="action_approve" value="Approve" id="performance-dialog-approve">
+                            <span class="spinner-border spinner-border-sm me-1 d-none" role="status" aria-hidden="true"></span>
+                            Approve
+                        </button>
                 @elseif ($is_form_create || $is_form_edit)
                     <button type="submit" class="btn btn-outline-primary rounded-pill me-2 draft-button"
-                        name="action_draft" value="Draft" id="performance-dialog-save-draft">Save as
-                        Draft</button>
+                        name="action_draft" value="Draft" id="performance-dialog-save-draft">
+                            <span class="spinner-border spinner-border-sm me-1 d-none" role="status" aria-hidden="true"></span>
+                            Save as Draft
+                        </button>
                     <button type="submit" class="btn btn-primary rounded-pill submit-button"
-                        name="action_submit" value="Submitted" id="performance-dialog-submit">Submit</button>
+                        name="action_submit" value="Submitted" id="performance-dialog-submit">
+                            <span class="spinner-border spinner-border-sm me-1 d-none" role="status" aria-hidden="true"></span>
+                            Submit
+                        </button>
                 @else
                     <a class="btn btn-outline-secondary rounded-pill submit-button" href="{{ $redirect_back }}">Back</a>
                 @endif
