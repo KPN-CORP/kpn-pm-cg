@@ -1,7 +1,7 @@
 import $ from 'jquery';
 
 import select2 from "select2"
-select2(); 
+select2();
 
 
 document.addEventListener("DOMContentLoaded", function () {
@@ -141,3 +141,9 @@ window.hideLoader = hideLoader;
 window.onload = function () {
     hideLoader();
 };
+
+window.addEventListener('pageshow', function (event) {
+    if (event.persisted) {
+        hideLoader();
+    }
+});
