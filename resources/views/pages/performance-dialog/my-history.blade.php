@@ -46,8 +46,8 @@
                                     $filterYear = request('filterYear');
                                 @endphp
                                 <div class="row align-items-end justify-content-between">
-                                    <div class="col-md-3">
-                                        <div class="mb-2">
+                                    <div class="d-flex align-items-end gap-3 mb-2">
+                                        <div style="width: 140px;">
                                             <label class="form-label" for="filterYear">{{ __('Year') }}</label>
                                             <select name="filterYear" id="filterYear" onchange="filterTriggerPerformanceDialogTask(this)" class="form-select">
                                                 @foreach ($performance_dialog_years as $year)
@@ -56,6 +56,20 @@
                                                     </option>
                                                 @endforeach
                                             </select>
+                                        </div>
+                                        <div style="width: 180px;">
+                                            <label class="form-label" for="filterStatus">Status</label>
+                                            <select name="filterStatus" id="filterStatus" onchange="filterTriggerPerformanceDialogTask(this)" class="form-select">
+                                                @foreach ($performance_dialog_statuses as $pd_status)
+                                                    <option value="{{ $pd_status }}" {{ $pd_status == $current_active_status ? 'selected' : '' }}>
+                                                        {{ $pd_status }}
+                                                    </option>
+                                                @endforeach
+                                            </select>
+                                        </div>
+                                        <div style="width: 160px;">
+                                            <label for="filterInitiateDate" class="form-label">Initiate Date</label>
+                                            <input type="date" class="form-control form-control-sm" id="filterInitiateDate" name="filterInitiateDate" value="{{ $current_filter_initiate_date }}" onchange="filterTriggerPerformanceDialogTask(this)">
                                         </div>
                                     </div>
                                 </div>
