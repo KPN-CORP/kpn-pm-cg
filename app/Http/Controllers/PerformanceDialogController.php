@@ -27,9 +27,11 @@ class PerformanceDialogController extends Controller
     }
 
     public function index(Request $request) {
-        $userID = $this->loggedInUser->id;
-        $employeeID = $this->loggedInUser->employee_id;
+        $loggedInUserID = $this->loggedInUser->id;
+        $loggedInEmployeeID = $this->loggedInUser->employee_id;
         $period = now()->year;
+        $currentActiveStatus = "All";
+        $currentFilterInitiateDate = "";
 
         if (!empty($request->period)) {
             $period = $request->period;
@@ -39,13 +41,34 @@ class PerformanceDialogController extends Controller
             $period = $request->filterYear;
         }
 
+        if (!empty($request->filterStatus)) {
+            $currentActiveStatus = $request->filterStatus;
+        }
+
+        if (!empty($request->filterInitiateDate)) {
+            $currentFilterInitiateDate = $request->filterInitiateDate;
+        }
+
         $rows = [];
 
         $performanceDialogs = PerformanceDialog::with(['employee', 'employeeManager'])
-            ->where('employee_id', $employeeID)
+            ->where('employee_id', $loggedInEmployeeID)
             ->where('period', $period)
-            ->where('deleted_at', null)
-            ->get();
+            ->whereNull('deleted_at');
+
+        if (in_array($currentActiveStatus, ['Draft', 'Scheduled', 'Done'])) {
+            $performanceDialogs->where('status', $currentActiveStatus);
+        } elseif ($currentActiveStatus == 'Overdue') {
+            $performanceDialogs
+                ->where('status', 'Scheduled')
+                ->where('start_date', '<', now());
+        }
+
+        if (!empty($currentFilterInitiateDate)) {
+            $performanceDialogs->whereDate('initiate_date', $currentFilterInitiateDate);
+        }
+
+        $performanceDialogs = $performanceDialogs->get();
 
         $now = Carbon::now();
 
@@ -88,7 +111,7 @@ class PerformanceDialogController extends Controller
         $performanceDialogGroupByEmployeeID = $performanceDialogs->groupBy('employee_id');
 
         $performanceDialogYears = PerformanceDialog::select('period')
-            ->where('employee_id', $employeeID)
+            ->where('employee_id', $loggedInEmployeeID)
             ->distinct()
             ->orderBy('period')
             ->pluck('period');
@@ -97,13 +120,24 @@ class PerformanceDialogController extends Controller
             $performanceDialogYears = collect([$period]);
         }
 
+        $performanceDialogStatuses = [
+            "All",
+            "Draft",
+            "Scheduled",
+            "Done",
+            "Overdue"
+        ];
+
         return view('pages.performance-dialog.my-history', [
             "parentLink" => "Performance Dialog",
             "link" => "My History",
             "period" => $period,
-            "user_id" => $userID,
-            "employee_id" => $employeeID,
+            "user_id" => $loggedInUserID,
+            "employee_id" => $loggedInEmployeeID,
             "performance_dialog_years" => $performanceDialogYears,
+            "current_active_status" => $currentActiveStatus,
+            "performance_dialog_statuses" => $performanceDialogStatuses,
+            "current_filter_initiate_date" => $currentFilterInitiateDate,
             "rows" => $rows,
         ]);
     }
