@@ -33,5 +33,8 @@ class ScheduleServiceProvider extends ServiceProvider
             ->command("update:bt-to-db")
             ->dailyAt("00:15")
             ->withoutOverlapping();
+        $schedule->command("app:performanceDialog:upcomingSchedule")->dailyAt("10:00");
+        $schedule->command("app:performanceDialog:overdueSchedule")->dailyAt("10:00");
+        $schedule->command("app:performanceDialog:draftSchedule")->dailyAt("10:00");
     }
 }
