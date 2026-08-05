@@ -5,10 +5,10 @@ namespace App\Console\Commands;
 use Illuminate\Console\Command;
 use App\Http\Controllers\PerformanceDialogCronController;
 
-class PerformanceDialogDraftScheduleReminder extends Command
+class PerformanceDialogDraftReminder extends Command
 {
-    protected $signature = "app:performanceDialog:draftSchedule";
-    protected $description = "Performance Dialog Draft Schedule";
+    protected $signature = "app:performanceDialog:draftReminder";
+    protected $description = "Performance Dialog Draft Reminder";
 
     public function __construct()
     {
@@ -18,7 +18,7 @@ class PerformanceDialogDraftScheduleReminder extends Command
     public function handle()
     {
         $controller = new PerformanceDialogCronController();
-        $controller->draftScheduleReminder();
+        $controller->draftReminder();
         $this->info("Email reminder sent successfully.");
     }
 }

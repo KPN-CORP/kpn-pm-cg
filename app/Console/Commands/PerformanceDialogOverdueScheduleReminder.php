@@ -7,8 +7,8 @@ use App\Http\Controllers\PerformanceDialogCronController;
 
 class PerformanceDialogOverdueScheduleReminder extends Command
 {
-    protected $signature = "app:performanceDialog:overdueSchedule";
-    protected $description = "Performance Dialog Overdue Schedule";
+    protected $signature = "app:performanceDialog:overdueScheduleReminder";
+    protected $description = "Performance Dialog Overdue ScheduleReminder";
 
     public function __construct()
     {

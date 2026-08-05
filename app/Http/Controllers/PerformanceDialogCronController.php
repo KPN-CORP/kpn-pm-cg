@@ -15,5 +15,5 @@ class PerformanceDialogCronController extends Controller
 
     public function overdueScheduleReminder () {}
 
-    public function draftScheduleReminder () {}
+    public function draftReminder () {}
 }
