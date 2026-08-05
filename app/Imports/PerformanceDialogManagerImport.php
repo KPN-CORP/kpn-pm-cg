@@ -97,8 +97,8 @@ class PerformanceDialogManagerImport implements ToModel, WithValidation, WithHea
             $developmentPlan =  $row['development_plan'];
             $additionalNotes =  $row['additional_notes'];
             $period =  $row['period'];
+            $startDate = Carbon::now();
             $initiateDate = Carbon::now();
-            $startDate = $row['schedule_date'];
             $endDate = null;
             $dueDate = $row['due_date'];
             $typeName = "";
@@ -121,6 +121,10 @@ class PerformanceDialogManagerImport implements ToModel, WithValidation, WithHea
 
             if (isset($row['initiate_date']) && !empty($row['initiate_date'])) {
                 $initiateDate = $row['initiate_date'];
+            }
+
+            if (isset($row['schedule_date']) && !empty($row['schedule_date'])) {
+                $startDate = $row['schedule_date'];
             }
 
             if ($status && $status != "Done") {
