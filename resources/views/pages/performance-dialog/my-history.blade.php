@@ -86,7 +86,7 @@
                                                 <th>Schedule Date</th>
                                                 <th>Initiated Date</th>
                                                 <th class="text-center">Status</th>
-                                                <th class="text-center sorting_1">Action</th>
+                                                <th class="bg-white text-center sorting_1">Action</th>
                                             </tr>
                                         </thead>
                                         <tbody>
@@ -114,7 +114,7 @@
                                                             {{ $row['status'] }}
                                                         </span>
                                                     </td>
-                                                    <td class="text-center">
+                                                    <td class="text-center" style="background-color:white !important;">
                                                         @if ($row['is_action_download'])
                                                             <a class="btn btn-sm btn-outline-info" href="{{ route('performance-dialog.download', $row['id']) }}" target="_blank"
                                                             data-bs-toggle="tooltip"

@@ -22,6 +22,7 @@ class Goal extends Model
         'form_data',
         'form_status',
         'period',
+        'is_achievement_submitted'
     ];
 
     public function approvalRequest()

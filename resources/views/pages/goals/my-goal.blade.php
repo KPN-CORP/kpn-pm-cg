@@ -120,6 +120,9 @@
                                 <span class="d-none"></span>
                             @endif
                         @endif
+                        <a type="button" class="btn btn-outline-primary btn-sm" href="{{ route('achievement.form-edit', [
+                            'goal_id' => $row->request->goal->id,
+                        ]) }}">Update Achievement</a>
                     </div>
                     <div class="card-body">
                         <div class="row">

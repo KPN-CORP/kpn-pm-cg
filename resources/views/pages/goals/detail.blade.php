@@ -12,7 +12,7 @@
                 <div class="container-fluid py-3">
                     <form action="" method="post">
                         <div class="d-sm-flex align-items-center mb-3">
-                                <h4 class="me-1">{{ $task->employee->fullname }}</h4><span class="text-muted h4">{{ $task->employee->employee_id }}</span>
+                                <h4 class="me-1">{{ $task->employee?->fullname }}</h4><span class="text-muted h4">{{ $task->employee?->employee_id }}</span>
                         </div>
                         @if ($sendbackMessages && $sendbackTo == $employeeId)
                         <div class="card col-md-12 mb-2 border border-dark">
@@ -28,22 +28,20 @@
                             </div>
                         </div>
                         @endif
-                        <!-- Content Row -->
+
                         <div class="container-card">
                             @php
                                 $formData = json_decode($goalData, true);
-                                
-                                // Group KPIs by cluster if cluster field exists
+
                                 $groupedData = [];
                                 $clusterKPIs = [
                                     'company' => [],
                                     'division' => [],
                                     'individual' => []
                                 ];
-                                
+
                                 if ($formData) {
                                     foreach ($formData as $index => $data) {
-                                        // Determine cluster type
                                         if (isset($data['cluster'])) {
                                             $cluster = strtolower($data['cluster']);
                                             if (!isset($groupedData[$cluster])) {
@@ -51,16 +49,14 @@
                                             }
                                             $groupedData[$cluster][] = array_merge($data, ['index' => $index]);
                                         } else {
-                                            // Fallback to individual if no cluster
                                             $groupedData['individual'][] = array_merge($data, ['index' => $index]);
                                         }
                                     }
                                 }
                             @endphp
-                            
+
                             @if ($formData)
                                 @if (!empty($groupedData))
-                                    {{-- Display clustered KPIs --}}
                                     @foreach ($groupedData as $clusterName => $kpis)
                                         <div class="mb-4">
                                             <div class="bg-light p-2 mb-2 rounded-top border-start border-3 border-primary">
@@ -68,7 +64,7 @@
                                                     {{ $clusterName === 'company' ? 'Company KPI' : ($clusterName === 'division' ? 'Division KPI' : 'Personal KPI') }}
                                                 </h5>
                                             </div>
-                                            
+
                                             @foreach ($kpis as $data)
                                                 <div class="card col-md-12 mb-2 border border-primary">
                                                     <div class="card-header bg-white pb-0">
@@ -76,16 +72,24 @@
                                                     </div>
                                                     <div class="card-body">
                                                         <div class="row">
-                                                            <div class="col-lg-5 mb-3">
+                                                            <div class="col-lg-4 mb-3">
                                                                 <div class="form-group">
                                                                     <label class="form-label" for="kpi">KPI</label>
                                                                     <p class="mt-1 mb-0 text-muted" @style('white-space: pre-line')>{{ $data['kpi'] }}</p>
                                                                 </div>
                                                             </div>
-                                                            <div class="col-lg-3 mb-3">
+                                                            <div class="col-lg-2 mb-3">
                                                                 <div class="form-group">
                                                                     <label class="form-label" for="target">{{ __('Target In UoM') }} {{ $data['uom'] === 'Other' ? $data['custom_uom'] : $data['uom'] }}</label>
                                                                     <p class="mt-1 mb-0 text-muted" @style('white-space: pre-line')>{{ $data['target'] }}</p>
+                                                                </div>
+                                                            </div>
+                                                            <div class="col-lg-2 mb-3">
+                                                                <div class="form-group">
+                                                                    <label class="form-label" for="achievement">{{ __('Achievement') }}</label>
+                                                                    <p class="mt-1 mb-0 text-muted">
+                                                                        {{ isset($data['achievement']) && $data['achievement'] !== '' ? $data['achievement'] : '-' }}
+                                                                    </p>
                                                                 </div>
                                                             </div>
                                                             <div class="col-lg-2 mb-3">
@@ -116,7 +120,6 @@
                                         </div>
                                     @endforeach
                                 @else
-                                    {{-- Fallback to simple display if no grouping --}}
                                     @foreach ($formData as $index => $data)
                                         <div class="card col-md-12 mb-2 border border-primary">
                                             <div class="card-header bg-white pb-0">
@@ -124,16 +127,24 @@
                                             </div>
                                             <div class="card-body">
                                                 <div class="row">
-                                                    <div class="col-lg-5 mb-3">
+                                                    <div class="col-lg-4 mb-3">
                                                         <div class="form-group">
                                                             <label class="form-label" for="kpi">KPI</label>
                                                             <p class="mt-1 mb-0 text-muted" @style('white-space: pre-line')>{{ $data['kpi'] }}</p>
                                                         </div>
                                                     </div>
-                                                    <div class="col-lg-3 mb-3">
+                                                    <div class="col-lg-2 mb-3">
                                                         <div class="form-group">
                                                             <label class="form-label" for="target">{{ __('Target In UoM') }} {{ $data['uom'] === 'Other' ? $data['custom_uom'] : $data['uom'] }}</label>
                                                             <p class="mt-1 mb-0 text-muted" @style('white-space: pre-line')>{{ $data['target'] }}</p>
+                                                        </div>
+                                                    </div>
+                                                    <div class="col-lg-2 mb-3">
+                                                        <div class="form-group">
+                                                            <label class="form-label" for="achievement">{{ __('Achievement') }}</label>
+                                                            <p class="mt-1 mb-0 text-muted">
+                                                                {{ isset($data['achievement']) && $data['achievement'] !== '' ? $data['achievement'] : '-' }}
+                                                            </p>
                                                         </div>
                                                     </div>
                                                     <div class="col-lg-2 mb-3">
@@ -164,11 +175,11 @@
                                 @endif
                             @else
                                 <p>No form data available.</p>
-                            @endif                
+                            @endif
                         </div>
                     </form>
                 </div>
             </div>
-      </div>
+        </div>
     </div>
-  </div>
+</div>
