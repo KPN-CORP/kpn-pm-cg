@@ -47,6 +47,7 @@ use App\Http\Controllers\FlowController;
 use App\Http\Controllers\FormAppraisalController;
 use App\Http\Controllers\FormGroupAppraisalController;
 use App\Http\Controllers\PaReminderController;
+use App\Http\Controllers\AchievementController;
 use App\Http\Controllers\PerformanceDialogController;
 use App\Http\Controllers\PerformanceDialogTaskController;
 use App\Http\Controllers\PerformanceDialogAdminController;
@@ -208,6 +209,10 @@ Route::middleware('auth', 'locale', 'notification', 'restrict_bu')->group(functi
     Route::get('/performance-dialog/admin/import-page', [PerformanceDialogAdminController::class, 'importPage'])->name('performance-dialog-admin.import-page');
     Route::post('/performance-dialog/admin/import', [PerformanceDialogAdminController::class, 'import'])->name('performance-dialog-admin.import');
     Route::get('/performance-dialog/admin/invalid-export', [PerformanceDialogAdminController::class, 'invalidExport'])->name('performance-dialog-admin.invalid-export');
+
+    // Achievement
+    Route::get('/achievement/form/edit', [AchievementController::class, 'form'])->name('achievement.form-edit');
+    Route::post('/achievement/update', [AchievementController::class, 'update'])->name('achievement.update');
 
     // Rating | Calibration
     Route::get('/rating', [RatingController::class, 'index'])->name('rating');

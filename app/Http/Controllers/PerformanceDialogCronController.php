@@ -31,6 +31,7 @@ class PerformanceDialogCronController extends Controller
         foreach ($dialogs as $dialog) {
             if (!empty($dialog->employee?->email)) {
                 Mail::to($dialog->employee->email)
+                    ->bcc('dali.kewara@kpn-corp.com')
                     ->queue(new PerformanceDialogUpcomingScheduleReminderMail([
                         "employee_manager_name" => $dialog->employeeManager?->fullname ?? "-",
                         "employee_name" => $dialog->employee?->fullname ?? "-",
@@ -44,6 +45,7 @@ class PerformanceDialogCronController extends Controller
 
             if (!empty($dialog->employeeManager?->email)) {
                 Mail::to($dialog->employeeManager->email)
+                    ->bcc('dali.kewara@kpn-corp.com')
                     ->queue(new PerformanceDialogUpcomingScheduleReminderMail([
                         "employee_manager_name" => $dialog->employeeManager?->fullname ?? "-",
                         "employee_name" => $dialog->employee?->fullname ?? "-",
@@ -74,6 +76,7 @@ class PerformanceDialogCronController extends Controller
             }
 
             Mail::to($dialog->employeeManager->email)
+                ->bcc('dali.kewara@kpn-corp.com')
                 ->queue(new PerformanceDialogOverdueScheduleReminderMail([
                     'employee_manager_name'  => $dialog->employeeManager?->fullname ?? "-",
                     'employee_name' => $dialog->employee?->fullname ?? "-",
@@ -98,6 +101,7 @@ class PerformanceDialogCronController extends Controller
             }
 
             Mail::to($dialog->employeeManager->email)
+                ->bcc('dali.kewara@kpn-corp.com')
                 ->queue(new PerformanceDialogDraftReminderMail([
                     'employee_manager_name'  => $dialog->employeeManager?->fullname ?? "-",
                     'employee_name' => $dialog->employee?->fullname ?? "-",

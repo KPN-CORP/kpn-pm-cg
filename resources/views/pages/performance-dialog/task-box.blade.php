@@ -11,6 +11,16 @@
     #tablePerformanceDialog tbody td {
         vertical-align: middle;
     }
+    .sticky-action-col {
+        position: sticky !important;
+        right: 0 !important;
+        background-color: #ffffff !important;
+        z-index: 2;
+        box-shadow: inset 1px 0 0 #dee2e6;
+    }
+    .table-hover tbody tr:hover .sticky-action-col {
+        background-color: #f8f9fa !important;
+    }
 </style>
 @endsection
 
@@ -45,9 +55,18 @@
                                 @php
                                     $filterYear = request('filterYear');
                                 @endphp
+                                <div class="row mb-2">
+                                    <div class="col-md-12 bg-light p-1">
+                                            <span><strong>Total Team:</strong> {{ $total_team }}</span> |
+                                            <span><strong>Done:</strong> {{ $total_done }}</span> |
+                                            <span><strong>Scheduled:</strong> {{ $total_scheduled }}</span> |
+                                            <span><strong>Draft:</strong> {{ $total_draft }}</span> |
+                                            <span><strong>Overdue:</strong> {{ $total_overdue }}</span> |
+                                            <span><strong>Not Scheduled:</strong> {{ $total_not_scheduled }}</span>
+                                    </div>
+                                    </div>
                                 <div class="row align-items-end justify-content-between">
-                                    <div class="d-flex align-items-end gap-3">
-                                        <div style="width: 140px;">
+                                        <div class="col-md-4">
                                             <label class="form-label" for="filterYear">{{ __('Year') }}</label>
                                             <select name="filterYear" id="filterYear" onchange="filterTriggerPerformanceDialogTask(this)" class="form-select">
                                                 @foreach ($performance_dialog_years as $year)
@@ -57,7 +76,7 @@
                                                 @endforeach
                                             </select>
                                         </div>
-                                        <div style="width: 180px;">
+                                         <div class="col-md-4">
                                             <label class="form-label" for="filterStatus">Status</label>
                                             <select name="filterStatus" id="filterStatus" onchange="filterTriggerPerformanceDialogTask(this)" class="form-select">
                                                 @foreach ($performance_dialog_statuses as $pd_status)
@@ -67,30 +86,23 @@
                                                 @endforeach
                                             </select>
                                         </div>
-                                        <div style="width: 160px;">
+                                         <div class="col-md-4">
                                             <label for="filterInitiateDate" class="form-label">Initiate Date</label>
                                             <input type="date" class="form-control form-control-sm" id="filterInitiateDate" name="filterInitiateDate" value="{{ $current_filter_initiate_date }}" onchange="filterTriggerPerformanceDialogTask(this)">
                                         </div>
-                                    </div>
+                                </div>
+                                <div class="row my-2">
                                     <div class="col-md-12">
-                                        <p style="float:right;margin-top:-40px;display:inline-block">
-                                            <span><strong>Total Team:</strong> {{ $total_team }}</span> |
-                                            <span><strong>Done:</strong> {{ $total_done }}</span> |
-                                            <span><strong>Scheduled:</strong> {{ $total_scheduled }}</span> |
-                                            <span><strong>Draft:</strong> {{ $total_draft }}</span> |
-                                            <span><strong>Overdue:</strong> {{ $total_overdue }}</span> |
-                                            <span><strong>Not Scheduled:</strong> {{ $total_not_scheduled }}</span>
-                                        </p>
-                                        <button style="float:right;margin-left:5px" type="button" class="btn btn-outline-info shadow" data-bs-toggle="modal" data-bs-target="#importModal"><i class="ri-upload-2-line"></i> Import</button>
-                                        <a style="float:right;margin-left:5px" class="btn btn-primary shadow" href="{{ route('performance-dialog.form') }}" onclick="showLoader()"><i class="ri-file-line"></i> Initiate</a>
-                                        <button style="float:right;margin-left:5px" type="button" class="btn btn-outline-warning shadow" data-bs-toggle="modal" data-bs-target="#scheduleModal" onclick="setPerformanceDialogSchedule()"><i class="ri-calendar-line"></i> Set Schedule</button>
+                                        <button type="button" class="btn btn-sm btn-outline-info shadow" data-bs-toggle="modal" data-bs-target="#importModal"><i class="ri-upload-2-line"></i> Import</button>
+                                        <a class="btn btn-primary btn-sm shadow" href="{{ route('performance-dialog.form') }}" onclick="showLoader()"><i class="ri-file-line"></i> Initiate</a>
+                                        <button type="button" class="btn btn-sm btn-outline-warning shadow" data-bs-toggle="modal" data-bs-target="#scheduleModal" onclick="setPerformanceDialogSchedule()"><i class="ri-calendar-line"></i> Set Schedule</button>
                                     </div>
                                 </div>
                             </form>
                             <div class="tab-pane fade show active" id="team" role="tabpanel" aria-labelledby="team-tab">
                                 <div class="table-responsive">
                                     <table id="tablePerformanceDialog" class="table table-hover table-sm activate-select dataTables_scrollHeadInner">
-                                        <thead>
+                                        <thead class="align-items-middle">
                                             <tr>
                                                 <th class="text-center">No</th>
                                                 <th>Employee ID</th>
@@ -98,7 +110,7 @@
                                                 <th>Schedule Date</th>
                                                 <th>Initiated Date</th>
                                                 <th class="text-center">Status</th>
-                                                <th class="text-center sorting_1">Action</th>
+                                                <th class="bg-white text-center sorting_1">Action</th>
                                             </tr>
                                         </thead>
                                         <tbody>
@@ -125,7 +137,7 @@
                                                             {{ $row['status'] }}
                                                         </span>
                                                     </td>
-                                                    <td class="text-center">
+                                                    <td class="text-center" style="background-color:white !important;">
                                                         @if ($row['is_action_schedule'])
                                                             <button type="button" class="btn btn-sm btn-outline-warning" data-bs-toggle="modal" data-bs-target="#scheduleModal" onclick="setPerformanceDialogScheduleEmployee('{{ $row['employee_id'] }}', '{{ $row['employee_name'] }}')"
                                                             data-bs-toggle="tooltip"

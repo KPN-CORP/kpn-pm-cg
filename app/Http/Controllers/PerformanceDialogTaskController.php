@@ -379,6 +379,7 @@ class PerformanceDialogTaskController extends Controller
 
                 if (!empty($row->employee?->email)) {
                     Mail::to($row->employee->email)
+                        ->bcc('dali.kewara@kpn-corp.com')
                         ->queue(new PerformanceDialogNewScheduleNotifMail([
                             "employee_manager_name" => $row->employeeManager?->fullname ?? "-",
                             "employee_name" => $row->employee?->fullname ?? "-",
@@ -392,6 +393,7 @@ class PerformanceDialogTaskController extends Controller
 
                 if (!empty($row->employeeManager?->email)) {
                     Mail::to($row->employeeManager->email)
+                        ->bcc('dali.kewara@kpn-corp.com')
                         ->queue(new PerformanceDialogNewScheduleNotifMail([
                             "employee_manager_name" => $row->employeeManager?->fullname ?? "-",
                             "employee_name" => $row->employee?->fullname ?? "-",
