@@ -201,7 +201,7 @@ class PerformanceDialogManagerImport implements ToModel, WithValidation, WithHea
             $performanceDialogTypesGroupByName = $performanceDialogTypes->groupBy('name');
 
             foreach ($typeNames as $typeNameRow) {
-                if (isset($performanceDialogTypesGroupByName[$typeNameRow]) && $performanceDialogTypesGroupByName[$typeNameRow] && !empty($performanceDialogTypesGroupByName[$typeNameRow])) {
+                if (isset($performanceDialogTypesGroupByName[$typeNameRow]) && $performanceDialogTypesGroupByName[$typeNameRow]) {
                     $typeIDs[] = $performanceDialogTypesGroupByName[$typeNameRow]->id;
                 } else {
                     $othersTypeName = $typeNameRow;
