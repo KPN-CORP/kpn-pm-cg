@@ -144,7 +144,7 @@
                                     </div>
                                 </div>
                                 <div class="form-group">
-                                    <label for="file">Upload File</label>
+                                    <label for="file">Upload File<span class="text-danger">*</span></label>
                                     <input type="file" name="file" id="file" class="form-control" required>
                                 </div>
                             </div>
