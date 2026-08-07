@@ -9,7 +9,7 @@ use Illuminate\Mail\Mailables\Content;
 use Illuminate\Mail\Mailables\Envelope;
 use Illuminate\Queue\SerializesModels;
 
-class PerformanceDialogOverdueScheduleReminder extends Mailable
+class PerformanceDialogNewScheduleNotifMail extends Mailable
 {
     use Queueable, SerializesModels;
 
@@ -26,7 +26,7 @@ class PerformanceDialogOverdueScheduleReminder extends Mailable
     public function envelope(): Envelope
     {
         return new Envelope(
-            subject: 'Performance Dialog Overdue Schedule Reminder',
+            subject: 'Performance Dialog Scheduled',
         );
     }
 
@@ -36,7 +36,7 @@ class PerformanceDialogOverdueScheduleReminder extends Mailable
     public function content(): Content
     {
         return new Content(
-            view: 'emails.performance-dialog-overdue-schedule-reminder',
+            view: 'emails.performance-dialog-new-schedule-notif',
             with: $this->data
         );
     }

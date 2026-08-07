@@ -2,58 +2,82 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Performance Dialog Scheduled</title>
+        @if ($is_manager)
+            <title>Performance Dialog Successfully Scheduled</title>
+        @else
+            <title>Performance Dialog Scheduled</title>
+        @endif
 </head>
 <body style="margin:0;padding:30px;background:#f4f6f9;font-family:Arial,Helvetica,sans-serif;color:#333;">
-
 <table width="100%" cellspacing="0" cellpadding="0">
     <tr>
         <td align="center">
-
-            <table width="650" cellspacing="0" cellpadding="0"
-                   style="background:#ffffff;border-radius:8px;overflow:hidden;border:1px solid #e5e5e5;">
-
+            <table width="650" cellspacing="0" cellpadding="0" style="background:#ffffff;border-radius:8px;overflow:hidden;border:1px solid #e5e5e5;">
                 <tr>
                     <td style="background:#0d6efd;padding:20px 30px;color:white;">
-                        <h2 style="margin:0;">Performance Dialog</h2>
+                        @if ($is_manager)
+                            <h2 style="margin:0;">Performance Dialog Successfully Scheduled</h2>
+                        @else
+                            <h2 style="margin:0;">Performance Dialog Scheduled</h2>
+                        @endif
                     </td>
                 </tr>
-
                 <tr>
                     <td style="padding:30px;">
-
                         <p style="margin-top:0;">
                             Dear Bapak/Ibu
-                            <strong>{{ $employee_name }}</strong>,
+                            @if ($is_manager)
+                                <strong>{{ $employee_manager_name }}</strong>,
+                            @else
+                                <strong>{{ $employee_name }}</strong>,
+                            @endif
                         </p>
 
-                        <p>
-                            Performance Dialog Anda telah dijadwalkan oleh atasan Anda.
-                        </p>
+                        @if ($is_manager)
+                            <p>
+                                Anda telah berhasil menjadwalkan Performance Dialog dengan <strong>{{ $employee_name }}</strong>.
+                            </p>
+                        @else
+                            <p>
+                                Performance Dialog Anda telah dijadwalkan oleh atasan Anda.
+                            </p>
+                        @endif
 
-                        <table width="100%" cellpadding="10"
-                               style="border-collapse:collapse;background:#f8f9fa;border:1px solid #e9ecef;margin:25px 0;">
-
+                        <table width="100%" cellpadding="10" style="border-collapse:collapse;background:#f8f9fa;border:1px solid #e9ecef;margin:25px 0;">
+                            @if ($is_manager)
+                                <tr>
+                                    <td><strong>Employee</strong></td>
+                                    <td>{{ $employee_name }}</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Designation</strong></td>
+                                    <td>{{ $employee_designation }}</td>
+                                </tr>
+                            @else
+                                <tr>
+                                    <td><strong>Manager</strong></td>
+                                    <td>{{ $employee_manager_name }}</td>
+                                </tr>
+                            @endif
                             <tr>
                                 <td width="35%"><strong>Tanggal</strong></td>
-                                <td>{{ $date }}</td>
+                                <td>{{ $formatted_start_date }}</td>
                             </tr>
-
                             <tr style="background:white;">
                                 <td><strong>Waktu</strong></td>
-                                <td>{{ $time }}</td>
+                                <td>{{ $formatted_start_time }}</td>
                             </tr>
-
-                            <tr>
-                                <td><strong>Manager</strong></td>
-                                <td>{{ $manager_name }}</td>
-                            </tr>
-
                         </table>
 
-                        <p>
-                            Silakan hadir sesuai jadwal dan siapkan hal-hal yang ingin didiskusikan.
-                        </p>
+                        @if ($is_manager)
+                            <p>
+                                Silakan pastikan Anda hadir sesuai jadwal dan mempersiapkan sesi Performance Dialog.
+                            </p>
+                        @else
+                            <p>
+                                Silakan hadir sesuai jadwal dan siapkan hal-hal yang ingin didiskusikan.
+                            </p>
+                        @endif
 
                         @if(!empty($url))
                             <div style="margin:35px 0;text-align:center;">
@@ -73,7 +97,6 @@
                         <p style="margin-top:40px;">
                             Terima kasih.
                         </p>
-
                     </td>
                 </tr>
 
@@ -83,16 +106,12 @@
                                padding:18px;
                                color:#888;
                                font-size:12px;">
-                        This is an automated email generated by HCIS.<br>
-                        Please do not reply to this email.
+                        This is an automated email, please do not reply to this email.
                     </td>
                 </tr>
-
             </table>
-
         </td>
     </tr>
 </table>
-
 </body>
 </html>
