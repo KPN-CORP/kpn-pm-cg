@@ -92,38 +92,36 @@
                 <div class="col-md-12">
                 <div class="card shadow p-0 goal-card" data-year="{{ $row->request->period }}">
                     <div class="card-header bg-white py-3 d-flex align-items-center justify-content-between pb-0">
-                        <h4 class="m-0 font-weight-bold text-primary">{{ __('Goal') }} {{ $row->request->period }}</h4>
-                        @if ($period == $row->request->goal->period && !$row->request->appraisalCheck && $access)
-                            @if (Auth::user()->employee_id == ($row->request->initiated ? $row->request->initiated->employee_id : ''))
-                                @if (
-                                    $row->request->goal->form_status != 'Draft' &&
-                                    $row->request->created_by == Auth::user()->id
-                                )
-                                    <a class="btn btn-outline-warning fw-semibold"
-                                    href="{{ route('goals.edit', $row->request->goal->id) }}"
-                                    onclick="showLoader()">
-                                    {{ __('Revise Goals') }}
-                                    </a>
-                                @elseif (
-                                    $row->request->goal->form_status == 'Draft' ||
-                                    ($row->request->status == 'Pending' && count($row->request->approval) == 0) ||
-                                    $row->request->sendback_to == $row->request->employee_id
-                                )
-                                    <a class="btn btn-outline-warning fw-semibold"
-                                    href="{{ route('goals.edit', $row->request->goal->id) }}"
-                                    onclick="showLoader()">
-                                    {{ $row->request->status === 'Sendback' ? __('Revise Goals') : __('Edit') }}
-                                    </a>
-                                @endif
-                            @else
-                                <!-- Hide the button if the current user is not the initiated employee -->
-                                <span class="d-none"></span>
-                            @endif
-                        @endif
-                        <a type="button" class="btn btn-outline-primary btn-sm" href="{{ route('achievement.form-edit', [
-                            'goal_id' => $row->request->goal->id,
-                        ]) }}">Update Achievement</a>
-                    </div>
+    <h4 class="m-0 font-weight-bold text-dark">
+        {{ __('Goal') }} {{ $row->request->period }}
+    </h4>
+
+    <div class="d-flex align-items-center gap-3">
+        <a type="button" class="btn btn-outline-primary fw-semibold" href="{{ route('achievement.form-edit', ['goal_id' => $row->request->goal->id]) }}">
+            Update Achievement
+        </a>
+
+        @if ($period == $row->request->goal->period && !$row->request->appraisalCheck && $access)
+            @if (Auth::user()->employee_id == ($row->request->initiated ? $row->request->initiated->employee_id : ''))
+
+                @if ($row->request->goal->form_status != 'Draft' && $row->request->created_by == Auth::user()->id)
+                    <a class="btn btn-warning fw-semibold text-white" href="{{ route('goals.edit', $row->request->goal->id) }}" onclick="showLoader()">
+                        {{ __('Revise Goals') }}
+                    </a>
+                @elseif (
+                    $row->request->goal->form_status == 'Draft' ||
+                    ($row->request->status == 'Pending' && count($row->request->approval) == 0) ||
+                    $row->request->sendback_to == $row->request->employee_id
+                )
+                    <a class="btn btn-warning fw-semibold text-white" href="{{ route('goals.edit', $row->request->goal->id) }}" onclick="showLoader()">
+                        {{ $row->request->status === 'Sendback' ? __('Revise Goals') : __('Edit') }}
+                    </a>
+                @endif
+
+            @endif
+        @endif
+    </div>
+</div>
                     <div class="card-body">
                         <div class="row">
                             <div class="col-lg col-sm-12">
@@ -272,6 +270,12 @@
                                                     <div class="form-group">
                                                         <h5>{{ __('Weightage') }}</h5>
                                                         <p class="mt-1 mb-0 text-muted">{{ $data['weightage'] }}%</p>
+                                                    </div>
+                                                </div>
+                                                <div class="col-lg col-sm-12 p-2">
+                                                    <div class="form-group">
+                                                        <h5>{{ __('Achievement') }}</h5>
+                                                        <p class="mt-1 mb-0 text-muted">{{ $data['achievement'] ?? 0 }}</p>
                                                     </div>
                                                 </div>
                                             </div>
