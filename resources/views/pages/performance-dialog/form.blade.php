@@ -214,6 +214,13 @@
                 @endif
             </div>
             <div class="row mb-2">
+                <div class="col-md-12">
+                    <label for="" class="form-label">Summary<span class="text-danger">*</span></label>
+                    <textarea class="form-control form-control-sm" id="performance_dialog_summary" name="performance_dialog_summary" rows="4"
+                        placeholder="Please add more detail of summary ..." {{ $is_performance_dialog_summary_readonly ? 'readonly' : '' }} required>{{ $performance_dialog_summary }}</textarea>
+                </div>
+            </div>
+            <div class="row mb-2">
                 <div class="col-md-6">
                     <label for="" class="form-label">Development Plan<span class="text-danger">*</span></label>
                     <textarea class="form-control form-control-sm" id="performance_dialog_development_plan" name="performance_dialog_development_plan" rows="4"
@@ -225,12 +232,7 @@
                 </div>
             </div>
             <div class="row mb-2">
-                <div class="col-md-6">
-                    <label for="" class="form-label">Summary<span class="text-danger">*</span></label>
-                    <textarea class="form-control form-control-sm" id="performance_dialog_summary" name="performance_dialog_summary" rows="4"
-                        placeholder="Please add more detail of summary ..." {{ $is_performance_dialog_summary_readonly ? 'readonly' : '' }} required>{{ $performance_dialog_summary }}</textarea>
-                </div>
-                <div class="col-md-6">
+                <div class="col-md-12">
                     <label for="" class="form-label">Additional Notes</label>
                     <textarea class="form-control form-control-sm" id="performance_dialog_additional_notes" name="performance_dialog_additional_notes" rows="4"
                         placeholder="Please add more detail of additional notes ..." {{ $is_performance_dialog_additional_notes_readonly ? 'readonly' : '' }}>{{ $performance_dialog_additional_notes }}</textarea>
