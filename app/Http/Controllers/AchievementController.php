@@ -101,6 +101,7 @@ class AchievementController extends Controller
                 "grouped_form_data" => $groupedFormData,
                 "cluster_titles" => $clusterTitles,
                 "cluster_weights" => $clusterWeights,
+                "is_achievement_submitted" => $goal->is_achievement_submitted,
                 "redirect_back" => $redirectBack,
             ]);
         } catch (Exception $e) {
