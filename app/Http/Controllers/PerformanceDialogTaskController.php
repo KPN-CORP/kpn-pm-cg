@@ -10,6 +10,7 @@ use Illuminate\Support\Facades\Session;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Validation\ValidationException;
 use Maatwebsite\Excel\Facades\Excel;
 
@@ -19,6 +20,7 @@ use App\Models\Employee;
 use App\Services\AppService;
 use App\Imports\PerformanceDialogManagerImport;
 use App\Exports\InvalidPerformanceDialogManagerImport;
+use App\Mail\PerformanceDialogNewScheduleNotifMail;
 
 class PerformanceDialogTaskController extends Controller
 {
@@ -336,7 +338,7 @@ class PerformanceDialogTaskController extends Controller
                 ], 422);
             }
 
-            $reportees = ApprovalLayer::with(['employee'])
+            $reportees = ApprovalLayer::with(['employee', 'employeeManager'])
                 ->where("approver_id", $managerEmployeeID)
                 ->whereIn('employee_id', $employeeIDs)
                 ->get();
@@ -369,6 +371,38 @@ class PerformanceDialogTaskController extends Controller
             }
 
             PerformanceDialog::insert($insertData);
+
+            foreach ($reportees as $row) {
+                if ($row->approver_id != $managerEmployeeID) {
+                    continue;
+                }
+
+                if (!empty($row->employee?->email)) {
+                    Mail::to($row->employee->email)
+                        ->queue(new PerformanceDialogNewScheduleNotifMail([
+                            "employee_manager_name" => $row->employeeManager?->fullname ?? "-",
+                            "employee_name" => $row->employee?->fullname ?? "-",
+                            "employee_designation" => $row->employee?->designation ?? "-",
+                            "formatted_start_date" => Carbon::parse($startDate)->format('d F Y'),
+                            "formatted_start_time" => Carbon::parse($startDate)->format('H:i'),
+                            "url" => "",
+                            "is_manager" => false,
+                        ]));
+                }
+
+                if (!empty($row->employeeManager?->email)) {
+                    Mail::to($row->employeeManager->email)
+                        ->queue(new PerformanceDialogNewScheduleNotifMail([
+                            "employee_manager_name" => $row->employeeManager?->fullname ?? "-",
+                            "employee_name" => $row->employee?->fullname ?? "-",
+                            "employee_designation" => $row->employee?->designation ?? "-",
+                            "formatted_start_date" => Carbon::parse($startDate)->format('d F Y'),
+                            "formatted_start_time" => Carbon::parse($startDate)->format('H:i'),
+                            "url" => "",
+                            "is_manager" => true,
+                        ]));
+                }
+            }
 
             return response()->json([
                 'status' => true,
