@@ -224,7 +224,7 @@
                             </div>
                         </div>
                         <div class="form-group">
-                            <label for="file">Upload File</label>
+                            <label for="file">Upload File<span class="text-danger">*</span></label>
                             <input type="file" name="file" id="file" class="form-control" required>
                         </div>
                     </div>
@@ -257,11 +257,11 @@
                             <input type="text" class="form-control form-control-sm" id="performance-dialog-schedule-form-employee-name" name="employee_name" value="" disabled>
                         </div>
                         <div class="form-group mb-2">
-                            <label for="performance-dialog-schedule-form-schedule-date" class="form-label">Schedule Date</label>
+                            <label for="performance-dialog-schedule-form-schedule-date" class="form-label">Schedule Date<span class="text-danger">*</span></label>
                             <input type="datetime-local" class="form-control form-control-sm" id="performance-dialog-schedule-form-schedule-date" name="start_date" required>
                         </div>
                         <div id="performance-dialog-schedule-form-employee-elem" class="form-group">
-                            <label for="performance-dialog-schedule-form-employee" class="form-label">Employees</label>
+                            <label for="performance-dialog-schedule-form-employee" class="form-label">Employees<span class="text-danger">*</span></label>
                             <select class="form-select form-select-sm select2" id="performance-dialog-schedule-form-employee" name="employee_ids[]" data-placeholder="Select Employees" multiple required>
                                 <option></option>
                                 @foreach ($reportees as $row)

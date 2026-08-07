@@ -162,7 +162,7 @@
                 @endphp
                 @if ($is_show_select_employee)
                     <div class="col-md-{{ $colNum }}">
-                        <label for="performance_dialog_employee" class="form-label">Employees</label>
+                        <label for="performance_dialog_employee" class="form-label">Employees<span class="text-danger">*</span></label>
                         <select class="form-select form-select-sm select2" id="performance_dialog_employee" name="performance_dialog_employee_ids[]" data-placeholder="Select Employees" multiple required>
                             <option></option>
                             @foreach ($reportees as $row)
@@ -174,7 +174,7 @@
                     </div>
                 @endif
                 <div class="col-md-{{ $colNum }}">
-                    <label for="performance_dialog_type" class="form-label">Objectives</label>
+                    <label for="performance_dialog_type" class="form-label">Objectives<span class="text-danger">*</span></label>
                     <select class="form-select form-select-sm select2 {{ $is_performance_dialog_types_readonly ? 'select2-readonly' : '' }}" id="performance_dialog_type" name="performance_dialog_types[]" data-placeholder="Select Objectives" multiple required {{ $is_performance_dialog_types_readonly ? 'readonly' : '' }}>
                         <option></option>
                         @foreach ($master_performance_dialog_types as $master_performance_dialog_type)
@@ -208,25 +208,25 @@
                 </div>
                 @if ($is_show_start_date)
                     <div class="col-md-{{ $colNum }}">
-                        <label for="performance_dialog_start_date" class="form-label">Schedule Date</label>
+                        <label for="performance_dialog_start_date" class="form-label">Schedule Date<span class="text-danger">*</span></label>
                         <input type="datetime-local" class="form-control form-control-sm" id="performance_dialog_start_date" name="performance_dialog_start_date" value="{{ $performance_dialog_start_date }}" required {{ $is_performance_dialog_start_date_readonly ? 'readonly' : '' }}>
                     </div>
                 @endif
             </div>
             <div class="row mb-2">
                 <div class="col-md-6">
-                    <label for="" class="form-label">Development Plan</label>
+                    <label for="" class="form-label">Development Plan<span class="text-danger">*</span></label>
                     <textarea class="form-control form-control-sm" id="performance_dialog_development_plan" name="performance_dialog_development_plan" rows="4"
                         placeholder="Please add more detail of development plan ..." {{ $is_performance_dialog_development_plan_readonly ? 'readonly' : '' }} required>{{ $performance_dialog_development_plan }}</textarea>
                 </div>
                 <div class="col-md-6">
-                    <label for="performance_dialog_due_date" class="form-label">Due Date</label>
+                    <label for="performance_dialog_due_date" class="form-label">Due Date<span class="text-danger">*</span></label>
                     <input type="datetime-local" class="form-control form-control-sm" id="performance_dialog_due_date" name="performance_dialog_due_date" value="{{ $performance_dialog_due_date }}" required {{ $is_performance_dialog_due_date_readonly ? 'readonly' : '' }}>
                 </div>
             </div>
             <div class="row mb-2">
                 <div class="col-md-6">
-                    <label for="" class="form-label">Summary</label>
+                    <label for="" class="form-label">Summary<span class="text-danger">*</span></label>
                     <textarea class="form-control form-control-sm" id="performance_dialog_summary" name="performance_dialog_summary" rows="4"
                         placeholder="Please add more detail of summary ..." {{ $is_performance_dialog_summary_readonly ? 'readonly' : '' }} required>{{ $performance_dialog_summary }}</textarea>
                 </div>
