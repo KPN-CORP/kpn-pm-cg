@@ -96,16 +96,29 @@
                                         </div>
 
                                         <div class="col-lg-2 col-md-12 px-4 px-lg-2">
-                                            <label class="kpi-label text-success" for="achieve_{{ $data['original_index'] }}">
-                                                Achievement <span class="text-danger">*</span>
-                                            </label>
-                                            <input type="number" step="any"
-                                                class="form-control form-control-sm border-success shadow-none fw-bold text-success"
-                                                id="achieve_{{ $data['original_index'] }}"
-                                                name="achievements[{{ $data['original_index'] }}]"
-                                                value="{{ $data['achievement'] }}"
-                                                placeholder="0"
-                                                required>
+                                            @if ($clusterKey == "company")
+                                                <label class="kpi-label text-success" for="achieve_{{ $data['original_index'] }}">
+                                                    Achievement
+                                                </label>
+                                                <input type="number" step="any"
+                                                    class="form-control form-control-sm border-success shadow-none fw-bold text-success"
+                                                    id="achieve_{{ $data['original_index'] }}"
+                                                    name="achievements[{{ $data['original_index'] }}]"
+                                                    value="{{ $data['achievement'] }}"
+                                                    placeholder="0"
+                                                    >
+                                            @else
+                                                <label class="kpi-label text-success" for="achieve_{{ $data['original_index'] }}">
+                                                    Achievement <span class="text-danger">*</span>
+                                                </label>
+                                                <input type="number" step="any"
+                                                    class="form-control form-control-sm border-success shadow-none fw-bold text-success"
+                                                    id="achieve_{{ $data['original_index'] }}"
+                                                    name="achievements[{{ $data['original_index'] }}]"
+                                                    value="{{ $data['achievement'] }}"
+                                                    placeholder="0"
+                                                    required>
+                                            @endif
                                         </div>
                                     </div>
                                 </div>
@@ -127,7 +140,7 @@
 
             <div class="px-4 py-3 text-end mt-4">
                 <a href="{{ $redirect_back }}" class="btn btn-light border shadow-sm me-2">Cancel</a>
-                <button type="submit" class="btn btn-success shadow-sm px-4">
+                <button type="submit" class="btn btn-success shadow-sm px-4 spinner-border spinner-border-sm">
                     <i class="ri-save-line align-middle me-1"></i> Save Achievement
                 </button>
             </div>
