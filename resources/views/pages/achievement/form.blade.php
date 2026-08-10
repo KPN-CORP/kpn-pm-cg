@@ -140,7 +140,7 @@
 
             <div class="px-4 py-3 text-end mt-4">
                 <a href="{{ $redirect_back }}" class="btn btn-light border shadow-sm me-2">Cancel</a>
-                <button type="submit" class="btn btn-success shadow-sm px-4 spinner-border spinner-border-sm">
+                <button type="submit" class="btn btn-success shadow-sm px-4">
                     <i class="ri-save-line align-middle me-1"></i> Save Achievement
                 </button>
             </div>
