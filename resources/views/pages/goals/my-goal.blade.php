@@ -97,9 +97,11 @@
     </h4>
 
     <div class="d-flex align-items-center gap-3">
-        <a type="button" class="btn btn-outline-primary fw-semibold" href="{{ route('achievement.form-edit', ['goal_id' => $row->request->goal->id]) }}">
-            Update Achievement
-        </a>
+        @if ($row->request->period >= "2026")
+            <a type="button" class="btn btn-outline-primary fw-semibold" href="{{ route('achievement.form-edit', ['goal_id' => $row->request->goal->id]) }}">
+                Update Achievement
+            </a>
+        @endif
 
         @if ($period == $row->request->goal->period && !$row->request->appraisalCheck && $access)
             @if (Auth::user()->employee_id == ($row->request->initiated ? $row->request->initiated->employee_id : ''))
