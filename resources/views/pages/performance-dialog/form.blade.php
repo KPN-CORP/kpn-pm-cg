@@ -192,7 +192,7 @@
                             @endphp
                             <option value="{{ $master_performance_dialog_type->id }}" {{ $isSelected ? "selected" : "" }}>{{ $master_performance_dialog_type->name }}</option>
                         @endforeach
-                        @if (!empty($performance_dialog_others_type_name))
+                        @if (!empty($performance_dialog_others_type_name) && $performance_dialog_others_type_name != "-")
                             <option value="0" selected>Others</option>
                         @else
                             <option value="0">Others</option>
@@ -202,7 +202,7 @@
                         <div class="">
                             <input type="text" name="others_performance_dialog_type" id="others_performance_dialog_type"
                             class="form-control form-control-sm" placeholder="ex: Penilaian Kerja"
-                            value="{{ $performance_dialog_others_type_name }}" style="{{ empty($performance_dialog_others_type_name) ? "display: none" : "" }};margin-top:10px" {{ $is_others_performance_dialog_type_readonly ? 'readonly' : '' }}>
+                            value="{{ $performance_dialog_others_type_name }}" style="{{ empty($performance_dialog_others_type_name) || $performance_dialog_others_type_name == "-" ? "display: none" : "" }};margin-top:10px" {{ $is_others_performance_dialog_type_readonly ? 'readonly' : '' }}>
                         </div>
                     </div>
                 </div>
