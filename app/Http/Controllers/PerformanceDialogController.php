@@ -184,6 +184,7 @@ class PerformanceDialogController extends Controller
             $isFormAcknowledge = false;
             $isFormDelete = false;
             $isPerformanceDialogTypesReadonly = false;
+            $isPerformanceDialogTypesRequired = true;
             $isOthersPerformanceDialogTypeReadonly = false;
             $isPerformanceDialogStartDateReadonly = false;
             $isPerformanceDialogDueDateReadonly = false;
@@ -284,6 +285,10 @@ class PerformanceDialogController extends Controller
                     $isPerformanceDialogStartDateReadonly = true;
                 }
 
+                if ($isFormAcknowledge) {
+                    $isPerformanceDialogTypesRequired = false;
+                }
+
                 $isShowEmployeeDetail = true;
                 $isShowSelectEmployee = false;
             }
@@ -321,6 +326,7 @@ class PerformanceDialogController extends Controller
                 "is_form_edit" => $isFormEdit,
                 "is_form_acknowledge" => $isFormAcknowledge,
                 "is_form_delete" => $isFormDelete,
+                "is_performance_dialog_types_required" => $isPerformanceDialogTypesRequired,
                 "is_performance_dialog_types_readonly" => $isPerformanceDialogTypesReadonly,
                 "is_others_performance_dialog_type_readonly" => $isOthersPerformanceDialogTypeReadonly,
                 "is_performance_dialog_start_date_readonly" => $isPerformanceDialogStartDateReadonly,
