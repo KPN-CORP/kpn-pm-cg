@@ -212,7 +212,7 @@
                             @endphp
                             <td width="50%" style="padding-top:10px;">
                                 <span class="checkbox">
-                                    @if (!empty($others_type_name))
+                                    @if (!empty($others_type_name) && $others_type_name != "-")
                                         <div class="checked">✓</div>
                                     @endif
                                 </span>
@@ -233,7 +233,7 @@
                 @endphp
                 <td width="50%" style="padding-top:10px;">
                     <span class="checkbox">
-                        @if (!empty($others_type_name))
+                        @if (!empty($others_type_name) && $others_type_name != "-")
                             <div class="checked">✓</div>
                         @endif
                     </span>
@@ -279,7 +279,7 @@
                             </td>
                         </tr>
                         <tr>
-                            <td style="height:70px;border:1px solid #000;padding:8px;vertical-align:top;text-align:center;font-size:12px;"> @if(!empty($formatted_due_date)) {{ $formatted_due_date }} @endif </td>
+                            <td style="height:70px;border:1px solid #000;padding:8px;vertical-align:top;text-align:center;font-size:12px;"> @if(!empty($formatted_due_date) && $formatted_due_date != "-") {{ $formatted_due_date }} @endif </td>
                         </tr>
                     </table>
                 </td>
