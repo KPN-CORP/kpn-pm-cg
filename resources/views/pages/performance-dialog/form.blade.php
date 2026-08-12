@@ -175,7 +175,7 @@
                 @endif
                 <div class="col-md-{{ $colNum }}">
                     <label for="performance_dialog_type" class="form-label">Objectives<span class="text-danger">*</span></label>
-                    <select class="form-select form-select-sm select2 {{ $is_performance_dialog_types_readonly ? 'select2-readonly' : '' }}" id="performance_dialog_type" name="performance_dialog_types[]" data-placeholder="Select Objectives" multiple required {{ $is_performance_dialog_types_readonly ? 'readonly' : '' }}>
+                    <select class="form-select form-select-sm select2 {{ $is_performance_dialog_types_readonly ? 'select2-readonly' : '' }}" id="performance_dialog_type" name="performance_dialog_types[]" data-placeholder="Select Objectives" multiple {{ $is_performance_dialog_types_required ? 'required' : '' }} {{ $is_performance_dialog_types_readonly ? 'readonly' : '' }}>
                         <option></option>
                         @foreach ($master_performance_dialog_types as $master_performance_dialog_type)
                             @php
