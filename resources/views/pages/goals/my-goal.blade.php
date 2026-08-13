@@ -107,7 +107,7 @@
             @if (Auth::user()->employee_id == ($row->request->initiated ? $row->request->initiated->employee_id : ''))
 
                 @if ($row->request->goal->form_status != 'Draft' && $row->request->created_by == Auth::user()->id)
-                    <a class="btn btn-warning fw-semibold text-white" href="{{ route('goals.edit', $row->request->goal->id) }}" onclick="showLoader()">
+                    <a class="d-none btn btn-warning fw-semibold text-white" href="{{ route('goals.edit', $row->request->goal->id) }}" onclick="showLoader()">
                         {{ __('Revise Goals') }}
                     </a>
                 @elseif (
@@ -115,7 +115,7 @@
                     ($row->request->status == 'Pending' && count($row->request->approval) == 0) ||
                     $row->request->sendback_to == $row->request->employee_id
                 )
-                    <a class="btn btn-warning fw-semibold text-white" href="{{ route('goals.edit', $row->request->goal->id) }}" onclick="showLoader()">
+                    <a class="d-none btn btn-warning fw-semibold text-white" href="{{ route('goals.edit', $row->request->goal->id) }}" onclick="showLoader()">
                         {{ $row->request->status === 'Sendback' ? __('Revise Goals') : __('Edit') }}
                     </a>
                 @endif
