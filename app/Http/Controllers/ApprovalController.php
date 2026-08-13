@@ -115,7 +115,7 @@ class ApprovalController extends Controller
             // Update approval request
             $approvalRequest = ApprovalRequest::where('form_id', $request->id)
                 ->firstOrFail();
-                
+
             $approvalRequest->current_approval_id = $nextApprover ?? $request->current_approver_id;
             $approvalRequest->status = $statusRequest;
             $approvalRequest->updated_by = Auth::id();
@@ -197,7 +197,7 @@ class ApprovalController extends Controller
                     'peers' => json_encode($request->input('peers', [])),
                     'subordinates' => json_encode($request->input('subs', [])),
                 ]);
-                
+
                 // 2. Catat di log bahwa persetujuan telah dilakukan
                 ApprovalLog::create([
                     'approval_request_id' => $approvalRequest->id,
@@ -245,7 +245,7 @@ class ApprovalController extends Controller
                     'comments' => $comments,
                 ]);
             }
-            
+
             DB::commit();
             return back()->with('success', 'Tindakan persetujuan berhasil diproses.');
 
@@ -275,7 +275,7 @@ class ApprovalController extends Controller
                 // Ini membutuhkan logika bisnis tambahan untuk memetakan approverId ke layer yang benar
             ]);
         }
-        
+
         // Opsional: Perbarui status transaksi Proposed360 ke 'Approved'
         $proposed360Transaction->update(['status' => 'Approved']);
     }

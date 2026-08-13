@@ -50,7 +50,7 @@ class AdminRatingImport implements ToCollection, WithHeadingRow
 
         $isRatingValid = true;
         $totalRows = $collection->count();
-        
+
         // Initialize rating counts
         $ratingCounts = [
             5 => 0, // firstRow (A)
@@ -90,7 +90,7 @@ class AdminRatingImport implements ToCollection, WithHeadingRow
 
             $ratingMap = $ratings->pluck('value', 'parameter')->toArray();
             $convertedValue = $ratingMap[$row['your_rating']] ?? null;
-            
+
             // Count each rating
             if ($convertedValue) {
                 $ratingCounts[$convertedValue]++;
@@ -203,7 +203,7 @@ class AdminRatingImport implements ToCollection, WithHeadingRow
                         ->where('period', $this->period)
                         ->delete(); // Soft delete
                 }
-                
+
                 // Final approval - update Appraisal
                 $appraisal = Appraisal::where('id', $calibration->appraisal_id)
                 ->update([
@@ -211,7 +211,7 @@ class AdminRatingImport implements ToCollection, WithHeadingRow
                     'form_status' => 'Approved',
                     'updated_by' => Auth::id()
                 ]);
-                    
+
                 if ($calibration->approver_id != $row['approver_rating_id']) {
                     // Create new calibration for next approver
                     $createCalibration = new Calibration([
@@ -231,7 +231,7 @@ class AdminRatingImport implements ToCollection, WithHeadingRow
                 DB::commit();
             } catch (\Exception $e) {
                 DB::rollBack();
-                
+
                 // Add to invalid employees with error message
                 $this->invalidEmployees[] = [
                     'employee_id' => $row['employee_id'],
@@ -239,7 +239,7 @@ class AdminRatingImport implements ToCollection, WithHeadingRow
                     'your_rating' => $row['your_rating'],
                     'message' => 'Error processing record: ' . $e->getMessage()
                 ];
-                
+
                 $this->invalidEmployeeIds[] = $row['employee_id'];
                 continue;
             }

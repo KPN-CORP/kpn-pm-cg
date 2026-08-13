@@ -100,11 +100,34 @@
                         <a href="{{ route('proposed360') }}" onclick="showLoader()" class="side-nav-link">
                             <i class="ri-team-line"></i>
                             <span> {{ __('Propose 360') }} </span>
-                            {{-- <span class="badge bg-danger float-end">{{ $notificationProposed360 }}</span>     --}}
+                            {{-- <span class="badge bg-danger float-end">{{ $notificationProposed360 }}</span>   --}}
                         </a>
                     </li>
                 @endif
             @endif
+
+            <!-- START: MENU PERFORMANCE DIALOG -->
+            <li class="side-nav-item">
+                <a data-bs-toggle="collapse" href="#sidebarPerformanceDialog" aria-expanded="false" aria-controls="sidebarPerformanceDialog" class="side-nav-link">
+                    <i class="ri-message-3-line"></i>
+                    <span>{{ __('Performance Dialog') }}</span>
+                    <span class="menu-arrow"></span>
+                </a>
+                <div class="collapse" id="sidebarPerformanceDialog">
+                    <ul class="side-nav-second-level">
+                        <li>
+                            <a href="{{ route('performance-dialog.my-history') }}">{{ __('My History') }}</a>
+                        </li>
+                        @if (auth()->user()->isApprover())
+                        <li>
+                            <a href="{{ route('performance-dialog-task') }}">{{ __('Task Box') }}</a>
+                        </li>
+                        @endif
+                    </ul>
+                </div>
+            </li>
+            <!-- END: MENU PERFORMANCE DIALOG -->
+
             @if (auth()->user()->isApprover())
             <li class="side-nav-item">
                 <a href="{{ url('/reports') }}" class="side-nav-link">
@@ -287,6 +310,9 @@
                                 <a href="{{ route('importRating') }}">{{ __('Import Rating') }}</a>
                             </li>
                             @endif
+                            <li>
+                                <a href="{{ route('performance-dialog-admin.import-page') }}">Import Performance Dialog</a>
+                            </li>
                         </ul>
                     </div>
                 </li>

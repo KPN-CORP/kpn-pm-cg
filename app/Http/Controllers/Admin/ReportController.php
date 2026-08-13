@@ -12,6 +12,7 @@ use App\Models\Department;
 use App\Models\Designation;
 use App\Models\Employee;
 use App\Models\EmployeeAppraisal;
+use App\Models\PerformanceDialog;
 use App\Models\Goal;
 use App\Models\Location;
 use App\Models\Report;
@@ -34,17 +35,17 @@ class ReportController extends Controller
     protected $permissionLocations;
     protected $roles;
     protected $category;
-    
+
     public function __construct()
     {
         $this->category = 'Goals';
         $this->roles = Auth::user()->roles;
-        
+
         $restrictionData = [];
         if(!is_null($this->roles)){
             $restrictionData = json_decode($this->roles->first()->restriction, true);
         }
-        
+
         $this->permissionGroupCompanies = $restrictionData['group_company'] ?? [];
         $this->permissionCompanies = $restrictionData['contribution_level_code'] ?? [];
         $this->permissionLocations = $restrictionData['work_area_code'] ?? [];
@@ -81,7 +82,7 @@ class ReportController extends Controller
             })
             ->orderBy('contribution_level_code')->get();
     }
-    
+
     function index(Request $request) {
         $parentLink = 'Admin';
         $link = __('Report');
@@ -125,7 +126,7 @@ class ReportController extends Controller
             'locations' => $locations,
         ]);
     }
-    
+
     // public function getReportContent($reportType)
     public function getReportContent(Request $request)
     {
@@ -196,7 +197,7 @@ class ReportController extends Controller
                 $createdDate = Carbon::parse($item->created_at);
 
                     $item->formatted_created_at = $createdDate->format('d M Y g:ia');
-    
+
                 // Format updated_at
                 $updatedDate = Carbon::parse($item->updated_at);
 
@@ -235,7 +236,7 @@ class ReportController extends Controller
                 'group_company' => $permissionGroupCompanies,
                 'contribution_level_code' => $permissionCompanies,
             ];
-    
+
             $query->where(function ($query) use ($criteria) {
                 foreach ($criteria as $key => $value) {
                     if ($value !== null && !empty($value)) {
@@ -268,7 +269,7 @@ class ReportController extends Controller
                 'group_company' => $permissionGroupCompanies,
                 'contribution_level_code' => $permissionCompanies,
             ];
-    
+
             $query->where(function ($query) use ($criteria) {
                 foreach ($criteria as $key => $value) {
                     if ($value !== null && !empty($value)) {
@@ -301,7 +302,78 @@ class ReportController extends Controller
             $link = __('Report');
 
             return view($route, compact('data', 'link', 'filters', 'designations','departments','companies','locations', 'jobLevel'));
-        }else {
+        } else if ($report_type === 'PerformanceDialog') {
+            $usedPeriod = now()->year;
+
+            if (!empty($period)) {
+                $usedPeriod = $period;
+            }
+
+            $data = [];
+
+            $performanceDialogs = PerformanceDialog::with(['employee', 'employeeManager'])
+                ->where('period', $period)
+                ->where('deleted_at', null)
+                ->get();
+
+            $now = Carbon::now();
+
+            foreach($performanceDialogs as $row) {
+                $scheduleAt = $row->start_date ?? "-";
+                $initiatedAt = $row->initiate_date ?? "-";
+                $status = $row->status ?? "-";
+                $isActionDownload = false;
+
+                if ($scheduleAt != "-" && Carbon::parse($scheduleAt)->lt($now) && $status == "Scheduled") {
+                    $status = "Overdue";
+                }
+
+                if ($status == "Done" || $status == "Submitted") {
+                    $isActionDownload = true;
+                }
+
+                $formattedScheduleAt = $scheduleAt != "-" ? Carbon::parse($scheduleAt)->format('Y-m-d H:i:s') : '-';
+                $formattedInitiatedAt = $initiatedAt != "-" ? Carbon::parse($initiatedAt)->format('Y-m-d H:i:s') : '-';
+
+                $data[] = [
+                    "id" => $row->id,
+                    "employee_id" => $row->employee_id,
+                    "employee_name" => $row->employee?->fullname ?? "-",
+                    "employee_manager_id" => $row->employeeManager?->employee_id ?? "-",
+                    "employee_manager_name" => $row->employeeManager?->fullname ?? "-",
+                    "formatted_schedule_at" => $formattedScheduleAt,
+                    "formatted_initiated_at" => $formattedInitiatedAt,
+                    "status" => $status,
+                    "is_action_download" => $isActionDownload
+                ];
+            }
+
+            $performanceDialogGroupByEmployeeID = $performanceDialogs->groupBy('employee_id');
+
+            // $reportees = ApprovalLayer::with(["employee", "employeeManager"])->get();
+
+            // foreach($reportees as $reportee) {
+            //     $reporteePerformanceDialog = $performanceDialogGroupByEmployeeID[$reportee->employee_id] ?? null;
+
+            //     if ($reporteePerformanceDialog) {
+            //         continue;
+            //     }
+
+            //     $data[] = [
+            //         "id" => null,
+            //         "employee_id" => $reportee->employee_id,
+            //         "employee_name" => $reportee->employee?->fullname ?? "-",
+            //         "employee_manager_id" => $reportee->employeeManager?->employee_id ?? "-",
+            //         "employee_manager_name" => $reportee->employeeManager?->fullname ?? "-",
+            //         "formatted_schedule_at" => "-",
+            //         "formatted_initiated_at" => "-",
+            //         "status" => "Not Scheduled",
+            //         "is_action_download" => false
+            //     ];
+            // }
+
+            $route = 'reports-admin.performance-dialog';
+        } else {
             $data = collect(); // Empty collection for unknown report types
             $route = 'reports-admin.empty';
         }
@@ -315,7 +387,7 @@ class ReportController extends Controller
     public function generateReportExcel(Request $request)
     {
         // Logika untuk generate report
-        
+
         $reportType = $request->export_report_type;
         $groupCompany = $request->export_group_company;
         $company = $request->export_company;

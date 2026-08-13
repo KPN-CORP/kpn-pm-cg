@@ -35,14 +35,14 @@
                 <button type="button" class="btn btn-primary shadow" data-bs-toggle="modal" data-bs-target="#importModal">Import</button>
             </div>
         </div>
-        
+
         <div class="row">
           <div class="col-md-12">
             <div class="card shadow mb-4">
               <div class="card-body">
                 <div class="d-flex justify-content-between align-items-center mb-3">
                     <h3 class="card-title"></h3>
-                    
+
                 </div>
                   <div class="table-responsive">
                       <table class="table table-hover dt-responsive nowrap" id="scheduleTable" width="100%" cellspacing="0">
@@ -60,7 +60,7 @@
                                     <td class="text-center" style="width:5%">{{ $index + 1 }}</td>
                                     <td>{{ \Carbon\Carbon::parse($import->created_at)->format('d-m-Y H:i') }}</td>
                                     <td>
-                                        Success : {{$import->success}}, Error : {{$import->error}} 
+                                        Success : {{$import->success}}, Error : {{$import->error}}
                                         @if ($import->error > 0)
                                             <!-- Icon Information if errors are present -->
                                             <a href="javascript:void(0)" data-bs-toggle="modal" data-bs-target="#modalInfo{{$index}}"><i class="ri-information-line text-danger"></i></a>
@@ -84,13 +84,13 @@
                                                 @php
                                                     $detailErrors = json_decode($import->detail_error, true);
                                                 @endphp
-                                        
+
                                                 @if (is_array($detailErrors))
                                                     <ul>
                                                         @foreach ($detailErrors as $error)
                                                             @if (is_array($error)) {{-- Format Baru --}}
                                                                 <li>
-                                                                    <strong>Employee ID:</strong> {{ $error['employee_id'] ?? 'N/A' }} - 
+                                                                    <strong>Employee ID:</strong> {{ $error['employee_id'] ?? 'N/A' }} -
                                                                     <strong>Message:</strong> {{ $error['message'] ?? 'No details provided.' }}
                                                                 </li>
                                                             @else {{-- Format Lama --}}
