@@ -106,7 +106,7 @@
         @if ($period == $row->request->goal->period && !$row->request->appraisalCheck && $access)
             @if (Auth::user()->employee_id == ($row->request->initiated ? $row->request->initiated->employee_id : ''))
 
-                if ($row->request->goal->form_status == 'Draft')
+                @if ($row->request->goal->form_status == 'Draft')
                     <a class="btn btn-warning fw-semibold text-white" href="{{ route('goals.edit', $row->request->goal->id) }}" onclick="showLoader()">
                         {{ __('Edit') }}
                     </a>
