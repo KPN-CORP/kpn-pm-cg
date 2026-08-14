@@ -4,12 +4,12 @@
         <div class="card-header">
             <div class="row">
               <div class="col-md-auto text-center">
-                  <button class="btn btn-outline-primary btn-sm px-2 my-1 me-1 filter-btn" data-id="All">All</button>
-                  <button class="btn btn-outline-primary btn-sm px-2 my-1 me-1 filter-btn" data-id="Draft">Draft</button>
-                  <button class="btn btn-outline-primary btn-sm px-2 my-1 me-1 filter-btn" data-id="Not Scheduled">Not Scheduled</button>
-                  <button class="btn btn-outline-primary btn-sm px-2 my-1 me-1 filter-btn" data-id="Scheduled">Scheduled</button>
-                  <button class="btn btn-outline-primary btn-sm px-2 my-1 me-1 filter-btn" data-id="Overdue">Overdue</button>
-                  <button class="btn btn-outline-primary btn-sm px-2 my-1 me-1 filter-btn" data-id="Done">Done</button>
+                  <button class="btn btn-outline-primary btn-sm px-2 my-1 me-1 filter-btn" data-id="all">All</button>
+                  <button class="btn btn-outline-primary btn-sm px-2 my-1 me-1 filter-btn" data-id="draft">Draft</button>
+                  <button class="btn btn-outline-primary btn-sm px-2 my-1 me-1 filter-btn" data-id="not scheduled">Not Scheduled</button>
+                  <button class="btn btn-outline-primary btn-sm px-2 my-1 me-1 filter-btn" data-id="scheduled">Scheduled</button>
+                  <button class="btn btn-outline-primary btn-sm px-2 my-1 me-1 filter-btn" data-id="overdue">Overdue</button>
+                  <button class="btn btn-outline-primary btn-sm px-2 my-1 me-1 filter-btn" data-id="done">Done</button>
               </div>
             </div>
           </div>
