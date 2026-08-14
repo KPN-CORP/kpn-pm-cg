@@ -295,7 +295,12 @@ class PerformanceDialogController extends Controller
 
             $masterPerformanceDialogTypes = PerformanceDialogType::where("is_active", true)->where("deleted_at", null)->get();
 
-            $reportees = ApprovalLayer::with(["employee"])->where("approver_id", $loggedInEmployeeID)->get();
+            $reportees = ApprovalLayer::with(["employee"])
+                ->where("approver_id", $loggedInEmployeeID)
+                ->whereHas('employee', function ($query) {
+                    $query->whereNull('deleted_at');
+                })
+                ->get();
 
             return view('pages.performance-dialog.form', [
                 "parentLink" => "Performance Dialog",
@@ -407,6 +412,9 @@ class PerformanceDialogController extends Controller
             $reporteeEmployees = ApprovalLayer::with(['employee'])
                 ->whereIn('employee_id', $employeeIDs)
                 ->where('approver_id', $loggedInEmployeeID)
+                ->whereHas('employee', function ($query) {
+                    $query->whereNull('deleted_at');
+                })
                 ->get();
             if (!$reporteeEmployees || $reporteeEmployees->count() < 1) {
                 return response()->json([
