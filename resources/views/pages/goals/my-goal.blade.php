@@ -110,7 +110,7 @@
                     <a class="btn btn-warning fw-semibold text-white" href="{{ route('goals.edit', $row->request->goal->id) }}" onclick="showLoader()">
                         {{ __('Edit') }}
                     </a>
-                @elseif ($row->request->sendback_to == $row->request->employee_id || ($row->request->status != 'Draft' && count($row->request->approval) == 0))
+                @elseif ($row->request->sendback_to == $row->request->employee_id || ($row->request->status == 'Pending' && count($row->request->approval) == 0))
                     <a class="btn btn-warning fw-semibold text-white" href="{{ route('goals.edit', $row->request->goal->id) }}" onclick="showLoader()">
                         {{ __('Revise Goals') }}
                     </a>
