@@ -68,9 +68,11 @@ function adminReportType(val) {
                 const filterValue = $(this).data("id");
 
                 if (filterValue === "all") {
-                    reportGoalsTable.search("").draw(); // Clear the search for 'All Task'
+                    reportGoalsTable.search("").draw();
                 } else {
-                    reportGoalsTable.search(filterValue).draw();
+                    reportGoalsTable
+                        .search("^" + filterValue + "$", true, false)
+                        .draw();
                 }
             });
 
@@ -197,9 +199,11 @@ document.addEventListener("DOMContentLoaded", function () {
                     const filterValue = $(this).data("id");
 
                     if (filterValue === "all") {
-                        reportGoalsTable.search("").draw(); // Clear the search for 'All Task'
+                        reportGoalsTable.search("").draw();
                     } else {
-                        reportGoalsTable.search(filterValue).draw();
+                        reportGoalsTable
+                            .search("^" + filterValue + "$", true, false)
+                            .draw();
                     }
                 });
 
@@ -280,9 +284,11 @@ function reportType(val) {
                 const filterValue = $(this).data("id");
 
                 if (filterValue === "all") {
-                    reportGoalsTable.search("").draw(); // Clear the search for 'All Task'
+                    reportGoalsTable.search("").draw();
                 } else {
-                    reportGoalsTable.search(filterValue).draw();
+                    reportGoalsTable
+                        .search("^" + filterValue + "$", true, false)
+                        .draw();
                 }
             });
 
@@ -339,9 +345,11 @@ document.addEventListener("DOMContentLoaded", function () {
                     const filterValue = $(this).data("id");
 
                     if (filterValue === "all") {
-                        reportGoalsTable.search("").draw(); // Clear the search for 'All Task'
+                        reportGoalsTable.search("").draw();
                     } else {
-                        reportGoalsTable.search(filterValue).draw();
+                        reportGoalsTable
+                            .search("^" + filterValue + "$", true, false)
+                            .draw();
                     }
                 });
                 initializePopovers();
