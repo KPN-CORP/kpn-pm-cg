@@ -177,7 +177,13 @@ class PerformanceDialogTaskController extends Controller
 
         $reportees = ApprovalLayer::with(["employee"])
             ->where("approver_id", $loggedInEmployeeID)
-            ->get();
+            ->get()
+            ->filter(function ($reportee) {
+                return $reportee->employee
+                    && $reportee->employee->group_company === 'Cement'
+                    && is_null($reportee->employee->deleted_at);
+            })
+            ->values();
         $totalTeam = $reportees->count();
 
         foreach($reportees as $reportee) {
@@ -343,7 +349,13 @@ class PerformanceDialogTaskController extends Controller
             $reportees = ApprovalLayer::with(['employee', 'employeeManager'])
                 ->where("approver_id", $managerEmployeeID)
                 ->whereIn('employee_id', $employeeIDs)
-                ->get();
+                ->get()
+                ->filter(function ($reportee) {
+                    return $reportee->employee
+                        && $reportee->employee->group_company === 'Cement'
+                        && is_null($reportee->employee->deleted_at);
+                })
+                ->values();
             if (!$reportees || empty($reportees)) {
                 return response()->json([
                     'status' => false,
