@@ -285,7 +285,7 @@ class PerformanceDialogController extends Controller
                     $isPerformanceDialogStartDateReadonly = true;
                 }
 
-                if ($isFormAcknowledge) {
+                if ($isFormAcknowledge || $isFormDelete) {
                     $isPerformanceDialogTypesRequired = false;
                 }
 
