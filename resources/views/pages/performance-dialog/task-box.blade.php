@@ -190,16 +190,13 @@
                                                             </a>
                                                         @endif
                                                         @if ($row['is_action_delete'])
-                                                            <a class="btn btn-sm btn-outline-danger" href="{{ route('performance-dialog.form-delete', [
-                                                                'id' => $row['id'],
-                                                                'action' => 'delete',
-                                                            ]) }}"
+                                                            <button type="button" class="btn btn-sm btn-outline-danger" data-bs-toggle="modal" data-bs-target="#deleteModal" onclick="setPerformanceDialogDeleteEmployee('{{ $row['id'] }}', '{{ $row['employee_id'] }}', '{{ $row['employee_name'] }}', '{{ $row['formatted_schedule_at'] }}', '{{ $row['formatted_initiated_at'] }}', '{{ $row['status'] }}')"
                                                             data-bs-toggle="tooltip"
                                                             data-bs-placement="top"
                                                             title="Delete"
                                                             >
                                                                 <i class="ri-delete-bin-line"></i>
-                                                            </a>
+                                                            </button>
                                                         @endif
                                                     </td>
                                                 </tr>
@@ -289,6 +286,51 @@
                         <button type="submit" id="schedule-performance-dialog-submit" class="btn btn-primary">
                             <span class="spinner-border spinner-border-sm me-1 d-none" role="status" aria-hidden="true"></span>
                             Submit
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="deleteModal" tabindex="-1" aria-labelledby="deleteModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="deleteModalLabel">Are you sure to delete this data?</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div id="delete-performance-dialog-form-alert" class="alert alert-danger d-none"></div>
+                <form id="delete-performance-dialog" action="{{ route('performance-dialog-task.delete') }}" method="POST">
+                    @csrf
+                    <div class="modal-body">
+                        <input type="hidden" name="id" id="performance-dialog-delete-form-id" class="form-control">
+                        <div id="performance-dialog-delete-form-employee-id-elem" class="form-group mb-2">
+                            <label for="performance-dialog-delete-form-employee-id" class="form-label">Employee ID</label>
+                            <input type="text" class="form-control form-control-sm" id="performance-dialog-delete-form-employee-id" name="employee_id" value="" disabled>
+                        </div>
+                        <div id="performance-dialog-delete-form-employee-name-elem" class="form-group mb-2">
+                            <label for="performance-dialog-delete-form-employee-name" class="form-label">Employee Name</label>
+                            <input type="text" class="form-control form-control-sm" id="performance-dialog-delete-form-employee-name" name="employee_name" value="" disabled>
+                        </div>
+                        <div id="performance-dialog-delete-form-schedule-date-elem" class="form-group mb-2">
+                            <label for="performance-dialog-delete-form-schedule-date" class="form-label">Schedule Date</label>
+                            <input type="datetime-local" class="form-control form-control-sm" id="performance-dialog-delete-form-schedule-date" name="start_date" disabled>
+                        </div>
+                        <div id="performance-dialog-delete-form-initiate-date-elem" class="form-group mb-2">
+                            <label for="performance-dialog-delete-form-initiate-date" class="form-label">Initiate Date</label>
+                            <input type="datetime-local" class="form-control form-control-sm" id="performance-dialog-delete-form-initiate-date" name="initiate_date" disabled>
+                        </div>
+                        <div id="performance-dialog-delete-form-status-elem" class="form-group mb-2">
+                            <label for="performance-dialog-delete-form-status" class="form-label">Status</label>
+                            <input type="text" class="form-control form-control-sm" id="performance-dialog-delete-form-status" name="status" value="" disabled>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                        <button type="submit" id="delete-performance-dialog-submit" class="btn btn-primary">
+                            <span class="spinner-border spinner-border-sm me-1 d-none" role="status" aria-hidden="true"></span>
+                            Delete
                         </button>
                     </div>
                 </form>
