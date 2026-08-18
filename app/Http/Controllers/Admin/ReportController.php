@@ -357,7 +357,7 @@ class ReportController extends Controller
 
             $reportees = ApprovalLayer::with(['employee', 'employeeManager'])
                 ->whereIn('employee_id', $reporteeEmployeeIDs)
-                -where("layer", 1)
+                ->where("layer", 1)
                 ->get();
 
             foreach($reportees as $reportee) {
