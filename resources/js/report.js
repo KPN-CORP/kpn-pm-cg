@@ -74,6 +74,19 @@ function adminReportType(val) {
                 }
             });
 
+            $(".filter-btn-performance-dialog").on("click", function () {
+                const filterValue = $(this).data("id");
+
+                if (filterValue === "All") {
+                    reportGoalsTable.column(4).search("").draw();
+                } else {
+                    reportGoalsTable
+                        .column(4)
+                        .search("^\\s*" + filterValue + "\\s*$", true, false)
+                        .draw();
+                }
+            });
+
             initializePopovers();
 
             hideLoader();
@@ -203,6 +216,19 @@ document.addEventListener("DOMContentLoaded", function () {
                     }
                 });
 
+                $(".filter-btn-performance-dialog").on("click", function () {
+                    const filterValue = $(this).data("id");
+
+                    if (filterValue === "All") {
+                        reportGoalsTable.column(4).search("").draw();
+                    } else {
+                        reportGoalsTable
+                            .column(4)
+                            .search("^\\s*" + filterValue + "\\s*$", true, false)
+                            .draw();
+                    }
+                });
+
                 initializePopovers();
 
                 hideLoader();
@@ -286,6 +312,19 @@ function reportType(val) {
                 }
             });
 
+            $(".filter-btn-performance-dialog").on("click", function () {
+                const filterValue = $(this).data("id");
+
+                if (filterValue === "All") {
+                    reportGoalsTable.column(4).search("").draw();
+                } else {
+                    reportGoalsTable
+                        .column(4)
+                        .search("^\\s*" + filterValue + "\\s*$", true, false)
+                        .draw();
+                }
+            });
+
             hideLoader();
         },
         error: function (xhr, status, error) {
@@ -344,6 +383,20 @@ document.addEventListener("DOMContentLoaded", function () {
                         reportGoalsTable.search(filterValue).draw();
                     }
                 });
+
+                $(".filter-btn-performance-dialog").on("click", function () {
+                    const filterValue = $(this).data("id");
+
+                    if (filterValue === "All") {
+                        reportGoalsTable.column(4).search("").draw();
+                    } else {
+                        reportGoalsTable
+                            .column(4)
+                            .search("^\\s*" + filterValue + "\\s*$", true, false)
+                            .draw();
+                    }
+                });
+
                 initializePopovers();
                 hideLoader();
 
