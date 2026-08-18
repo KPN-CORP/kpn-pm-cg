@@ -6,7 +6,7 @@
               <div class="col-md-auto text-center">
                   <button class="btn btn-outline-primary btn-sm px-2 my-1 me-1 filter-btn" data-id="all">All</button>
                   <button class="btn btn-outline-primary btn-sm px-2 my-1 me-1 filter-btn" data-id="draft">Draft</button>
-                  <button class="btn btn-outline-primary btn-sm px-2 my-1 me-1 filter-btn" data-id="not scheduled">Not Scheduled</button>
+                  <button class="btn btn-outline-primary btn-sm px-2 my-1 me-1 filter-btn" data-id="not schedule">Not Scheduled</button>
                   <button class="btn btn-outline-primary btn-sm px-2 my-1 me-1 filter-btn" data-id="scheduled">Scheduled</button>
                   <button class="btn btn-outline-primary btn-sm px-2 my-1 me-1 filter-btn" data-id="overdue">Overdue</button>
                   <button class="btn btn-outline-primary btn-sm px-2 my-1 me-1 filter-btn" data-id="done">Done</button>
