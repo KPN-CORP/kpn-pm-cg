@@ -33,6 +33,17 @@ function setPerformanceDialogScheduleEmployee(employee_id, employee_name) {
 
 window.setPerformanceDialogScheduleEmployee = setPerformanceDialogScheduleEmployee;
 
+function setPerformanceDialogDeleteEmployee(id, employee_id, employee_name, schedule_date, initiate_date, status) {
+    document.getElementById('performance-dialog-delete-form-id').value = id;
+    document.getElementById('performance-dialog-delete-form-employee-id').value = employee_id;
+    document.getElementById('performance-dialog-delete-form-employee-name').value = employee_name;
+    document.getElementById('performance-dialog-delete-form-schedule-date').value = schedule_date;
+    document.getElementById('performance-dialog-delete-form-initiate-date').value = initiate_date;
+    document.getElementById('performance-dialog-delete-form-status').value = status;
+}
+
+window.setPerformanceDialogDeleteEmployee = setPerformanceDialogDeleteEmployee;
+
 document.addEventListener("DOMContentLoaded", function () {
     $(document).ready(function() {
         var tableData = $('#tablePerformanceDialog').DataTable({
@@ -515,6 +526,57 @@ document.addEventListener("DOMContentLoaded", function () {
                 html += '<li>' + (xhr.responseJSON?.message ?? 'Something went wrong.') + '</li>';
 
                 $('#schedule-performance-dialog-form-alert').removeClass('d-none').html('<ul class="mb-0">' + html + '</ul>');
+            }
+        });
+    });
+
+    $('#delete-performance-dialog-submit').click(function (e) {
+        e.preventDefault();
+
+        let button = $(this);
+        let spinner = button.find('.spinner-border');
+        let form = $('#delete-performance-dialog');
+
+        if (!form[0].checkValidity()) {
+            form[0].reportValidity();
+            return;
+        }
+
+        button.prop('disabled', true);
+        spinner.removeClass('d-none');
+
+        let formData = form.serializeArray();
+
+        $('#delete-performance-dialog-form-alert').addClass('d-none').empty();
+
+        $.ajax({
+            url: form.attr('action'),
+            type: form.attr('method'),
+            data: $.param(formData),
+
+            success: function (response) {
+                Swal.fire({
+                    title: "Success",
+                    text: response.message,
+                    icon: "success",
+                    timer: 1200,
+                    showConfirmButton: false
+                });
+
+                setTimeout(function () {
+                    window.location.href = response.redirect;
+                }, 1200);
+            },
+
+            error: function (xhr) {
+                button.prop('disabled', false);
+                spinner.addClass('d-none');
+
+                let html = '';
+
+                html += '<li>' + (xhr.responseJSON?.message ?? 'Something went wrong.') + '</li>';
+
+                $('#delete-performance-dialog-form-alert').removeClass('d-none').html('<ul class="mb-0">' + html + '</ul>');
             }
         });
     });
