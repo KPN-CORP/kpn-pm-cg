@@ -39,6 +39,10 @@
                     if (is_array($error)) {
                         $error = implode(', ', $error);
                     }
+
+                    if (str_contains($error, '&lt;a ')) {
+                        $error = html_entity_decode($error);
+                    }
                 @endphp
                 <strong>
                     {!! $error !!}
