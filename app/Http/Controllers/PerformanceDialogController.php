@@ -508,7 +508,7 @@ class PerformanceDialogController extends Controller
                         'initiate_date' => Carbon::now(),
                         'start_date' => $startDate,
                         'due_date' => $dueDate,
-                        'type_ids' => $typeIDs,
+                        'type_ids' => json_encode($typeIDs),
                         'others_type_name' => $othersType,
                         'status' => $status,
                         'created_by' => $loggedInUserID,
