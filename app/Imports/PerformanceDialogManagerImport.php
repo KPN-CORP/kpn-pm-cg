@@ -197,12 +197,13 @@ class PerformanceDialogManagerImport implements ToModel, WithValidation, WithHea
                 return;
             }
 
-            $performanceDialogTypes = PerformanceDialogType::whereIn("name", $typeNames)->get();
-            $performanceDialogTypesGroupByName = $performanceDialogTypes->groupBy('name');
+            $performanceDialogTypes = PerformanceDialogType::whereIn("name", $typeNames)
+                ->get()
+                ->keyBy('name');
 
             foreach ($typeNames as $typeNameRow) {
-                if (isset($performanceDialogTypesGroupByName[$typeNameRow]) && $performanceDialogTypesGroupByName[$typeNameRow]) {
-                    $typeIDs[] = $performanceDialogTypesGroupByName[$typeNameRow]->id;
+                if (isset($performanceDialogTypes[$typeNameRow])) {
+                    $typeIDs[] = $performanceDialogTypes[$typeNameRow]->id;
                 } else {
                     $othersTypeName = $typeNameRow;
                 }
