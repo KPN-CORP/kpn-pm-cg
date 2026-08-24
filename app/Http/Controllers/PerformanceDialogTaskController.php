@@ -177,6 +177,7 @@ class PerformanceDialogTaskController extends Controller
 
         $reportees = ApprovalLayer::with(["employee"])
             ->where("approver_id", $loggedInEmployeeID)
+            ->where("layer", 1)
             ->get()
             ->filter(function ($reportee) {
                 return $reportee->employee
@@ -349,6 +350,7 @@ class PerformanceDialogTaskController extends Controller
             $reportees = ApprovalLayer::with(['employee', 'employeeManager'])
                 ->where("approver_id", $managerEmployeeID)
                 ->whereIn('employee_id', $employeeIDs)
+                ->where("layer", 1)
                 ->get()
                 ->filter(function ($reportee) {
                     return $reportee->employee
