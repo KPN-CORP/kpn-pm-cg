@@ -105,7 +105,7 @@ class MyGoalController extends Controller
             }
 
             // Determine name and approval layer
-            if ($item->sendback_to == $item->employee->employee_id) {
+            if ($item->employee && $item->sendback_to == $item->employee->employee_id) {
                 $item->name = $item->employee->fullname . ' (' . $item->employee->employee_id . ')';
                 $item->approvalLayer = '';
             } else {
