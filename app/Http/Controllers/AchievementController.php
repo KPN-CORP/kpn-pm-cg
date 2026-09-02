@@ -64,7 +64,7 @@ class AchievementController extends Controller
                     'original_index' => $index,
                     'kpi' => $row['kpi'] ?? '',
                     'target' => $row['target'] ?? '',
-                    'uom' => $row['custom_uom'] ?: ($row['uom'] ?? ''),
+                    'uom' => ($row['uom'] && $row['uom'] === 'Other') ? ($row['custom_uom'] ?? '') : $row['uom'],
                     'type' => $row['type'] ?? '',
                     'weightage' => $row['weightage'] ?? '',
                     'achievement' => $row['achievement'] ?? '',
