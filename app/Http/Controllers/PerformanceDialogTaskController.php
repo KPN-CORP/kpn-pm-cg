@@ -115,7 +115,7 @@ class PerformanceDialogTaskController extends Controller
                 $isActionDownload = true;
             }
 
-            if ($status == "Scheduled" || $status == "Draft") {
+            if ($status == "Scheduled" || $status == "Draft" || $status == "Overdue") {
                 $isActionDelete = true;
             }
 
